@@ -1,0 +1,6 @@
+.taskList {
+  background-color: var(--board-bg);
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  min-height: 400px;
+}
