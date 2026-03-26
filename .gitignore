@@ -13,13 +13,17 @@ lerna-debug.log*
 # Node modules
 # --------------------
 node_modules/
+*/node_modules/
 
 # --------------------
-# Vite / build output
+# Build output
 # --------------------
 dist/
 out/
+build/
 *.local
+frontend/dist/
+backend/build/
 node_modules/.vite/
 
 # --------------------
@@ -28,6 +32,8 @@ node_modules/.vite/
 .env
 .env.local
 .env.*.local
+backend/.env
+backend/.env.local
 
 # --------------------
 # Editor directories and files
@@ -49,8 +55,15 @@ coverage/
 *.lcov
 
 # --------------------
+# Prisma
+# --------------------
+prisma/migrations/dev_*.db
+
+# --------------------
 # Optional package locks 
 # --------------------
 # package-lock.json
 # yarn.lock
 # pnpm-lock.yaml
+
+/backend/generated/prisma

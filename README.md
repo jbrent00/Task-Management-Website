@@ -1,16 +1,98 @@
-# React + Vite
+# Task Management Website - Monorepo
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This project is organized as a monorepo with separate frontend and backend applications.
 
-Currently, two official plugins are available:
+## Project Structure
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+```
+├── frontend/          # React frontend application
+│   ├── src/
+│   ├── public/
+│   ├── package.json
+│   ├── vite.config.js
+│   ├── eslint.config.js
+│   └── index.html
+│
+├── backend/           # Node.js backend with Prisma
+│   ├── src/
+│   │   ├── services/
+│   │   │   └── prisma.js    # Prisma client instance
+│   │   └── index.js         # Express server entry point
+│   ├── prisma/
+│   │   ├── schema.prisma
+│   │   └── migrations/
+│   ├── package.json
+│   ├── tsconfig.json
+│   └── .env
+│
+└── README.md
+```
 
-## React Compiler
+## Setup Instructions
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### Prerequisites
+- Node.js 18+
+- PostgreSQL database
+- npm or yarn
 
-## Expanding the ESLint configuration
+### Frontend Setup
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+```bash
+cd frontend
+npm install
+npm run dev       # Start dev server on http://localhost:5173
+npm run build     # Build for production
+npm run lint      # Run ESLint
+```
+
+### Backend Setup
+
+```bash
+cd backend
+npm install
+```
+
+**Configure Database:**
+1. Create a PostgreSQL database
+2. Update `backend/.env` with your `DATABASE_URL`
+
+**Initialize Prisma:**
+```bash
+cd backend
+npm run generate  # Generate Prisma client
+npm run migrate   # Run migrations
+npm run dev       # Start backend server on http://localhost:3000
+```
+
+## Environment Variables
+
+### Backend (`.env`)
+```
+DATABASE_URL="postgresql://user:password@localhost:5432/task_manager"
+PORT=3000
+```
+
+## Development
+
+**Frontend:**
+- Vite for fast development
+- React 19
+- ESLint for code quality
+
+**Backend:**
+- Express.js for API
+- Prisma ORM for database
+- PostgreSQL database
+
+## Scripts
+
+**Frontend:**
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run lint` - Run linter
+
+**Backend:**
+- `npm run dev` - Start server
+- `npm run generate` - Generate Prisma client
+- `npm run migrate` - Run database migrations
+- `npm run db:push` - Push schema changes to database
