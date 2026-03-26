@@ -17,6 +17,9 @@ This project is organized as a monorepo with separate frontend and backend appli
 │   ├── src/
 │   │   ├── services/
 │   │   │   └── prisma.js    # Prisma client instance
+|   |   ├── controllers/     # Querying database and sending response
+|   |   ├──routes/           # Routes
+|   |   |   └──tasks.js 
 │   │   └── index.js         # Express server entry point
 │   ├── prisma/
 │   │   ├── schema.prisma
