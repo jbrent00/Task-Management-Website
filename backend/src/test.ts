@@ -1,4 +1,4 @@
-import { prisma } from "./services/prisma.js";
+import { prisma } from "./services/prisma";
 
 async function testDatabase() {
   try {
