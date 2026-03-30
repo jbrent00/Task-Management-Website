@@ -1,0 +1,4 @@
+.createTask {
+    display: flex;
+    flex-direction: column;
+}
