@@ -1,7 +1,7 @@
 import TaskCard from "../task-card/task-card";
 import styles from "./task-list.module.css";
 
-function TaskList ({tasks, status}) {
+function TaskList ({tasks, status, allTasks, setAllTasks}) {
  
     // We need to map over the tasks of a certain category
     return (
@@ -12,7 +12,7 @@ function TaskList ({tasks, status}) {
             
             {
             tasks.map(
-                task => (<TaskCard key={task.id} id={task.id} task={task}/>)
+                task => (<TaskCard key={task.id} id={task.id} task={task} allTasks={allTasks} setAllTasks={setAllTasks}/>)
             )
             }
         </div>

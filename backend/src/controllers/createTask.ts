@@ -4,6 +4,7 @@ import type { Request, Response } from "express";
 async function createTask(req: Request, res: Response) {
     try {
         const { title, description, userId, priority, dueDate } = req.body;
+
         const newTask = await prisma.task.create({
             data: {
                 title,
@@ -11,7 +12,7 @@ async function createTask(req: Request, res: Response) {
                 userId, 
                 priority,
                 status: "todo", // Default status is "todo"\
-                dueDate: dueDate ? new Date(dueDate + ':00.000Z') : null, // Convert to Date object if provided, otherwise set to null
+                dueDate: dueDate ? new Date(dueDate) : null, // Convert to Date object if provided, otherwise set to null
             }
         });
 

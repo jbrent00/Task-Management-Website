@@ -38,9 +38,9 @@ function TasksPage () {
                 <CreateTaskForm tasks={tasks} setTasks={setTasks}/>
             </div>
             <div className={styles.taskBoards}>
-                <TaskBoard status="todo" tasks={todoTasks} loading={loading}/>
-                <TaskBoard status="in_progress" tasks={inProgressTasks} loading={loading}/>
-                <TaskBoard status="completed" tasks={completedTasks} loading={loading}/>
+                <TaskBoard status="todo" tasks={todoTasks} allTasks={tasks} setAllTasks={setTasks} loading={loading}/>
+                <TaskBoard status="in_progress" tasks={inProgressTasks} allTasks={tasks} setAllTasks={setTasks} loading={loading}/>
+                <TaskBoard status="completed" tasks={completedTasks} allTasks={tasks} setAllTasks={setTasks} loading={loading}/>
             </div>
         </div>
     );
