@@ -1,13 +1,16 @@
 import { useState } from 'react';
 import styles from './create-task-form.module.css';
 import { createTask } from '../../api/createTask';
+import { useAuth } from '@clerk/react';
 
 function CreateTaskForm ({tasks, setTasks}) {
+    const { userId, getToken } = useAuth();
+
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [priority, setPriority] = useState('low');
     const [dueDate, setDueDate] = useState('');
-    const userId = 1; // Assuming userId is 1 for now, can be updated to get from auth context or similar
+
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -16,7 +19,8 @@ function CreateTaskForm ({tasks, setTasks}) {
         // (TasksPage) 
         // to include the newly created task so it shows up in the UI without needing to refresh the page
         try {
-            const newTask = await createTask(title, description, userId, priority, dueDate || null); 
+            const token = await getToken();
+            const newTask = await createTask(token, title, description, userId, priority, dueDate || null); 
             setTasks((prevTasks) => [newTask, ...prevTasks]); // Add the new task to the existing list of tasks
         } catch (error) {
             console.error('Error creating task', error);

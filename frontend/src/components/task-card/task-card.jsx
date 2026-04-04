@@ -3,9 +3,10 @@ import { deleteTask } from '../../api/deleteTask';
 import { updateTask } from '../../api/updateTask';
 import toLocalDateTimeInput from '../../functions/toLocalDateTime';
 import { useState } from 'react';
-
+import { useAuth } from '@clerk/react';
 
 function TaskCard ({task, allTasks, setAllTasks}) {
+    const { getToken } = useAuth();
 
     const [editing, setEditing] = useState(false);
     const [dueDate, setDueDate] = useState(
@@ -18,7 +19,9 @@ function TaskCard ({task, allTasks, setAllTasks}) {
     const handleDelete = async () => {
         const taskId = task.id;
         try {
-            await deleteTask(taskId);
+            const token = await getToken();
+
+            await deleteTask(token, taskId);
             // After deleting the task, we want to update the list of tasks in the parent component
             setAllTasks(allTasks.filter( t => t.id !== taskId));    
         } 
@@ -38,7 +41,8 @@ function TaskCard ({task, allTasks, setAllTasks}) {
         }
         
         try {
-            const updatedTask = await updateTask(task.id, title, description, status, priority, dueDate || null);
+            const token = await getToken();
+            const updatedTask = await updateTask(token, task.id, title, description, status, priority, dueDate || null);
             // Update allTasks array with the updated task
             setAllTasks( allTasks.map(
                 t => t.id === task.id ? updatedTask : t

@@ -1,6 +1,6 @@
 const backendURL = import.meta.env.VITE_BACKEND_BASE_URL;
 
-export const updateTask = async (taskId, title, description, status, priority, dueDate) => {
+export const updateTask = async (token, taskId, title, description, status, priority, dueDate) => {
     try {
         const urlToFetch = `${backendURL}/tasks/${taskId}`;
 
@@ -10,7 +10,8 @@ export const updateTask = async (taskId, title, description, status, priority, d
         const response = await fetch(urlToFetch, {
             method: 'PUT',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
             },
             body: JSON.stringify({
                 title,

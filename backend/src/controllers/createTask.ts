@@ -1,10 +1,12 @@
 import { prisma } from '../services/prisma';
 import type { Request, Response } from "express";
+import { getAuth } from '@clerk/express';
 
 async function createTask(req: Request, res: Response) {
     try {
-        const { title, description, userId, priority, dueDate } = req.body;
-
+        const { title, description, priority, dueDate } = req.body;
+        const { userId } = getAuth(req);
+        
         const newTask = await prisma.task.create({
             data: {
                 title,

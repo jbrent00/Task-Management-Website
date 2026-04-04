@@ -12,15 +12,15 @@ model Project {
   title       String
   description String?
   createdAt   DateTime @default(now())
-  userId      Int
-  User        User     @relation(fields: [userId], references: [id])
-  Task        Task[]
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tasks       Task[]   
 }
 
 model Tag {
-  id      Int       @id @default(autoincrement())
-  name    String    @unique
-  TaskTag TaskTag[]
+  id       Int       @id @default(autoincrement())
+  name     String    @unique
+  taskTags TaskTag[]
 }
 
 model Task {
@@ -32,30 +32,28 @@ model Task {
   dueDate     DateTime?
   createdAt   DateTime     @default(now())
   projectId   Int?
-  userId      Int
-  Project     Project?     @relation(fields: [projectId], references: [id])
-  User        User         @relation(fields: [userId], references: [id])
-  TaskTag     TaskTag[]
+  userId      String
+  project     Project?     @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  taskTags    TaskTag[]
 }
 
 model TaskTag {
   taskId Int
   tagId  Int
-  Tag    Tag  @relation(fields: [tagId], references: [id])
-  Task   Task @relation(fields: [taskId], references: [id])
+  tag    Tag  @relation(fields: [tagId], references: [id])
+  task   Task @relation(fields: [taskId], references: [id])
 
   @@id([taskId, tagId])
 }
 
 model User {
-  id        Int       @id @default(autoincrement())
-  email     String    @unique
-  password  String
-  createdAt DateTime  @default(now())
-  fname     String
-  lname     String
-  Project   Project[]
-  Task      Task[]
+  id         String    @id  // Clerk's user ID, e.g. "user_2abc123xyz"
+  fname      String?
+  lname      String?
+  createdAt  DateTime  @default(now())
+  projects   Project[]
+  tasks      Task[]
 }
 
 enum TaskPriority {

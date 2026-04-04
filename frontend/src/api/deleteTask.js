@@ -1,10 +1,13 @@
 const backendURL = import.meta.env.VITE_BACKEND_BASE_URL;
 
-export const deleteTask = async (taskId) => {
+export const deleteTask = async (token, taskId) => {
     try {
         const urlToFetch = `${backendURL}/tasks/${taskId}`;
         const response = await fetch(urlToFetch, {
-            method: 'DELETE'
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
         });
 
         if (!response.ok) {

@@ -1,6 +1,6 @@
 const backendURL = import.meta.env.VITE_BACKEND_BASE_URL;
 
-export const createTask = async (title, description, userId, priority, dueDate) => {
+export const createTask = async (token, title, description, userId, priority, dueDate) => {
     try {
         const urlToFetch = backendURL + "/tasks";
         const utcISOString = dueDate ? new Date(dueDate).toISOString() : null; // Convert to UTC ISO string if dueDate is provided
@@ -8,7 +8,8 @@ export const createTask = async (title, description, userId, priority, dueDate) 
         const response = await fetch(urlToFetch, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
             },
             body: JSON.stringify({
                 title,
