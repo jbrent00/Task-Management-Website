@@ -5,6 +5,8 @@ import { useState, useEffect } from 'react';
 import { getTasks } from '../api/getTasks';
 import { UserButton } from '@clerk/react';
 import { useAuth  } from '@clerk/react';
+import { DragDropContext } from '@hello-pangea/dnd';
+import { updateTask } from '../api/updateTask';
 
 function TasksPage () {
     const { getToken, isSignedIn , isLoaded } = useAuth();
@@ -18,6 +20,7 @@ function TasksPage () {
 
     // Fetch tasks from the backend when the component mounts
     useEffect( () => {
+        
         if (!isLoaded) {
             return; // Wait for auth to load before doing anything
         } 
@@ -33,10 +36,11 @@ function TasksPage () {
             const token = await getToken();
             const data = await getTasks(token);
             setTasks(data);
+            setLoading(false);
         }
 
         fetchTasks();
-        setLoading(false);
+        
         }, [isLoaded]);
 
     // Whenever the tasks state changes, update the 3 status lists
@@ -46,7 +50,46 @@ function TasksPage () {
         setCompletedTasks(tasks.filter( task => task.status === 'completed'));
     }, [tasks]);
 
+    // Function to handle drag and drop of tasks between columns
+    const handleDragEnd = async (result) => {
+        const { source, destination } = result;
+        if (!destination) {
+            return; // If dropped outside any droppable area, do nothing
+        }
+        const sourceStatus = source.droppableId;
+        const destStatus = destination.droppableId;
+        if (sourceStatus === destStatus) {
+            return; // If dropped in the same column, do nothing
+        }
 
+        const taskId = parseInt(result.draggableId);
+
+        // Update the task's status in the local state to reflect the change immediately in the UI
+        setTasks(prevTasks => {
+            const updatedTasks = prevTasks.map(task => {
+                if (task.id === taskId) {
+                    return { ...task, status: destStatus };
+                }
+                return task;
+            });
+            return updatedTasks;
+        });
+
+        // Update the task's status in the backend to persist the change
+        const updateTaskStatus = async () => {
+            try {
+                const token = await getToken();
+                const taskToUpdate = tasks.find(task => task.id === taskId);
+                await updateTask(token, taskId, taskToUpdate.title, taskToUpdate.description, destStatus, taskToUpdate.priority, taskToUpdate.dueDate);
+            } catch (error) {
+                console.error('Error updating task status', error);
+                // Optionally, we could revert the local state change here if the backend update fails
+            }
+        };
+
+        await updateTaskStatus();
+
+    }
     return (
         <div className={styles.tasksPage}>
             <div className={styles.header}>
@@ -59,9 +102,11 @@ function TasksPage () {
                 <CreateTaskForm tasks={tasks} setTasks={setTasks}/>
             </div>
             <div className={styles.taskBoards}>
-                <TaskBoard status="todo" tasks={todoTasks} allTasks={tasks} setAllTasks={setTasks} loading={loading}/>
-                <TaskBoard status="in_progress" tasks={inProgressTasks} allTasks={tasks} setAllTasks={setTasks} loading={loading}/>
-                <TaskBoard status="completed" tasks={completedTasks} allTasks={tasks} setAllTasks={setTasks} loading={loading}/>
+                <DragDropContext onDragEnd={handleDragEnd}>
+                    <TaskBoard status="todo" tasks={todoTasks} allTasks={tasks} setAllTasks={setTasks} loading={loading}/>
+                    <TaskBoard status="in_progress" tasks={inProgressTasks} allTasks={tasks} setAllTasks={setTasks} loading={loading}/>
+                    <TaskBoard status="completed" tasks={completedTasks} allTasks={tasks} setAllTasks={setTasks} loading={loading}/>
+                </DragDropContext>
             </div>
         </div>
     );
