@@ -16,8 +16,8 @@ async function testDatabase() {
     console.log("\nFetching all projects...");
     const projects = await prisma.project.findMany({
       include: {
-        Task: true,
-        User: true,
+        tasks: true,
+        user: true,
       },
     });
     console.log("Projects:", projects);

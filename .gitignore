@@ -70,3 +70,8 @@ prisma/migrations/dev_*.db
 # pnpm-lock.yaml
 
 /backend/generated/prisma
+
+# Codex contributor guidance and local agent metadata
+AGENTS.md
+.codex/
+.agents/

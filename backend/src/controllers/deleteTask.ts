@@ -7,6 +7,11 @@ async function deleteTask(req: Request, res: Response) {
         const { id } = req.params;
         const { userId } = getAuth(req);
 
+        if (!userId) {
+            res.status(401).json({ error: "Unauthorized" });
+            return;
+        }
+
         const deletedTask = await prisma.task.delete({
             where: { 
                 userId,

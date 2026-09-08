@@ -13,25 +13,31 @@ function CreateTaskForm ({tasks, setTasks}) {
 
 
     const handleSubmit = async (e) => {
-        e.preventDefault();
-        // Handle task creation logic here
-        // 1. Send a request to the backend to create a new task. Update tasks state in the parent component 
-        // (TasksPage) 
-        // to include the newly created task so it shows up in the UI without needing to refresh the page
-        try {
-            const token = await getToken();
-            const newTask = await createTask(token, title, description, userId, priority, dueDate || null); 
-            setTasks((prevTasks) => [newTask, ...prevTasks]); // Add the new task to the existing list of tasks
-        } catch (error) {
-            console.error('Error creating task', error);
-        }
+    e.preventDefault();
+    // Handle task creation logic here
+    // 1. Send a request to the backend to create a new task. Update tasks state in the parent component
+    // (TasksPage) to include the newly created task so it shows up in the UI without needing to refresh the page
+    try {
+        const token = await getToken();
 
-        // 2. Clear the form fields after successful creation
-        setTitle('');
-        setDescription('');
-        setPriority('low');
-        setDueDate('');
-    };
+        // Find the orderIndex to assign to the new task (insert at the bottom of the todo list)
+        const todoTasks = tasks.filter(task => task.status === 'todo');
+        const orderIndex = todoTasks.length > 0
+            ? Math.max(...todoTasks.map(task => task.orderIndex)) + 1
+            : 0;
+
+        const newTask = await createTask(token, title, description, userId, priority, dueDate || null, orderIndex);
+        setTasks((prevTasks) => [...prevTasks, newTask]); // Add the new task to the bottom of the todo list
+    } catch (error) {
+        console.error('Error creating task', error);
+    }
+
+    // 2. Clear the form fields after successful creation
+    setTitle('');
+    setDescription('');
+    setPriority('low');
+    setDueDate('');
+};
 
     return (
         <form onSubmit={handleSubmit} className={styles.createTask}>

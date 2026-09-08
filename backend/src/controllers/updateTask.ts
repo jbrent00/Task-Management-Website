@@ -8,8 +8,10 @@ async function updateTask(req: Request, res: Response) {
         const { title, description, priority, status, dueDate } = req.body;
         const { userId } = getAuth(req);
 
-        // DELETE THIS AFTER
-        console.log('Date received in backend for update:', dueDate); // Check the format of the received dueDate
+        if (!userId) {
+            res.status(401).json({ error: "Unauthorized" });
+            return;
+        }
 
         const updatedTask = await prisma.task.update({
             where: { 
@@ -25,7 +27,6 @@ async function updateTask(req: Request, res: Response) {
             }
         });
 
-        console.log('Updated task:', updatedTask); // REMOVE LATER ON
         res.status(200).json(updatedTask);
     } catch (error) {
         console.error('Error updating task:', error);

@@ -1,5 +1,3 @@
-import { getTasks } from '../../api/getTasks';
-import { useState, useEffect } from 'react';
 import TaskList from '../task-list/task-list';
 import { Droppable } from '@hello-pangea/dnd';
 
