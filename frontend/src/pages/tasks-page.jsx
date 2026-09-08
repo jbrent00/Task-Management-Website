@@ -95,7 +95,11 @@ function TasksPage () {
     return (
         <div className={styles.tasksPage}>
             <div className={styles.header}>
-                <h1>USER BUTTON</h1>
+                <div>
+                    <p className={styles.eyebrow}>Task workspace</p>
+                    <h1 className={styles.title}>My tasks</h1>
+                    <p className={styles.taskTotal}><strong>{tasks.length}</strong> {tasks.length === 1 ? 'task' : 'tasks'} in your workspace</p>
+                </div>
                 <div className={styles.userButton}>
                     <UserButton />
                 </div>

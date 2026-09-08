@@ -2,16 +2,25 @@ import TaskCard from "../task-card/task-card";
 import { Draggable } from '@hello-pangea/dnd';
 import styles from "./task-list.module.css";
 
-function TaskList ({tasks, status, allTasks, setAllTasks}) {
- 
-    // We need to map over the tasks of a certain category
+function TaskList ({tasks, status, allTasks, setAllTasks, loading}) {
+    const statusDetails = {
+        todo: { label: 'To do', className: 'todo', emptyMessage: 'No tasks yet. Create one above to get started.' },
+        in_progress: { label: 'In progress', className: 'inProgress', emptyMessage: 'Move a task here when you are ready to focus.' },
+        completed: { label: 'Completed', className: 'completed', emptyMessage: 'Completed tasks will appear here.' },
+    };
+    const { label, className, emptyMessage } = statusDetails[status];
+
     return (
-        <div className={styles.taskList}>
-            {status === "todo" && <h2>To Do</h2>} 
-            {status === "in_progress" && <h2>In Progress</h2>}
-            {status === "completed" && <h2>Completed</h2>}
-            
-            {tasks.map((task, index) => (
+        <section className={`${styles.taskList} ${styles[className]}`} aria-label={`${label} tasks`}>
+            <div className={styles.heading}>
+                <div className={styles.headingContent}>
+                    <span className={styles.statusMarker} aria-hidden="true" />
+                    <h2>{label}</h2>
+                </div>
+                <span className={styles.count}>{tasks.length}</span>
+            </div>
+
+            {loading ? <p className={styles.loadingState}>Loading tasks…</p> : tasks.length === 0 ? <p className={styles.emptyState}>{emptyMessage}</p> : tasks.map((task, index) => (
                 <Draggable key={task.id} draggableId={String(task.id)} index={index}>
                     {(provided) => (
                         <div
@@ -23,9 +32,8 @@ function TaskList ({tasks, status, allTasks, setAllTasks}) {
                         </div>
                     )}
                 </Draggable>
-            ))
-            }
-        </div>
+            ))}
+        </section>
     );
 }
 

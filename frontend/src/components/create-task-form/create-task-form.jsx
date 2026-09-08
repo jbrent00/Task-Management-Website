@@ -41,36 +41,34 @@ function CreateTaskForm ({tasks, setTasks}) {
 
     return (
         <form onSubmit={handleSubmit} className={styles.createTask}>
-            <h2>Create Task</h2>
-
-            <label htmlFor="title">Title:</label>
-            <input type="text" id="title" name="title" value={title} 
-            maxLength={100} onChange={(e) => setTitle(e.target.value)} />
-
-            <label htmlFor="description">Description:</label>
-            <textarea id="description" name="description" value={description} 
-            maxLength={500} onChange={(e) => setDescription(e.target.value)}></textarea>
-            <span>{description.length}/500</span>
-
-            <label htmlFor="dueDate">Due Date: <span>(optional)</span></label>
-            <input
-            type="datetime-local"
-            id="dueDate"
-            name="dueDate"
-            value={dueDate}
-            min={new Date().toISOString().split('T')[0]}  // prevents past dates
-            onChange={(e) => setDueDate(e.target.value)}
-            />
-
-            <label htmlFor="priority">Priority:</label>
-            <select id="priority" name="priority" value={priority} 
-            onChange={(e) => setPriority(e.target.value)}>
-                <option value="low">Low</option>
-                <option value="medium">Medium</option>
-                <option value="high">High</option>
-            </select>
-
-            <button disabled={!(title && description)} type="submit">Create Task</button>
+            <div className={styles.formIntro}>
+                <h2>Create a task</h2>
+                <p>Add details now, then organize it on the board.</p>
+            </div>
+            <div className={styles.field}>
+                <label htmlFor="title">Title</label>
+                <input type="text" id="title" name="title" value={title} maxLength={100} onChange={(e) => setTitle(e.target.value)} />
+            </div>
+            <div className={styles.field}>
+                <label htmlFor="description">Description <span className={styles.characterCount}>{description.length}/500</span></label>
+                <textarea id="description" name="description" value={description} maxLength={500} onChange={(e) => setDescription(e.target.value)} />
+            </div>
+            <div className={styles.details}>
+                <div className={styles.field}>
+                    <label htmlFor="priority">Priority</label>
+                    <select id="priority" name="priority" value={priority} onChange={(e) => setPriority(e.target.value)}>
+                        <option value="low">Low</option>
+                        <option value="medium">Medium</option>
+                        <option value="high">High</option>
+                    </select>
+                </div>
+                <div className={styles.field}>
+                    <label htmlFor="dueDate">Due date <span>(optional)</span></label>
+                    <input type="datetime-local" id="dueDate" name="dueDate" value={dueDate}
+                        min={new Date().toISOString().split('T')[0]} onChange={(e) => setDueDate(e.target.value)} />
+                </div>
+            </div>
+            <button className={styles.submitButton} disabled={!(title && description)} type="submit">Create task</button>
         </form>
     );
 }

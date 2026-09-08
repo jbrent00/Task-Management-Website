@@ -4,19 +4,14 @@ import { Droppable } from '@hello-pangea/dnd';
 function TaskBoard ({status, tasks, allTasks, setAllTasks, loading}) {
     
     return (
-        
         <Droppable droppableId={status}>
         {(provided) => (
             <div ref={provided.innerRef} {...provided.droppableProps}>
-                {loading 
-                    ? <h2>Loading...</h2> 
-                    : <TaskList status={status} tasks={tasks} allTasks={allTasks} setAllTasks={setAllTasks}/>
-                }
+                <TaskList status={status} tasks={tasks} allTasks={allTasks} setAllTasks={setAllTasks} loading={loading}/>
                 {provided.placeholder}
             </div>
         )}
         </Droppable>
-        
     );
 }
 

@@ -1,4 +1,15 @@
-.createTask {
-    display: flex;
-    flex-direction: column;
-}
+.createTask { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: end; padding: 20px; border: 1px solid var(--border); border-radius: 16px; background: var(--surface); box-shadow: var(--shadow-sm); }
+.formIntro { grid-column: 1 / -1; display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.formIntro h2 { color: var(--text-strong); font-size: 1.05rem; }
+.formIntro p, .characterCount { color: var(--text-muted); font-size: 0.82rem; }
+.field { display: flex; min-width: 0; flex-direction: column; gap: 7px; }
+.field label { color: var(--text); font-size: 0.84rem; font-weight: 650; }
+.field label span { color: var(--text-muted); font-weight: 400; }
+.field input, .field textarea, .field select { width: 100%; border: 1px solid var(--border-strong); border-radius: 9px; background: var(--surface); color: var(--text); }
+.field input, .field select { min-height: 42px; padding: 0 12px; }
+.field textarea { height: 42px; min-height: 42px; padding: 10px 12px; resize: none; }
+.details { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.submitButton { grid-column: 1 / -1; justify-self: end; min-height: 42px; padding: 0 18px; border: 0; border-radius: 9px; background: var(--primary); color: #fff; font-weight: 700; white-space: nowrap; transition: background 160ms ease, transform 160ms ease; }
+.submitButton:hover:not(:disabled) { background: var(--primary-hover); transform: translateY(-1px); }
+.submitButton:disabled { background: #c7d2fe; color: #eef2ff; }
+@media (max-width: 760px) { .createTask, .details { grid-template-columns: 1fr; } .submitButton { width: 100%; } }

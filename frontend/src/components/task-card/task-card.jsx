@@ -7,108 +7,98 @@ import { useAuth } from '@clerk/react';
 
 function TaskCard ({task, allTasks, setAllTasks}) {
     const { getToken } = useAuth();
-
     const [editing, setEditing] = useState(false);
-    const [dueDate, setDueDate] = useState(
-    task.dueDate ? toLocalDateTimeInput(task.dueDate) : '');
+    const [dueDate, setDueDate] = useState(task.dueDate ? toLocalDateTimeInput(task.dueDate) : '');
     const [status, setStatus] = useState(task.status);
     const [priority, setPriority] = useState(task.priority);
     const [title, setTitle] = useState(task.title);
     const [description, setDescription] = useState(task.description);
 
     const handleDelete = async () => {
-        const taskId = task.id;
         try {
             const token = await getToken();
-
-            await deleteTask(token, taskId);
-            // After deleting the task, we want to update the list of tasks in the parent component
-            setAllTasks(allTasks.filter( t => t.id !== taskId));    
-        } 
-        catch (error) {
+            await deleteTask(token, task.id);
+            setAllTasks(allTasks.filter((currentTask) => currentTask.id !== task.id));
+        } catch (error) {
             console.error('Error deleting task', error);
         }
     };
 
     const handleSave = async () => {
-        // Needed for properly checking if dueDate has changed, since it can be null, state uses ''
         const dueDateForComparing = task.dueDate ? toLocalDateTimeInput(task.dueDate) : '';
 
-        if (title === task.title && description === task.description && status === task.status 
+        if (title === task.title && description === task.description && status === task.status
             && priority === task.priority && dueDate === dueDateForComparing) {
-                setEditing(false);
-                return; // No changes, so we can skip the API call
+            setEditing(false);
+            return;
         }
-        
+
         try {
             const token = await getToken();
             const updatedTask = await updateTask(token, task.id, title, description, status, priority, dueDate || null);
-            // Update allTasks array with the updated task
-            setAllTasks( allTasks.map(
-                t => t.id === task.id ? updatedTask : t
-            ));
-
+            setAllTasks(allTasks.map((currentTask) => currentTask.id === task.id ? updatedTask : currentTask));
             setEditing(false);
         } catch (error) {
             console.error('Error updating task', error);
         }
-    }
+    };
+
+    const formattedDueDate = task.dueDate && toLocalDateTimeInput(task.dueDate).replace('T', ' ');
 
     return (
-        <div className={styles.card}>
-            { editing ? 
-            <>
-            <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} 
-                className={styles.editTitle}
-            />
-            <textarea value={description} onChange={(e) => setDescription(e.target.value)} 
-                className={styles.editDescription}
-            />
-
-            <label htmlFor="status">Status:</label>    
-            <select value={status} onChange={(e) => setStatus(e.target.value)}>
-                <option value="todo">To Do</option>
-                <option value="in_progress">In Progress</option>
-                <option value="completed">Completed</option>
-            </select>
-
-            <label htmlFor="priority">Priority:</label>
-            <select value={priority} onChange={(e) => setPriority(e.target.value)}>
-                <option value="low">Low</option>
-                <option value="medium">Medium</option>
-                <option value="high">High</option>
-            </select>
-
-            <label htmlFor="dueDate" className={styles.editDateLabel}>
-                Due Date: <span>(optional)</span>
-            </label>    
-            <input
-            type="datetime-local"
-            id="dueDate"
-            name="dueDate"
-            value={toLocalDateTimeInput(dueDate)}
-            min={new Date().toISOString().split('T')[0]}  // prevents past dates
-            onChange={(e) => setDueDate(e.target.value)}
-            />
-
-            <button className={styles.saveButton} onClick={handleSave}>Save</button> 
-            
-            
-            </>
-            :
-            <>
-            <h3 className={styles.title}>{task.title}</h3>
-            <p className={styles.description}>{task.description}</p>
-            {task.dueDate && (
-            <span>
-                Due: {toLocalDateTimeInput(task.dueDate).replace('T', ' ')}
-            </span>
+        <article className={styles.card}>
+            {editing ? (
+                <div className={styles.editForm}>
+                    <div className={styles.field}>
+                        <label htmlFor={`task-${task.id}-title`}>Title</label>
+                        <input id={`task-${task.id}-title`} type="text" value={title} onChange={(event) => setTitle(event.target.value)} />
+                    </div>
+                    <div className={styles.field}>
+                        <label htmlFor={`task-${task.id}-description`}>Description</label>
+                        <textarea id={`task-${task.id}-description`} value={description} onChange={(event) => setDescription(event.target.value)} />
+                    </div>
+                    <div className={styles.editGrid}>
+                        <div className={styles.field}>
+                            <label htmlFor={`task-${task.id}-status`}>Status</label>
+                            <select id={`task-${task.id}-status`} value={status} onChange={(event) => setStatus(event.target.value)}>
+                                <option value="todo">To do</option>
+                                <option value="in_progress">In progress</option>
+                                <option value="completed">Completed</option>
+                            </select>
+                        </div>
+                        <div className={styles.field}>
+                            <label htmlFor={`task-${task.id}-priority`}>Priority</label>
+                            <select id={`task-${task.id}-priority`} value={priority} onChange={(event) => setPriority(event.target.value)}>
+                                <option value="low">Low</option>
+                                <option value="medium">Medium</option>
+                                <option value="high">High</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div className={styles.field}>
+                        <label htmlFor={`task-${task.id}-due-date`}>Due date</label>
+                        <input type="datetime-local" id={`task-${task.id}-due-date`} value={toLocalDateTimeInput(dueDate)}
+                            min={new Date().toISOString().split('T')[0]} onChange={(event) => setDueDate(event.target.value)} />
+                    </div>
+                    <div className={styles.actions}>
+                        <button className={styles.saveButton} type="button" onClick={handleSave}>Save changes</button>
+                    </div>
+                </div>
+            ) : (
+                <>
+                    <div className={styles.topRow}>
+                        <h3 className={styles.title}>{task.title}</h3>
+                        <span className={`${styles.priority} ${styles[task.priority]}`}>{task.priority}</span>
+                    </div>
+                    <p className={styles.description}>{task.description}</p>
+                    {formattedDueDate && <p className={styles.meta}><span className={styles.dueLabel}>Due</span>{formattedDueDate}</p>}
+                    <div className={styles.actions}>
+                        <button type="button" className={styles.button} onClick={() => setEditing(true)}>Edit</button>
+                        <button type="button" onClick={handleDelete} className={`${styles.button} ${styles.deleteButton}`}>Delete</button>
+                    </div>
+                </>
             )}
-            <button className={styles.button} onClick={() => setEditing(true)}>Edit</button>
-            <button onClick={handleDelete} className={styles.button}>Delete</button>
-            </>
-            }
-        </div>
+        </article>
     );
 }
 

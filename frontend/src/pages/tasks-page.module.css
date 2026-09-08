@@ -1,4 +1,11 @@
-.taskBoards {
-    display: flex;
-    justify-content: space-between;
-}
+.tasksPage { width: min(1440px, 100%); min-height: 100vh; margin: 0 auto; padding: 32px clamp(16px, 4vw, 56px) 48px; }
+.header { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin-bottom: 28px; }
+.eyebrow { margin-bottom: 6px; color: var(--primary); font-size: 0.78rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+.title { color: var(--text-strong); font-size: clamp(2rem, 4vw, 3rem); letter-spacing: -0.045em; line-height: 1; }
+.taskTotal { margin-top: 10px; color: var(--text-muted); }
+.taskTotal strong { color: var(--text); }
+.userButton { display: grid; width: 42px; height: 42px; place-items: center; border: 1px solid var(--border); border-radius: 50%; background: var(--surface); box-shadow: var(--shadow-sm); }
+.createTask { margin-bottom: 28px; }
+.taskBoards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; align-items: start; }
+@media (max-width: 960px) { .taskBoards { grid-template-columns: 1fr; } }
+@media (max-width: 640px) { .tasksPage { padding: 24px 16px 36px; } .header { align-items: flex-start; margin-bottom: 22px; } }
