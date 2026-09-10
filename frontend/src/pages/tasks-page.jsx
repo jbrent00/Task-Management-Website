@@ -1,96 +1,122 @@
 import TaskBoard from '../components/task-board/task-board';
 import CreateTaskForm from '../components/create-task-form/create-task-form';
+import TaskViewControls from '../components/task-view-controls/task-view-controls';
 import styles from './tasks-page.module.css';
-import { useState, useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { getTasks } from '../api/getTasks';
-import { UserButton } from '@clerk/react';
-import { useAuth  } from '@clerk/react';
+import { UserButton, useAuth } from '@clerk/react';
 import { DragDropContext } from '@hello-pangea/dnd';
 import { updateTasks } from '../api/updateTasks';
+import { defaultTaskView, getVisibleTasksByStatus, hasActiveTaskFilters, isValidTaskView, taskStatuses } from '../functions/taskViews';
 
-function TasksPage () {
-    const { getToken, isSignedIn , isLoaded } = useAuth();
+const getStorageKey = (userId) => `task-manager:view:${userId}`;
 
+function mergeVisibleOrder(allTasks, previousVisibleTasks, reorderedVisibleTasks) {
+    const visibleIds = new Set(previousVisibleTasks.map((task) => task.id));
+    const firstVisibleIndex = allTasks.findIndex((task) => visibleIds.has(task.id));
+    const remainingTasks = allTasks.filter((task) => !visibleIds.has(task.id));
+    const insertionIndex = firstVisibleIndex === -1 ? remainingTasks.length : firstVisibleIndex;
+    return [...remainingTasks.slice(0, insertionIndex), ...reorderedVisibleTasks, ...remainingTasks.slice(insertionIndex)];
+}
+
+function TasksPage() {
+    const { getToken, isSignedIn, isLoaded, userId } = useAuth();
     const [loading, setLoading] = useState(true);
     const [tasks, setTasks] = useState([]);
+    const [loadError, setLoadError] = useState('');
+    const [view, setView] = useState(defaultTaskView);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [hydratedViewUserId, setHydratedViewUserId] = useState('');
 
-    const tasksByStatus = useMemo(() => ({
-        todo: tasks.filter((task) => task.status === 'todo').sort((a, b) => a.orderIndex - b.orderIndex),
-        in_progress: tasks.filter((task) => task.status === 'in_progress').sort((a, b) => a.orderIndex - b.orderIndex),
-        completed: tasks.filter((task) => task.status === 'completed').sort((a, b) => a.orderIndex - b.orderIndex),
-    }), [tasks]);
+    useEffect(() => {
+        if (!isLoaded || !userId) {
+            setHydratedViewUserId('');
+            return;
+        }
 
-    // Fetch tasks from the backend when the component mounts
-    useEffect( () => {
-        
-        if (!isLoaded) {
-            return; // Wait for auth to load before doing anything
-        } 
+        let restoredView = defaultTaskView;
+        try {
+            const storedView = JSON.parse(localStorage.getItem(getStorageKey(userId)) ?? 'null');
+            restoredView = isValidTaskView(storedView) ? storedView : defaultTaskView;
+        } catch {
+            restoredView = defaultTaskView;
+        }
+        setView(restoredView);
+        setHydratedViewUserId(userId);
+    }, [isLoaded, userId]);
 
+    useEffect(() => {
+        if (userId && hydratedViewUserId === userId) {
+            localStorage.setItem(getStorageKey(userId), JSON.stringify(view));
+        }
+    }, [hydratedViewUserId, userId, view]);
+
+    useEffect(() => {
+        if (!isLoaded) return;
         const fetchTasks = async () => {
             if (!isSignedIn) {
                 setLoading(false);
                 return;
             }
-
             try {
                 const token = await getToken();
-                const data = await getTasks(token);
-                setTasks(data);
+                setTasks(await getTasks(token));
+                setLoadError('');
             } catch (error) {
                 console.error('Error fetching tasks', error);
+                setLoadError('We could not load your tasks. Check that the backend is running, then refresh the page.');
             } finally {
                 setLoading(false);
             }
-        }
-
+        };
         fetchTasks();
-        
-        }, [getToken, isLoaded, isSignedIn]);
+    }, [getToken, isLoaded, isSignedIn]);
 
-    // Function to handle drag and drop of tasks between columns
+    const tasksByStatus = useMemo(() => getVisibleTasksByStatus(tasks, view, searchQuery), [tasks, view, searchQuery]);
+    const totalVisibleTasks = taskStatuses.reduce((total, status) => total + tasksByStatus[status].length, 0);
+    const isManualOrder = view.sort === 'manual';
+    const isFiltered = hasActiveTaskFilters(view) || Boolean(searchQuery.trim());
+
     const handleDragEnd = async (result) => {
+        if (!isManualOrder) return;
         const { source, destination } = result;
-
-        if (!destination) return;
-        if (source.droppableId === destination.droppableId && source.index === destination.index) return;
+        if (!destination || (source.droppableId === destination.droppableId && source.index === destination.index)) return;
 
         const sourceStatus = source.droppableId;
         const destinationStatus = destination.droppableId;
-        const sourceTasks = [...tasksByStatus[sourceStatus]];
-        const destinationTasks = sourceStatus === destinationStatus
-            ? sourceTasks
-            : [...tasksByStatus[destinationStatus]];
-        const [movedTask] = sourceTasks.splice(source.index, 1);
-
+        const sourceVisibleTasks = [...tasksByStatus[sourceStatus]];
+        const destinationVisibleTasks = sourceStatus === destinationStatus ? sourceVisibleTasks : [...tasksByStatus[destinationStatus]];
+        const [movedTask] = sourceVisibleTasks.splice(source.index, 1);
         if (!movedTask) return;
+        destinationVisibleTasks.splice(destination.index, 0, movedTask);
 
-        destinationTasks.splice(destination.index, 0, movedTask);
+        const allSourceTasks = tasks.filter((task) => task.status === sourceStatus).sort((first, second) => first.orderIndex - second.orderIndex);
+        const allDestinationTasks = sourceStatus === destinationStatus ? allSourceTasks : tasks.filter((task) => task.status === destinationStatus).sort((first, second) => first.orderIndex - second.orderIndex);
+        const reorderedByStatus = sourceStatus === destinationStatus
+            ? { [sourceStatus]: mergeVisibleOrder(allSourceTasks, tasksByStatus[sourceStatus], destinationVisibleTasks) }
+            : {
+                [sourceStatus]: mergeVisibleOrder(allSourceTasks, tasksByStatus[sourceStatus], sourceVisibleTasks),
+                [destinationStatus]: mergeVisibleOrder(allDestinationTasks, tasksByStatus[destinationStatus], destinationVisibleTasks),
+            };
 
-        const reorderedLists = sourceStatus === destinationStatus
-            ? [[sourceStatus, sourceTasks]]
-            : [
-                [sourceStatus, sourceTasks],
-                [destinationStatus, destinationTasks],
-            ];
-        const reorderedTasks = reorderedLists.flatMap(([status, list]) =>
-            list.map((task, index) => ({ ...task, status, orderIndex: index }))
-        );
+        const reorderedTasks = Object.entries(reorderedByStatus).flatMap(([status, list]) => list.map((task, index) => ({ ...task, status, orderIndex: index })));
         const updatesById = new Map(reorderedTasks.map((task) => [task.id, task]));
-        const nextTasks = tasks.map((task) => updatesById.get(task.id) ?? task);
-
-        setTasks(nextTasks);
+        const previousTasks = tasks;
+        setTasks(tasks.map((task) => updatesById.get(task.id) ?? task));
 
         try {
             const token = await getToken();
             await updateTasks(token, reorderedTasks);
         } catch (error) {
             console.error('Error updating task order', error);
-            setTasks(tasks);
+            setTasks(previousTasks);
         }
+    };
 
-    }
-
+    const handleClearFilters = () => {
+        setSearchQuery('');
+        setView((currentView) => ({ ...defaultTaskView, sort: currentView.sort }));
+    };
 
     return (
         <div className={styles.tasksPage}>
@@ -98,20 +124,16 @@ function TasksPage () {
                 <div>
                     <p className={styles.eyebrow}>Task workspace</p>
                     <h1 className={styles.title}>My tasks</h1>
-                    <p className={styles.taskTotal}><strong>{tasks.length}</strong> {tasks.length === 1 ? 'task' : 'tasks'} in your workspace</p>
+                    <p className={styles.taskTotal}><strong>{totalVisibleTasks}</strong>{isFiltered ? ` of ${tasks.length}` : ''} {totalVisibleTasks === 1 ? 'task' : 'tasks'} in your workspace</p>
                 </div>
-                <div className={styles.userButton}>
-                    <UserButton />
-                </div>
+                <div className={styles.userButton}><UserButton /></div>
             </div>
-            <div className={styles.createTask}>
-                <CreateTaskForm tasks={tasks} setTasks={setTasks}/>
-            </div>
+            <div className={styles.createTask}><CreateTaskForm tasks={tasks} setTasks={setTasks} /></div>
+            <TaskViewControls view={view} searchQuery={searchQuery} onSearchChange={setSearchQuery} onViewChange={setView} onClearFilters={handleClearFilters} />
+            {loadError && <p className={styles.loadError} role="alert">{loadError}</p>}
             <div className={styles.taskBoards}>
                 <DragDropContext onDragEnd={handleDragEnd}>
-                    <TaskBoard status="todo" tasks={tasksByStatus.todo} allTasks={tasks} setAllTasks={setTasks} loading={loading}/>
-                    <TaskBoard status="in_progress" tasks={tasksByStatus.in_progress} allTasks={tasks} setAllTasks={setTasks} loading={loading}/>
-                    <TaskBoard status="completed" tasks={tasksByStatus.completed} allTasks={tasks} setAllTasks={setTasks} loading={loading}/>
+                    {taskStatuses.map((status) => <TaskBoard key={status} status={status} tasks={tasksByStatus[status]} allTasks={tasks} setAllTasks={setTasks} loading={loading} isManualOrder={isManualOrder} isFiltered={isFiltered} />)}
                 </DragDropContext>
             </div>
         </div>

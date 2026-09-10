@@ -6,6 +6,7 @@
 .taskTotal strong { color: var(--text); }
 .userButton { display: grid; width: 42px; height: 42px; place-items: center; border: 1px solid var(--border); border-radius: 50%; background: var(--surface); box-shadow: var(--shadow-sm); }
 .createTask { margin-bottom: 28px; }
+.loadError { margin: -8px 0 20px; padding: 12px 14px; border: 1px solid #fecaca; border-radius: 10px; background: var(--danger-soft); color: var(--danger); font-size: 0.9rem; font-weight: 600; line-height: 1.4; }
 .taskBoards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; align-items: start; }
 @media (max-width: 960px) { .taskBoards { grid-template-columns: 1fr; } }
 @media (max-width: 640px) { .tasksPage { padding: 24px 16px 36px; } .header { align-items: flex-start; margin-bottom: 22px; } }
