@@ -8,6 +8,10 @@ import createUser from './controllers/createUser';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const developmentFrontendOrigins = ['http://localhost:5173', 'http://127.0.0.1:5173'];
+const allowedFrontendOrigins = process.env.NODE_ENV === 'production'
+  ? [process.env.FRONTEND_URL].filter((origin): origin is string => Boolean(origin))
+  : [...new Set([process.env.FRONTEND_URL, ...developmentFrontendOrigins].filter((origin): origin is string => Boolean(origin)))];
 
 // Webhook endpoint for Clerk
 app.post('/api/webhooks', express.raw({ type: 'application/json' }), createUser);
@@ -18,7 +22,7 @@ app.use(clerkMiddleware());
 
 
 app.use(cors({
-  origin: process.env.FRONTEND_URL
+  origin: allowedFrontendOrigins,
 }));
 
 app.use(express.json());
