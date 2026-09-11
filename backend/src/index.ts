@@ -4,6 +4,8 @@ import cors from "cors";
 import { clerkMiddleware, clerkClient, requireAuth, getAuth } from '@clerk/express'
 import { prisma } from "./services/prisma";
 import taskRoutes from './routes/tasks';
+import projectRoutes from './routes/projects';
+import tagRoutes from './routes/tags';
 import createUser from './controllers/createUser';
 
 const app = express();
@@ -29,6 +31,8 @@ app.use(express.json());
 
 // Routes
 app.use("/tasks", requireAuth(), taskRoutes);
+app.use('/projects', requireAuth(), projectRoutes);
+app.use('/tags', requireAuth(), tagRoutes);
 
 app.get("/api/health", (req, res) => {
   res.json({ status: "Backend is running!" });

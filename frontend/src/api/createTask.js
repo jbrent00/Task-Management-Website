@@ -1,6 +1,6 @@
 const backendURL = import.meta.env.VITE_BACKEND_BASE_URL;
 
-export const createTask = async (token, title, description, userId, priority, dueDate, orderIndex) => {
+export const createTask = async (token, title, description, priority, dueDate, orderIndex, projectId, tagIds) => {
     try {
         const urlToFetch = backendURL + "/tasks";
         const utcISOString = dueDate ? new Date(dueDate).toISOString() : null; // Convert to UTC ISO string if dueDate is provided
@@ -14,10 +14,11 @@ export const createTask = async (token, title, description, userId, priority, du
             body: JSON.stringify({
                 title,
                 description,
-                userId,
                 priority,
                 dueDate: utcISOString, // can be null if not provided, backend should handle this case
-                orderIndex
+                orderIndex,
+                projectId,
+                tagIds,
             })
         });
 
@@ -33,4 +34,4 @@ export const createTask = async (token, title, description, userId, priority, du
         console.error('Error creating task', error);
         throw error; // re-throw so caller can handle the error if needed
     }
-} 
+}

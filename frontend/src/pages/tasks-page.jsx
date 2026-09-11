@@ -7,7 +7,9 @@ import { getTasks } from '../api/getTasks';
 import { UserButton, useAuth } from '@clerk/react';
 import { DragDropContext } from '@hello-pangea/dnd';
 import { updateTasks } from '../api/updateTasks';
-import { defaultTaskView, getVisibleTasksByStatus, hasActiveTaskFilters, isValidTaskView, taskStatuses } from '../functions/taskViews';
+import { createProject, deleteProject, getProjects, updateProject } from '../api/projects';
+import { createTag, deleteTag, getTags, updateTag } from '../api/tags';
+import { defaultTaskView, getVisibleTasksByStatus, hasActiveTaskFilters, isValidTaskView, noProjectFilter, taskStatuses } from '../functions/taskViews';
 
 const getStorageKey = (userId) => `task-manager:view:${userId}`;
 
@@ -23,21 +25,27 @@ function TasksPage() {
     const { getToken, isSignedIn, isLoaded, userId } = useAuth();
     const [loading, setLoading] = useState(true);
     const [tasks, setTasks] = useState([]);
+    const [projects, setProjects] = useState([]);
+    const [tags, setTags] = useState([]);
     const [loadError, setLoadError] = useState('');
     const [view, setView] = useState(defaultTaskView);
     const [searchQuery, setSearchQuery] = useState('');
     const [hydratedViewUserId, setHydratedViewUserId] = useState('');
+    const [assignmentsLoaded, setAssignmentsLoaded] = useState(false);
 
     useEffect(() => {
         if (!isLoaded || !userId) {
             setHydratedViewUserId('');
+            setAssignmentsLoaded(false);
             return;
         }
 
         let restoredView = defaultTaskView;
         try {
             const storedView = JSON.parse(localStorage.getItem(getStorageKey(userId)) ?? 'null');
-            restoredView = isValidTaskView(storedView) ? storedView : defaultTaskView;
+            // Upgrade the previous UI-only name once, then persist the clearer internal value.
+            const upgradedStoredView = storedView?.projectId === 'inbox' ? { ...storedView, projectId: noProjectFilter } : storedView;
+            restoredView = isValidTaskView(upgradedStoredView) ? upgradedStoredView : defaultTaskView;
         } catch {
             restoredView = defaultTaskView;
         }
@@ -62,6 +70,14 @@ function TasksPage() {
                 const token = await getToken();
                 setTasks(await getTasks(token));
                 setLoadError('');
+                try {
+                    const [loadedProjects, loadedTags] = await Promise.all([getProjects(token), getTags(token)]);
+                    setProjects(loadedProjects);
+                    setTags(loadedTags);
+                    setAssignmentsLoaded(true);
+                } catch (error) {
+                    console.error('Error fetching projects or tags', error);
+                }
             } catch (error) {
                 console.error('Error fetching tasks', error);
                 setLoadError('We could not load your tasks. Check that the backend is running, then refresh the page.');
@@ -72,10 +88,28 @@ function TasksPage() {
         fetchTasks();
     }, [getToken, isLoaded, isSignedIn]);
 
+    useEffect(() => {
+        if (!assignmentsLoaded) return;
+        setView((current) => ({ ...current, projectId: current.projectId !== noProjectFilter && current.projectId !== null && !projects.some((project) => project.id === current.projectId) ? null : current.projectId, tagIds: current.tagIds.filter((id) => tags.some((tag) => tag.id === id)) }));
+    }, [assignmentsLoaded, projects, tags]);
+
     const tasksByStatus = useMemo(() => getVisibleTasksByStatus(tasks, view, searchQuery), [tasks, view, searchQuery]);
     const totalVisibleTasks = taskStatuses.reduce((total, status) => total + tasksByStatus[status].length, 0);
     const isManualOrder = view.sort === 'manual';
     const isFiltered = hasActiveTaskFilters(view) || Boolean(searchQuery.trim());
+    const projectCounts = useMemo(() => projects.reduce((counts, project) => {
+        const projectTasks = tasks.filter((task) => task.projectId === project.id);
+        counts[project.id] = { total: projectTasks.length, completed: projectTasks.filter((task) => task.status === 'completed').length };
+        return counts;
+    }, {}), [projects, tasks]);
+
+    const withToken = async (callback) => callback(await getToken());
+    const handleCreateProject = async (title, description) => { const project = await withToken((token) => createProject(token, title, description)); setProjects((current) => [...current, project].sort((a, b) => a.title.localeCompare(b.title))); return project; };
+    const handleUpdateProject = async (id, title, description) => { const project = await withToken((token) => updateProject(token, id, title, description)); setProjects((current) => current.map((item) => item.id === id ? project : item).sort((a, b) => a.title.localeCompare(b.title))); setTasks((current) => current.map((task) => task.projectId === id ? { ...task, project: { id, title: project.title } } : task)); };
+    const handleDeleteProject = async (id) => { await withToken((token) => deleteProject(token, id)); setProjects((current) => current.filter((project) => project.id !== id)); setTasks((current) => current.map((task) => task.projectId === id ? { ...task, projectId: null, project: null } : task)); };
+    const handleCreateTag = async (name, color) => { const tag = await withToken((token) => createTag(token, name, color)); setTags((current) => [...current, tag].sort((a, b) => a.name.localeCompare(b.name))); return tag; };
+    const handleUpdateTag = async (id, name, color) => { const tag = await withToken((token) => updateTag(token, id, name, color)); setTags((current) => current.map((item) => item.id === id ? tag : item).sort((a, b) => a.name.localeCompare(b.name))); setTasks((current) => current.map((task) => ({ ...task, tags: task.tags.map((item) => item.id === id ? tag : item) }))); };
+    const handleDeleteTag = async (id) => { await withToken((token) => deleteTag(token, id)); setTags((current) => current.filter((tag) => tag.id !== id)); setTasks((current) => current.map((task) => ({ ...task, tags: task.tags.filter((tag) => tag.id !== id) }))); };
 
     const handleDragEnd = async (result) => {
         if (!isManualOrder) return;
@@ -128,12 +162,12 @@ function TasksPage() {
                 </div>
                 <div className={styles.userButton}><UserButton /></div>
             </div>
-            <div className={styles.createTask}><CreateTaskForm tasks={tasks} setTasks={setTasks} /></div>
-            <TaskViewControls view={view} searchQuery={searchQuery} onSearchChange={setSearchQuery} onViewChange={setView} onClearFilters={handleClearFilters} />
+            <div className={styles.createTask}><CreateTaskForm tasks={tasks} setTasks={setTasks} projects={projects} tags={tags} onCreateTag={handleCreateTag} /></div>
+            <TaskViewControls view={view} searchQuery={searchQuery} onSearchChange={setSearchQuery} onViewChange={setView} onClearFilters={handleClearFilters} projects={projects} tags={tags} projectCounts={projectCounts} onCreateProject={handleCreateProject} onUpdateProject={handleUpdateProject} onDeleteProject={handleDeleteProject} onUpdateTag={handleUpdateTag} onDeleteTag={handleDeleteTag} />
             {loadError && <p className={styles.loadError} role="alert">{loadError}</p>}
             <div className={styles.taskBoards}>
                 <DragDropContext onDragEnd={handleDragEnd}>
-                    {taskStatuses.map((status) => <TaskBoard key={status} status={status} tasks={tasksByStatus[status]} allTasks={tasks} setAllTasks={setTasks} loading={loading} isManualOrder={isManualOrder} isFiltered={isFiltered} />)}
+                    {taskStatuses.map((status) => <TaskBoard key={status} status={status} tasks={tasksByStatus[status]} allTasks={tasks} setAllTasks={setTasks} loading={loading} isManualOrder={isManualOrder} isFiltered={isFiltered} projects={projects} tags={tags} onCreateTag={handleCreateTag} />)}
                 </DragDropContext>
             </div>
         </div>

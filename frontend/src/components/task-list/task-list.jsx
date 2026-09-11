@@ -2,7 +2,7 @@ import TaskCard from '../task-card/task-card';
 import { Draggable } from '@hello-pangea/dnd';
 import styles from './task-list.module.css';
 
-function TaskList({ tasks, status, allTasks, setAllTasks, loading, isManualOrder, isFiltered }) {
+function TaskList({ tasks, status, allTasks, setAllTasks, loading, isManualOrder, isFiltered, projects, tags, onCreateTag }) {
     const statusDetails = {
         todo: { label: 'To do', className: 'todo', emptyMessage: 'No tasks yet. Create one above to get started.' },
         in_progress: { label: 'In progress', className: 'inProgress', emptyMessage: 'Move a task here when you are ready to focus.' },
@@ -23,7 +23,7 @@ function TaskList({ tasks, status, allTasks, setAllTasks, loading, isManualOrder
                 <Draggable key={task.id} draggableId={String(task.id)} index={index} isDragDisabled={!isManualOrder}>
                     {(provided) => (
                         <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}>
-                            <TaskCard task={task} allTasks={allTasks} setAllTasks={setAllTasks} />
+                            <TaskCard task={task} allTasks={allTasks} setAllTasks={setAllTasks} projects={projects} tags={tags} onCreateTag={onCreateTag} />
                         </div>
                     )}
                 </Draggable>

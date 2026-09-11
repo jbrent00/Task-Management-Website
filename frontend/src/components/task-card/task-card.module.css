@@ -9,6 +9,10 @@
 .high { background: var(--danger-soft); color: var(--danger); }
 .description { display: -webkit-box; margin-top: 9px; overflow: hidden; color: var(--text-muted); font-size: 0.88rem; line-height: 1.5; -webkit-box-orient: vertical; -webkit-line-clamp: 3; }
 .meta { gap: 6px; margin-top: 14px; color: var(--text-muted); font-size: 0.78rem; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.projectChip, .tagChip { padding: 3px 7px; border-radius: 999px; font-size: .72rem; font-weight: 700; }
+.projectChip { background: var(--primary-soft); color: var(--primary); }
+.tag_slate { background: #e2e8f0; color: #334155; }.tag_red { background: #fee2e2; color: #b91c1c; }.tag_orange { background: #ffedd5; color: #c2410c; }.tag_yellow { background: #fef9c3; color: #a16207; }.tag_green { background: #dcfce7; color: #15803d; }.tag_teal { background: #ccfbf1; color: #0f766e; }.tag_blue { background: #dbeafe; color: #1d4ed8; }.tag_purple { background: #f3e8ff; color: #7e22ce; }
 .dueLabel { font-weight: 700; }
 .actions { justify-content: flex-end; gap: 8px; margin-top: 16px; }
 .button, .saveButton, .cancelButton { min-height: 34px; padding: 0 11px; border-radius: 7px; font-size: 0.8rem; font-weight: 700; }

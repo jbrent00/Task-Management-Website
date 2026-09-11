@@ -1,8 +1,9 @@
 export const taskStatuses = ['todo', 'in_progress', 'completed'];
 export const taskPriorities = ['high', 'medium', 'low'];
 export const taskSorts = ['manual', 'priority', 'dueDate', 'title', 'createdAt'];
+export const noProjectFilter = 'no_project';
 
-export const defaultTaskView = { sort: 'manual', priorityFilters: [], statusFilters: [], dueFilters: [] };
+export const defaultTaskView = { sort: 'manual', priorityFilters: [], statusFilters: [], dueFilters: [], projectId: null, tagIds: [] };
 
 const priorityRank = { high: 0, medium: 1, low: 2 };
 const stableCompare = (first, second) => first.title.localeCompare(second.title, undefined, { sensitivity: 'base' }) || first.id - second.id;
@@ -11,7 +12,7 @@ const dateValue = (value) => {
     return Number.isNaN(timestamp) ? null : timestamp;
 };
 
-export const hasActiveTaskFilters = (view) => view.priorityFilters.length > 0 || view.statusFilters.length > 0 || view.dueFilters.length > 0;
+export const hasActiveTaskFilters = (view) => view.priorityFilters.length > 0 || view.statusFilters.length > 0 || view.dueFilters.length > 0 || view.projectId !== null || view.tagIds.length > 0;
 
 export const isOverdue = (task, now = Date.now()) => {
     const dueTimestamp = dateValue(task.dueDate);
@@ -21,7 +22,9 @@ export const isOverdue = (task, now = Date.now()) => {
 export const isValidTaskView = (view) => view && typeof view === 'object' && taskSorts.includes(view.sort)
     && Array.isArray(view.priorityFilters) && view.priorityFilters.every((value) => taskPriorities.includes(value))
     && Array.isArray(view.statusFilters) && view.statusFilters.every((value) => taskStatuses.includes(value))
-    && Array.isArray(view.dueFilters) && view.dueFilters.every((value) => ['overdue', 'noDueDate'].includes(value));
+    && Array.isArray(view.dueFilters) && view.dueFilters.every((value) => ['overdue', 'noDueDate'].includes(value))
+    && (view.projectId === null || view.projectId === noProjectFilter || Number.isInteger(view.projectId))
+    && Array.isArray(view.tagIds) && view.tagIds.every(Number.isInteger);
 
 export const getVisibleTasksByStatus = (tasks, view, searchQuery) => {
     const normalizedSearch = searchQuery.trim().toLocaleLowerCase();
@@ -32,7 +35,9 @@ export const getVisibleTasksByStatus = (tasks, view, searchQuery) => {
         const matchesPriority = !view.priorityFilters.length || view.priorityFilters.includes(task.priority);
         const matchesStatus = !view.statusFilters.length || view.statusFilters.includes(task.status);
         const matchesDue = !view.dueFilters.length || (view.dueFilters.includes('overdue') && isOverdue(task, now)) || (view.dueFilters.includes('noDueDate') && !task.dueDate);
-        return matchesSearch && matchesPriority && matchesStatus && matchesDue;
+        const matchesProject = view.projectId === null || (view.projectId === noProjectFilter ? task.projectId === null : task.projectId === view.projectId);
+        const matchesTags = !view.tagIds.length || task.tags.some((tag) => view.tagIds.includes(tag.id));
+        return matchesSearch && matchesPriority && matchesStatus && matchesDue && matchesProject && matchesTags;
     });
 
     const compareTasks = (first, second) => {

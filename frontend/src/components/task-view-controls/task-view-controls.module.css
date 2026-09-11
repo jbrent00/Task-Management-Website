@@ -3,6 +3,7 @@
 .searchField, .sortField { display: grid; gap: 6px; color: var(--text-muted); font-size: 0.78rem; font-weight: 700; }
 .searchField input, .sortField select { min-height: 40px; width: 100%; padding: 0 11px; border: 1px solid var(--border-strong); border-radius: 8px; background: var(--surface); color: var(--text); font-weight: 400; }
 .filters { display: flex; flex-wrap: wrap; gap: 12px 24px; }
+.projectRow { display: flex; align-items: end; flex-wrap: wrap; gap: 12px; }
 .filterGroup { display: flex; flex-wrap: wrap; gap: 8px 12px; min-width: 0; margin: 0; padding: 0; border: 0; }
 .filterGroup legend { width: 100%; margin-bottom: 1px; color: var(--text-muted); font-size: 0.78rem; font-weight: 700; }
 .checkLabel { display: inline-flex; align-items: center; gap: 6px; color: var(--text); font-size: 0.84rem; white-space: nowrap; }

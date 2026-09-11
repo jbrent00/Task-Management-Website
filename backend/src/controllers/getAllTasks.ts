@@ -2,6 +2,7 @@
 import { prisma } from '../services/prisma';
 import type { Request, Response } from "express";
 import { getAuth } from '@clerk/express';
+import { serializeTask, taskInclude } from './taskResponse';
 
 async function getAllTasks(req: Request, res: Response) {
     try {
@@ -15,10 +16,11 @@ async function getAllTasks(req: Request, res: Response) {
         const tasks = await prisma.task.findMany({
             where: {
                 userId
-            }
+            },
+            include: taskInclude,
         });
         
-        res.json(tasks);
+        res.json(tasks.map(serializeTask));
     } catch (error) {
         console.error("Error fetching tasks: ", error);
         res.status(500).json({error: "Failed to fetch tasks"});
