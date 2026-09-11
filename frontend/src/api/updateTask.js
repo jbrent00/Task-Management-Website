@@ -1,6 +1,6 @@
 const backendURL = import.meta.env.VITE_BACKEND_BASE_URL;
 
-export const updateTask = async (token, taskId, title, description, status, priority, dueDate) => {
+export const updateTask = async (token, taskId, title, description, status, priority, dueDate, projectId, tagIds) => {
     try {
         const urlToFetch = `${backendURL}/tasks/${taskId}`;
 
@@ -18,7 +18,9 @@ export const updateTask = async (token, taskId, title, description, status, prio
                 description,
                 status,
                 priority,
-                dueDate: dueDateISO
+                dueDate: dueDateISO,
+                projectId,
+                tagIds,
             })
             }
         );

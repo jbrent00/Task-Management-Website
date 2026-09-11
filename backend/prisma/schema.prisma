@@ -8,19 +8,28 @@ datasource db {
 }
 
 model Project {
-  id          Int      @id @default(autoincrement())
-  title       String
-  description String?
-  createdAt   DateTime @default(now())
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  tasks       Task[]   
+  id              Int      @id @default(autoincrement())
+  title           String
+  normalizedTitle String
+  description     String?
+  createdAt       DateTime @default(now())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tasks           Task[]
+
+  @@unique([userId, normalizedTitle])
 }
 
 model Tag {
-  id       Int       @id @default(autoincrement())
-  name     String    @unique
-  taskTags TaskTag[]
+  id             Int       @id @default(autoincrement())
+  name           String
+  normalizedName String
+  color          String
+  userId         String
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  taskTags       TaskTag[]
+
+  @@unique([userId, normalizedName])
 }
 
 model Task {
@@ -30,6 +39,7 @@ model Task {
   status      TaskStatus
   priority    TaskPriority
   dueDate     DateTime?
+  completedAt DateTime?
   createdAt   DateTime     @default(now())
   orderIndex  Int          @default(0)
   projectId   Int?
@@ -42,8 +52,8 @@ model Task {
 model TaskTag {
   taskId Int
   tagId  Int
-  tag    Tag  @relation(fields: [tagId], references: [id])
-  task   Task @relation(fields: [taskId], references: [id])
+  tag    Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  task   Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
 
   @@id([taskId, tagId])
 }
@@ -54,6 +64,7 @@ model User {
   lname      String?
   createdAt  DateTime  @default(now())
   projects   Project[]
+  tags       Tag[]
   tasks      Task[]
 }
 

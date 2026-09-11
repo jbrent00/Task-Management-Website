@@ -43,14 +43,18 @@ const bulkUpdateTasks = async function(req: Request, res: Response) {
     }
 
     try {
-        const ownedTaskCount = await prisma.task.count({
+        const existingTasks = await prisma.task.findMany({
             where: { id: { in: taskIds }, userId },
+            select: { id: true, status: true },
         });
 
-        if (ownedTaskCount !== taskIds.length) {
+        if (existingTasks.length !== taskIds.length) {
             res.status(404).json({ error: "One or more tasks were not found" });
             return;
         }
+
+        const statusById = new Map(existingTasks.map((task) => [task.id, task.status]));
+        const completedAt = new Date();
 
         await prisma.$transaction(
             tasks.map(task =>
@@ -59,6 +63,7 @@ const bulkUpdateTasks = async function(req: Request, res: Response) {
                     data: {
                         orderIndex: task.orderIndex,
                         status: task.status,
+                        ...(statusById.get(task.id) !== task.status ? { completedAt: task.status === "completed" ? completedAt : null } : {}),
                     },
                 }),
             )

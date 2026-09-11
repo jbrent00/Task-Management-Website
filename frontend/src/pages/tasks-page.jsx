@@ -1,13 +1,16 @@
 import TaskBoard from '../components/task-board/task-board';
 import CreateTaskForm from '../components/create-task-form/create-task-form';
 import TaskViewControls from '../components/task-view-controls/task-view-controls';
+import TaskViewTabs from '../components/task-view-tabs/task-view-tabs';
 import styles from './tasks-page.module.css';
 import { useEffect, useMemo, useState } from 'react';
 import { getTasks } from '../api/getTasks';
 import { UserButton, useAuth } from '@clerk/react';
 import { DragDropContext } from '@hello-pangea/dnd';
 import { updateTasks } from '../api/updateTasks';
-import { defaultTaskView, getVisibleTasksByStatus, hasActiveTaskFilters, isValidTaskView, taskStatuses } from '../functions/taskViews';
+import { createProject, deleteProject, getProjects, updateProject } from '../api/projects';
+import { createTag, deleteTag, getTags, updateTag } from '../api/tags';
+import { defaultTaskView, getActiveSort, getTaskTabCounts, getVisibleTasksByStatus, hasActiveTaskFilters, isValidTaskView, taskStatuses } from '../functions/taskViews';
 
 const getStorageKey = (userId) => `task-manager:view:${userId}`;
 
@@ -23,10 +26,27 @@ function TasksPage() {
     const { getToken, isSignedIn, isLoaded, userId } = useAuth();
     const [loading, setLoading] = useState(true);
     const [tasks, setTasks] = useState([]);
+    const [projects, setProjects] = useState([]);
+    const [tags, setTags] = useState([]);
     const [loadError, setLoadError] = useState('');
     const [view, setView] = useState(defaultTaskView);
     const [searchQuery, setSearchQuery] = useState('');
     const [hydratedViewUserId, setHydratedViewUserId] = useState('');
+    const [dateReference, setDateReference] = useState(() => new Date());
+
+    useEffect(() => {
+        let timerId;
+        const scheduleNextRefresh = () => {
+            const now = new Date();
+            const nextMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+            timerId = window.setTimeout(() => {
+                setDateReference(new Date());
+                scheduleNextRefresh();
+            }, nextMidnight.getTime() - now.getTime() + 100);
+        };
+        scheduleNextRefresh();
+        return () => window.clearTimeout(timerId);
+    }, []);
 
     useEffect(() => {
         if (!isLoaded || !userId) {
@@ -60,7 +80,10 @@ function TasksPage() {
             }
             try {
                 const token = await getToken();
-                setTasks(await getTasks(token));
+                const [loadedTasks, loadedProjects, loadedTags] = await Promise.all([getTasks(token), getProjects(token), getTags(token)]);
+                setTasks(loadedTasks);
+                setProjects(loadedProjects);
+                setTags(loadedTags);
                 setLoadError('');
             } catch (error) {
                 console.error('Error fetching tasks', error);
@@ -72,10 +95,23 @@ function TasksPage() {
         fetchTasks();
     }, [getToken, isLoaded, isSignedIn]);
 
-    const tasksByStatus = useMemo(() => getVisibleTasksByStatus(tasks, view, searchQuery), [tasks, view, searchQuery]);
+    const tasksByStatus = useMemo(() => getVisibleTasksByStatus(tasks, view, searchQuery, dateReference), [tasks, view, searchQuery, dateReference]);
+    const tabCounts = useMemo(() => getTaskTabCounts(tasks, dateReference), [tasks, dateReference]);
     const totalVisibleTasks = taskStatuses.reduce((total, status) => total + tasksByStatus[status].length, 0);
-    const isManualOrder = view.sort === 'manual';
-    const isFiltered = hasActiveTaskFilters(view) || Boolean(searchQuery.trim());
+    const isManualOrder = getActiveSort(view) === 'manual';
+    const isFiltered = view.selectedTab !== 'all' || hasActiveTaskFilters(view) || Boolean(searchQuery.trim());
+    const projectCounts = useMemo(() => projects.reduce((counts, project) => {
+        const projectTasks = tasks.filter((task) => task.projectId === project.id);
+        counts[project.id] = { total: projectTasks.length, completed: projectTasks.filter((task) => task.status === 'completed').length };
+        return counts;
+    }, {}), [projects, tasks]);
+    const withToken = async (callback) => callback(await getToken());
+    const handleCreateProject = async (title, description) => { const project = await withToken((token) => createProject(token, title, description)); setProjects((current) => [...current, project].sort((a, b) => a.title.localeCompare(b.title))); return project; };
+    const handleUpdateProject = async (id, title, description) => { const project = await withToken((token) => updateProject(token, id, title, description)); setProjects((current) => current.map((item) => item.id === id ? project : item)); setTasks((current) => current.map((task) => task.projectId === id ? { ...task, project: { id, title: project.title } } : task)); };
+    const handleDeleteProject = async (id) => { await withToken((token) => deleteProject(token, id)); setProjects((current) => current.filter((project) => project.id !== id)); setTasks((current) => current.map((task) => task.projectId === id ? { ...task, projectId: null, project: null } : task)); };
+    const handleCreateTag = async (name, color) => { const tag = await withToken((token) => createTag(token, name, color)); setTags((current) => [...current, tag].sort((a, b) => a.name.localeCompare(b.name))); return tag; };
+    const handleUpdateTag = async (id, name, color) => { const tag = await withToken((token) => updateTag(token, id, name, color)); setTags((current) => current.map((item) => item.id === id ? tag : item)); setTasks((current) => current.map((task) => ({ ...task, tags: (task.tags ?? []).map((item) => item.id === id ? tag : item) }))); };
+    const handleDeleteTag = async (id) => { await withToken((token) => deleteTag(token, id)); setTags((current) => current.filter((tag) => tag.id !== id)); setTasks((current) => current.map((task) => ({ ...task, tags: (task.tags ?? []).filter((tag) => tag.id !== id) }))); };
 
     const handleDragEnd = async (result) => {
         if (!isManualOrder) return;
@@ -115,7 +151,7 @@ function TasksPage() {
 
     const handleClearFilters = () => {
         setSearchQuery('');
-        setView((currentView) => ({ ...defaultTaskView, sort: currentView.sort }));
+        setView((currentView) => ({ ...defaultTaskView, selectedTab: currentView.selectedTab, sorts: currentView.sorts }));
     };
 
     return (
@@ -128,12 +164,13 @@ function TasksPage() {
                 </div>
                 <div className={styles.userButton}><UserButton /></div>
             </div>
-            <div className={styles.createTask}><CreateTaskForm tasks={tasks} setTasks={setTasks} /></div>
-            <TaskViewControls view={view} searchQuery={searchQuery} onSearchChange={setSearchQuery} onViewChange={setView} onClearFilters={handleClearFilters} />
+            <div className={styles.createTask}><CreateTaskForm tasks={tasks} setTasks={setTasks} projects={projects} tags={tags} onCreateTag={handleCreateTag} /></div>
+            <TaskViewTabs selectedTab={view.selectedTab} counts={tabCounts} onSelect={(selectedTab) => setView((currentView) => ({ ...currentView, selectedTab }))} />
+            <TaskViewControls view={view} searchQuery={searchQuery} onSearchChange={setSearchQuery} onViewChange={setView} onClearFilters={handleClearFilters} projects={projects} tags={tags} projectCounts={projectCounts} onCreateProject={handleCreateProject} onUpdateProject={handleUpdateProject} onDeleteProject={handleDeleteProject} onUpdateTag={handleUpdateTag} onDeleteTag={handleDeleteTag} />
             {loadError && <p className={styles.loadError} role="alert">{loadError}</p>}
             <div className={styles.taskBoards}>
                 <DragDropContext onDragEnd={handleDragEnd}>
-                    {taskStatuses.map((status) => <TaskBoard key={status} status={status} tasks={tasksByStatus[status]} allTasks={tasks} setAllTasks={setTasks} loading={loading} isManualOrder={isManualOrder} isFiltered={isFiltered} />)}
+                    {taskStatuses.map((status) => <TaskBoard key={status} status={status} tasks={tasksByStatus[status]} allTasks={tasks} setAllTasks={setTasks} loading={loading} isManualOrder={isManualOrder} isFiltered={isFiltered} selectedTab={view.selectedTab} projects={projects} tags={tags} onCreateTag={handleCreateTag} />)}
                 </DragDropContext>
             </div>
         </div>

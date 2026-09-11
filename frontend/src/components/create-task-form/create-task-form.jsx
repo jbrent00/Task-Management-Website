@@ -2,14 +2,17 @@ import { useState } from 'react';
 import styles from './create-task-form.module.css';
 import { createTask } from '../../api/createTask';
 import { useAuth } from '@clerk/react';
+import TaskAssignmentFields from '../task-assignment-fields/task-assignment-fields';
 
-function CreateTaskForm ({tasks, setTasks}) {
-    const { userId, getToken } = useAuth();
+function CreateTaskForm ({tasks, setTasks, projects, tags, onCreateTag}) {
+    const { getToken } = useAuth();
 
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [priority, setPriority] = useState('low');
     const [dueDate, setDueDate] = useState('');
+    const [projectId, setProjectId] = useState(null);
+    const [tagIds, setTagIds] = useState([]);
 
 
     const handleSubmit = async (e) => {
@@ -26,7 +29,7 @@ function CreateTaskForm ({tasks, setTasks}) {
             ? Math.max(...todoTasks.map(task => task.orderIndex)) + 1
             : 0;
 
-        const newTask = await createTask(token, title, description, userId, priority, dueDate || null, orderIndex);
+        const newTask = await createTask(token, title, description, priority, dueDate || null, orderIndex, projectId, tagIds);
         setTasks((prevTasks) => [...prevTasks, newTask]); // Add the new task to the bottom of the todo list
     } catch (error) {
         console.error('Error creating task', error);
@@ -37,6 +40,8 @@ function CreateTaskForm ({tasks, setTasks}) {
     setDescription('');
     setPriority('low');
     setDueDate('');
+    setProjectId(null);
+    setTagIds([]);
 };
 
     return (
@@ -68,6 +73,7 @@ function CreateTaskForm ({tasks, setTasks}) {
                         min={new Date().toISOString().split('T')[0]} onChange={(e) => setDueDate(e.target.value)} />
                 </div>
             </div>
+            <div className={styles.assignments}><TaskAssignmentFields projects={projects} tags={tags} projectId={projectId} tagIds={tagIds} onProjectChange={setProjectId} onTagIdsChange={setTagIds} onCreateTag={onCreateTag} /></div>
             <button className={styles.submitButton} disabled={!(title && description)} type="submit">Create task</button>
         </form>
     );
