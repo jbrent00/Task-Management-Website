@@ -1,6 +1,7 @@
 import { prisma } from '../services/prisma';
 import type { Request, Response } from "express";
 import { getAuth } from '@clerk/express';
+import { ownedTaskWhere } from './validation';
 
 async function deleteTask(req: Request, res: Response) {
     try {
@@ -19,7 +20,7 @@ async function deleteTask(req: Request, res: Response) {
         }
 
         const { count } = await prisma.task.deleteMany({
-            where: { id: taskId, userId },
+            where: ownedTaskWhere(taskId, userId),
         });
 
         if (count === 0) {

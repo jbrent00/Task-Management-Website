@@ -4,14 +4,15 @@ export const taskSorts = ['manual', 'priority', 'dueDate', 'title', 'createdAt',
 export const taskViewTabs = [
     ['all', 'All tasks'],
     ['today', 'Today'],
-    ['upcoming', 'Upcoming'],
+    ['upcoming', 'Next 7 days'],
     ['overdue', 'Overdue'],
-    ['noDueDate', 'No due date'],
+    ['noDueDate', 'Unscheduled'],
+    ['completed', 'Completed'],
     ['completedRecently', 'Completed recently'],
 ];
 export const noProjectFilter = 'no_project';
 
-const defaultSorts = { all: 'manual', today: 'dueDate', upcoming: 'dueDate', overdue: 'dueDate', noDueDate: 'dueDate', completedRecently: 'completedAt' };
+const defaultSorts = { all: 'manual', today: 'dueDate', upcoming: 'dueDate', overdue: 'dueDate', noDueDate: 'dueDate', completed: 'completedAt', completedRecently: 'completedAt' };
 export const defaultTaskView = { selectedTab: 'all', sorts: defaultSorts, priorityFilters: [], statusFilters: [], dueFilters: [], projectId: null, tagIds: [] };
 
 const priorityRank = { high: 0, medium: 1, low: 2 };
@@ -50,6 +51,7 @@ export const matchesTaskTab = (task, selectedTab, now = new Date()) => {
     const todayKey = localDateKey(now);
     const dueKey = task.dueDate ? localDateKey(task.dueDate) : null;
     if (selectedTab === 'all') return true;
+    if (selectedTab === 'completed') return task.status === 'completed';
     if (selectedTab === 'completedRecently') {
         const completedKey = task.completedAt ? localDateKey(task.completedAt) : null;
         return task.status === 'completed' && completedKey !== null && completedKey >= localDateKey(addDays(now, -6)) && completedKey <= todayKey;
@@ -57,7 +59,7 @@ export const matchesTaskTab = (task, selectedTab, now = new Date()) => {
     if (!isActiveTask(task)) return false;
     if (selectedTab === 'overdue') return dueKey !== null && dueKey < todayKey;
     if (selectedTab === 'today') return dueKey === todayKey;
-    if (selectedTab === 'upcoming') return dueKey !== null && dueKey > todayKey && dueKey <= localDateKey(addDays(now, (7 - now.getDay()) % 7));
+    if (selectedTab === 'upcoming') return dueKey !== null && dueKey > todayKey && dueKey <= localDateKey(addDays(now, 7));
     return dueKey === null;
 };
 

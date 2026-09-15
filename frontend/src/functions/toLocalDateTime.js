@@ -8,4 +8,6 @@ function toLocalDateTimeInput(utcString) {
     return `${yyyy}-${MM}-${dd}T${hh}:${mm}`;
 }
 
+export const getLocalDateTimeMinimum = () => `${toLocalDateTimeInput(new Date()).slice(0, 10)}T00:00`;
+
 export default toLocalDateTimeInput;

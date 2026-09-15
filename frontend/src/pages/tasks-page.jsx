@@ -33,6 +33,13 @@ function TasksPage() {
     const [searchQuery, setSearchQuery] = useState('');
     const [hydratedViewUserId, setHydratedViewUserId] = useState('');
     const [dateReference, setDateReference] = useState(() => new Date());
+    const [notice, setNotice] = useState(null);
+
+    useEffect(() => {
+        if (!notice) return undefined;
+        const timeoutId = window.setTimeout(() => setNotice(null), 5000);
+        return () => window.clearTimeout(timeoutId);
+    }, [notice]);
 
     useEffect(() => {
         let timerId;
@@ -143,9 +150,11 @@ function TasksPage() {
         try {
             const token = await getToken();
             await updateTasks(token, reorderedTasks);
+            setNotice({ tone: 'success', message: `Moved “${movedTask.title}”.` });
         } catch (error) {
             console.error('Error updating task order', error);
             setTasks(previousTasks);
+            setNotice({ tone: 'error', message: `Could not move “${movedTask.title}”. Its previous position was restored.` });
         }
     };
 
@@ -164,13 +173,14 @@ function TasksPage() {
                 </div>
                 <div className={styles.userButton}><UserButton /></div>
             </div>
-            <div className={styles.createTask}><CreateTaskForm tasks={tasks} setTasks={setTasks} projects={projects} tags={tags} onCreateTag={handleCreateTag} /></div>
+            {notice && <div className={`${styles.notice} ${styles[notice.tone]}`} role={notice.tone === 'error' ? 'alert' : 'status'} aria-live="polite"><span>{notice.message}</span><button type="button" onClick={() => setNotice(null)} aria-label="Dismiss notification">×</button></div>}
+            <div className={styles.createTask}><CreateTaskForm tasks={tasks} setTasks={setTasks} projects={projects} tags={tags} onCreateTag={handleCreateTag} onNotify={setNotice} /></div>
             <TaskViewTabs selectedTab={view.selectedTab} counts={tabCounts} onSelect={(selectedTab) => setView((currentView) => ({ ...currentView, selectedTab }))} />
-            <TaskViewControls view={view} searchQuery={searchQuery} onSearchChange={setSearchQuery} onViewChange={setView} onClearFilters={handleClearFilters} projects={projects} tags={tags} projectCounts={projectCounts} onCreateProject={handleCreateProject} onUpdateProject={handleUpdateProject} onDeleteProject={handleDeleteProject} onUpdateTag={handleUpdateTag} onDeleteTag={handleDeleteTag} />
+            <TaskViewControls view={view} searchQuery={searchQuery} onSearchChange={setSearchQuery} onViewChange={setView} onClearFilters={handleClearFilters} projects={projects} tags={tags} projectCounts={projectCounts} onCreateProject={handleCreateProject} onUpdateProject={handleUpdateProject} onDeleteProject={handleDeleteProject} onUpdateTag={handleUpdateTag} onDeleteTag={handleDeleteTag} onNotify={setNotice} />
             {loadError && <p className={styles.loadError} role="alert">{loadError}</p>}
             <div className={styles.taskBoards}>
                 <DragDropContext onDragEnd={handleDragEnd}>
-                    {taskStatuses.map((status) => <TaskBoard key={status} status={status} tasks={tasksByStatus[status]} allTasks={tasks} setAllTasks={setTasks} loading={loading} isManualOrder={isManualOrder} isFiltered={isFiltered} selectedTab={view.selectedTab} projects={projects} tags={tags} onCreateTag={handleCreateTag} />)}
+                    {taskStatuses.map((status) => <TaskBoard key={status} status={status} tasks={tasksByStatus[status]} allTasks={tasks} setAllTasks={setTasks} loading={loading} isManualOrder={isManualOrder} isFiltered={isFiltered} selectedTab={view.selectedTab} projects={projects} tags={tags} onCreateTag={handleCreateTag} onNotify={setNotice} />)}
                 </DragDropContext>
             </div>
         </div>

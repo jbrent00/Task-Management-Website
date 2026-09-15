@@ -3,20 +3,23 @@ import type { Request, Response } from "express";
 import { getAuth } from '@clerk/express';
 import { validateTaskAssignments } from './taskAssignments';
 import { serializeTask, taskInclude } from './taskResponse';
+import { cleanOptionalText, cleanRequiredText, isNonNegativeInteger, isTaskPriority, parseOptionalDate } from './validation';
 
 async function createTask(req: Request, res: Response) {
     try {
-        const { title, description, priority, dueDate, orderIndex, projectId = null, tagIds = [] } = req.body;
+        const { priority, orderIndex, projectId = null, tagIds = [] } = req.body;
         const { userId } = getAuth(req);
-        const parsedOrderIndex = Number(orderIndex);
+        const title = cleanRequiredText(req.body.title, 100);
+        const description = cleanOptionalText(req.body.description, 500);
+        const dueDate = parseOptionalDate(req.body.dueDate);
 
         if (!userId) {
             res.status(401).json({ error: "Unauthorized" });
             return;
         }
 
-        if (!Number.isInteger(parsedOrderIndex) || parsedOrderIndex < 0) {
-            res.status(400).json({ error: "orderIndex must be a non-negative integer" });
+        if (!title || description === undefined || !isTaskPriority(priority) || dueDate === undefined || !isNonNegativeInteger(orderIndex)) {
+            res.status(400).json({ error: 'Invalid task details. Check the title, description, priority, due date, and order.' });
             return;
         }
         if (!await validateTaskAssignments(userId, projectId, tagIds)) {
@@ -31,8 +34,8 @@ async function createTask(req: Request, res: Response) {
                 userId, 
                 priority,
                 status: "todo",
-                dueDate: dueDate ? new Date(dueDate) : null, // Convert to Date object if provided, otherwise set to null
-                orderIndex: parsedOrderIndex,
+                dueDate,
+                orderIndex,
                 projectId,
                 taskTags: { create: tagIds.map((tagId: number) => ({ tagId })) },
             },

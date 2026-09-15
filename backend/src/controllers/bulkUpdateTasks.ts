@@ -1,9 +1,7 @@
 import type { Request, Response } from "express";
 import { getAuth } from "@clerk/express";
 import { prisma } from "../services/prisma";
-
-const taskStatuses = ["todo", "in_progress", "completed"] as const;
-type TaskStatus = (typeof taskStatuses)[number];
+import { isNonNegativeInteger, isTaskStatus, type TaskStatus } from './validation';
 
 type TaskUpdate = {
     id: number;
@@ -16,9 +14,8 @@ function isTaskUpdate(value: unknown): value is TaskUpdate {
 
     const task = value as Record<string, unknown>;
     return Number.isInteger(task.id)
-        && Number.isInteger(task.orderIndex)
-        && (task.orderIndex as number) >= 0
-        && taskStatuses.includes(task.status as TaskStatus);
+        && isNonNegativeInteger(task.orderIndex)
+        && isTaskStatus(task.status);
 }
 
 const bulkUpdateTasks = async function(req: Request, res: Response) {

@@ -8,3 +8,4 @@
 .count { min-width: 26px; padding: 3px 8px; border-radius: 999px; background: #e9edf5; color: var(--text-muted); font-size: 0.78rem; font-weight: 700; text-align: center; }
 .emptyState, .loadingState { display: grid; min-height: 210px; place-items: center; padding: 24px; color: var(--text-muted); font-size: 0.9rem; text-align: center; }
 .emptyState { border: 1px dashed var(--border-strong); border-radius: 12px; }
+.draggableItem { position: relative; }
