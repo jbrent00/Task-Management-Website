@@ -22,7 +22,7 @@ function TaskCard ({task, allTasks, setAllTasks, projects = [], tags = [], onCre
         try {
             const token = await getToken();
             await deleteTask(token, task.id);
-            setAllTasks(allTasks.filter((currentTask) => currentTask.id !== task.id));
+            setAllTasks((currentTasks) => currentTasks.filter((currentTask) => currentTask.id !== task.id));
         } catch (error) {
             console.error('Error deleting task', error);
         }

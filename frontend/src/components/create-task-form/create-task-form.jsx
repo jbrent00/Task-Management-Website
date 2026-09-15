@@ -17,6 +17,7 @@ function CreateTaskForm ({tasks, setTasks, projects, tags, onCreateTag}) {
 
     const handleSubmit = async (e) => {
     e.preventDefault();
+    const submittedDueDate = new FormData(e.currentTarget).get('dueDate');
     // Handle task creation logic here
     // 1. Send a request to the backend to create a new task. Update tasks state in the parent component
     // (TasksPage) to include the newly created task so it shows up in the UI without needing to refresh the page
@@ -29,7 +30,7 @@ function CreateTaskForm ({tasks, setTasks, projects, tags, onCreateTag}) {
             ? Math.max(...todoTasks.map(task => task.orderIndex)) + 1
             : 0;
 
-        const newTask = await createTask(token, title, description, priority, dueDate || null, orderIndex, projectId, tagIds);
+        const newTask = await createTask(token, title, description, priority, submittedDueDate || null, orderIndex, projectId, tagIds);
         setTasks((prevTasks) => [...prevTasks, newTask]); // Add the new task to the bottom of the todo list
     } catch (error) {
         console.error('Error creating task', error);

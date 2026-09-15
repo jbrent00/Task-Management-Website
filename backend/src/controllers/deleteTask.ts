@@ -12,14 +12,21 @@ async function deleteTask(req: Request, res: Response) {
             return;
         }
 
-        const deletedTask = await prisma.task.delete({
-            where: { 
-                userId,
-                id: Number(id) 
-            },
+        const taskId = Number(id);
+        if (!Number.isInteger(taskId)) {
+            res.status(400).json({ error: 'Task id must be an integer' });
+            return;
+        }
+
+        const { count } = await prisma.task.deleteMany({
+            where: { id: taskId, userId },
         });
 
-        console.log('Deleted task:', deletedTask); // REMOVE LATER ON
+        if (count === 0) {
+            res.status(404).json({ error: 'Task not found' });
+            return;
+        }
+
         res.status(204).send();
     } catch (error) {
         res.status(500).json({ error: 'Failed to delete task' });
