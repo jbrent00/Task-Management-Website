@@ -3,7 +3,8 @@ import CreateTaskForm from '../components/create-task-form/create-task-form';
 import TaskViewControls from '../components/task-view-controls/task-view-controls';
 import TaskViewTabs from '../components/task-view-tabs/task-view-tabs';
 import styles from './tasks-page.module.css';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { TaskMutationContext } from '../functions/taskMutationContext';
 import { getTasks } from '../api/getTasks';
 import { UserButton, useAuth } from '@clerk/react';
 import { DragDropContext } from '@hello-pangea/dnd';
@@ -34,6 +35,28 @@ function TasksPage() {
     const [hydratedViewUserId, setHydratedViewUserId] = useState('');
     const [dateReference, setDateReference] = useState(() => new Date());
     const [notice, setNotice] = useState(null);
+    const [creationExpanded, setCreationExpanded] = useState(false);
+    const creationTrigger = useRef(null);
+    const [selectedStatus, setSelectedStatus] = useState('todo');
+    const [narrow, setNarrow] = useState(() => window.matchMedia('(max-width: 960px)').matches);
+    const mutationLock = useRef(false);
+    const [mutationBusy, setMutationBusy] = useState(false);
+    const mutation = {
+        busy: mutationBusy,
+        begin: () => {
+            if (mutationLock.current) return false;
+            mutationLock.current = true;
+            setMutationBusy(true);
+            return true;
+        },
+        end: () => { mutationLock.current = false; setMutationBusy(false); },
+    };
+    useEffect(() => {
+        const media = window.matchMedia('(max-width: 960px)');
+        const update = () => setNarrow(media.matches);
+        media.addEventListener('change', update);
+        return () => media.removeEventListener('change', update);
+    }, []);
 
     useEffect(() => {
         if (!notice) return undefined;
@@ -112,7 +135,11 @@ function TasksPage() {
         counts[project.id] = { total: projectTasks.length, completed: projectTasks.filter((task) => task.status === 'completed').length };
         return counts;
     }, {}), [projects, tasks]);
-    const withToken = async (callback) => callback(await getToken());
+    const withToken = async (callback) => {
+        if (!mutation.begin()) throw new Error('Another workspace change is still saving. Please try again.');
+        try { return await callback(await getToken()); }
+        finally { mutation.end(); }
+    };
     const handleCreateProject = async (title, description) => { const project = await withToken((token) => createProject(token, title, description)); setProjects((current) => [...current, project].sort((a, b) => a.title.localeCompare(b.title))); return project; };
     const handleUpdateProject = async (id, title, description) => { const project = await withToken((token) => updateProject(token, id, title, description)); setProjects((current) => current.map((item) => item.id === id ? project : item)); setTasks((current) => current.map((task) => task.projectId === id ? { ...task, project: { id, title: project.title } } : task)); };
     const handleDeleteProject = async (id) => { await withToken((token) => deleteProject(token, id)); setProjects((current) => current.filter((project) => project.id !== id)); setTasks((current) => current.map((task) => task.projectId === id ? { ...task, projectId: null, project: null } : task)); };
@@ -131,6 +158,7 @@ function TasksPage() {
         const destinationVisibleTasks = sourceStatus === destinationStatus ? sourceVisibleTasks : [...tasksByStatus[destinationStatus]];
         const [movedTask] = sourceVisibleTasks.splice(source.index, 1);
         if (!movedTask) return;
+        if (!mutation.begin()) return;
         destinationVisibleTasks.splice(destination.index, 0, movedTask);
 
         const allSourceTasks = tasks.filter((task) => task.status === sourceStatus).sort((first, second) => first.orderIndex - second.orderIndex);
@@ -155,6 +183,8 @@ function TasksPage() {
             console.error('Error updating task order', error);
             setTasks(previousTasks);
             setNotice({ tone: 'error', message: `Could not move “${movedTask.title}”. Its previous position was restored.` });
+        } finally {
+            mutation.end();
         }
     };
 
@@ -164,26 +194,33 @@ function TasksPage() {
     };
 
     return (
-        <div className={styles.tasksPage}>
+        <TaskMutationContext.Provider value={mutation}><div className={styles.tasksPage}>
             <div className={styles.header}>
                 <div>
                     <p className={styles.eyebrow}>Task workspace</p>
                     <h1 className={styles.title}>My tasks</h1>
                     <p className={styles.taskTotal}><strong>{totalVisibleTasks}</strong>{isFiltered ? ` of ${tasks.length}` : ''} {totalVisibleTasks === 1 ? 'task' : 'tasks'} in your workspace</p>
                 </div>
-                <div className={styles.userButton}><UserButton /></div>
+                <div className={styles.headerActions}>
+                    <button ref={creationTrigger} className={styles.createButton} type="button" aria-expanded={creationExpanded} aria-controls="create-task-content" onClick={() => { setCreationExpanded((value) => !value); if (creationExpanded) creationTrigger.current?.focus(); }}>{creationExpanded ? 'Hide form' : 'Create task'}</button>
+                    <div className={styles.userButton}><UserButton /></div>
+                </div>
             </div>
             {notice && <div className={`${styles.notice} ${styles[notice.tone]}`} role={notice.tone === 'error' ? 'alert' : 'status'} aria-live="polite"><span>{notice.message}</span><button type="button" onClick={() => setNotice(null)} aria-label="Dismiss notification">×</button></div>}
-            <div className={styles.createTask}><CreateTaskForm tasks={tasks} setTasks={setTasks} projects={projects} tags={tags} onCreateTag={handleCreateTag} onNotify={setNotice} /></div>
+            <div className={styles.createTask} hidden={!creationExpanded}><CreateTaskForm expanded={creationExpanded} onCreated={() => { setCreationExpanded(false); window.requestAnimationFrame(() => creationTrigger.current?.focus()); }} tasks={tasks} setTasks={setTasks} projects={projects} tags={tags} onCreateTag={handleCreateTag} onNotify={setNotice} /></div>
             <TaskViewTabs selectedTab={view.selectedTab} counts={tabCounts} onSelect={(selectedTab) => setView((currentView) => ({ ...currentView, selectedTab }))} />
             <TaskViewControls view={view} searchQuery={searchQuery} onSearchChange={setSearchQuery} onViewChange={setView} onClearFilters={handleClearFilters} projects={projects} tags={tags} projectCounts={projectCounts} onCreateProject={handleCreateProject} onUpdateProject={handleUpdateProject} onDeleteProject={handleDeleteProject} onUpdateTag={handleUpdateTag} onDeleteTag={handleDeleteTag} onNotify={setNotice} />
             {loadError && <p className={styles.loadError} role="alert">{loadError}</p>}
+            {narrow && <nav className={styles.statusSelectors} aria-label="Task status">{taskStatuses.map((status) => <button type="button" key={status} aria-pressed={selectedStatus === status} onClick={() => setSelectedStatus(status)}>{({ todo: 'To do', in_progress: 'In progress', completed: 'Completed' })[status]} <span>{tasksByStatus[status].length}</span></button>)}</nav>}
             <div className={styles.taskBoards}>
                 <DragDropContext onDragEnd={handleDragEnd}>
-                    {taskStatuses.map((status) => <TaskBoard key={status} status={status} tasks={tasksByStatus[status]} allTasks={tasks} setAllTasks={setTasks} loading={loading} isManualOrder={isManualOrder} isFiltered={isFiltered} selectedTab={view.selectedTab} projects={projects} tags={tags} onCreateTag={handleCreateTag} onNotify={setNotice} />)}
+                    {taskStatuses.map((status) => <div key={status} hidden={narrow && selectedStatus !== status}>
+                        <TaskBoard status={status} tasks={tasksByStatus[status]} allTasks={tasks} setAllTasks={setTasks} loading={loading} isManualOrder={isManualOrder && !mutationBusy} isFiltered={isFiltered} selectedTab={view.selectedTab} projects={projects} tags={tags} onCreateTag={handleCreateTag} onNotify={setNotice} />
+                        {narrow && !loading && tasksByStatus[status].length === 0 && taskStatuses.filter((other) => other !== status && tasksByStatus[other].length > 0).map((other) => <button className={styles.switchStatus} type="button" key={other} onClick={() => setSelectedStatus(other)}>Show {({ todo: 'To do', in_progress: 'In progress', completed: 'Completed' })[other]} tasks ({tasksByStatus[other].length})</button>)}
+                    </div>)}
                 </DragDropContext>
             </div>
-        </div>
+        </div></TaskMutationContext.Provider>
     );
 }
 

@@ -1,5 +1,5 @@
-.controls { display: grid; gap: 16px; margin-bottom: 28px; padding: 18px; border: 1px solid var(--border); border-radius: 16px; background: var(--surface); box-shadow: var(--shadow-sm); }
-.topRow { display: grid; grid-template-columns: minmax(0, 1fr) minmax(180px, 240px); gap: 16px; }
+.controls { display: grid; gap: 10px; margin-bottom: 18px; padding: 12px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); box-shadow: var(--shadow-sm); }
+.topRow { display: grid; grid-template-columns: minmax(0, 1fr) minmax(180px, 240px); gap: 10px; }
 .filterToggle { justify-self: start; padding: 0; border: 0; background: transparent; color: var(--text); font: inherit; font-size: .84rem; font-weight: 750; cursor: pointer; }
 .filterContent { display: grid; gap: 16px; }
 .filterContent[hidden] { display: none; }
@@ -16,4 +16,4 @@
 .chip { padding: 4px 8px; border-radius: 999px; background: var(--primary-soft); color: var(--primary); font-size: 0.76rem; font-weight: 700; }
 .clearButton { border: 0; background: transparent; color: var(--primary); font-size: 0.82rem; font-weight: 700; text-decoration: underline; }
 .reorderNotice { padding: 9px 11px; border-radius: 8px; background: var(--warning-soft); color: var(--warning); font-size: 0.84rem; line-height: 1.4; }
-@media (max-width: 640px) { .controls { padding: 16px; } .topRow { grid-template-columns: 1fr; } .viewSummary { align-items: flex-start; flex-direction: column; } }
+@media (max-width: 640px) { .topRow { grid-template-columns: 1fr; } .viewSummary { align-items: flex-start; flex-direction: column; } }

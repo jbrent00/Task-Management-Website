@@ -2,14 +2,21 @@ import styles from './task-card.module.css';
 import { deleteTask } from '../../api/deleteTask';
 import { updateTask } from '../../api/updateTask';
 import toLocalDateTimeInput, { getLocalDateTimeMinimum } from '../../functions/toLocalDateTime';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import TaskActions from './task-actions';
+import { useTaskMutation } from '../../functions/taskMutationContext';
 import { useAuth } from '@clerk/react';
 import { getTaskDueState } from '../../functions/taskViews';
 import TaskAssignmentFields from '../task-assignment-fields/task-assignment-fields';
 import Checklist from '../checklist/checklist';
 
-function TaskCard ({task, allTasks, setAllTasks, projects = [], tags = [], onCreateTag, onNotify, dragHandleProps, isDragEnabled}) {
+function TaskCard ({task, setAllTasks, projects = [], tags = [], onCreateTag, onNotify, dragHandleProps, isDragEnabled}) {
     const { getToken } = useAuth();
+    const mutation = useTaskMutation();
+    const [checklistOpenRequest, setChecklistOpenRequest] = useState(0);
+    const editTitle = useRef(null);
+    const deleteCancel = useRef(null);
+    const cardRef = useRef(null);
     const [editing, setEditing] = useState(false);
     const [dueDate, setDueDate] = useState(task.dueDate ? toLocalDateTimeInput(task.dueDate) : '');
     const [status, setStatus] = useState(task.status);
@@ -21,6 +28,8 @@ function TaskCard ({task, allTasks, setAllTasks, projects = [], tags = [], onCre
     const [saving, setSaving] = useState(false);
     const [confirmingDelete, setConfirmingDelete] = useState(false);
     const [deleting, setDeleting] = useState(false);
+    useEffect(() => { if (editing) editTitle.current?.focus(); }, [editing]);
+    useEffect(() => { if (confirmingDelete) deleteCancel.current?.focus(); }, [confirmingDelete]);
 
     const resetDraft = () => {
         setTitle(task.title);
@@ -33,6 +42,7 @@ function TaskCard ({task, allTasks, setAllTasks, projects = [], tags = [], onCre
     };
 
     const handleDelete = async () => {
+        if (!mutation.begin()) return;
         setDeleting(true);
         try {
             const token = await getToken();
@@ -45,6 +55,7 @@ function TaskCard ({task, allTasks, setAllTasks, projects = [], tags = [], onCre
             onNotify({ tone: 'error', message: `Could not delete “${task.title}”. Please try again.` });
         } finally {
             setDeleting(false);
+            mutation.end();
         }
     };
 
@@ -62,11 +73,12 @@ function TaskCard ({task, allTasks, setAllTasks, projects = [], tags = [], onCre
             return;
         }
 
+        if (!mutation.begin()) return;
         setSaving(true);
         try {
             const token = await getToken();
             const updatedTask = await updateTask(token, task.id, title, description, status, priority, dueDate || null, projectId, tagIds);
-            setAllTasks(allTasks.map((currentTask) => currentTask.id === task.id ? updatedTask : currentTask));
+            setAllTasks((currentTasks) => currentTasks.map((currentTask) => currentTask.id === task.id ? updatedTask : currentTask));
             setEditing(false);
             onNotify({ tone: 'success', message: `Saved “${updatedTask.title}”.` });
         } catch (error) {
@@ -74,22 +86,34 @@ function TaskCard ({task, allTasks, setAllTasks, projects = [], tags = [], onCre
             onNotify({ tone: 'error', message: `Could not save “${task.title}”. Your changes are still open.` });
         } finally {
             setSaving(false);
+            mutation.end();
         }
     };
 
-    const formattedDueDate = task.dueDate && toLocalDateTimeInput(task.dueDate).replace('T', ' ');
+    const handleCompletion = async () => {
+        if (!mutation.begin()) return;
+        setSaving(true);
+        try {
+            const updated = await updateTask(await getToken(), task.id, task.title, task.description ?? '', task.status === 'completed' ? 'todo' : 'completed', task.priority, task.dueDate, task.projectId, (task.tags ?? []).map((tag) => tag.id));
+            setAllTasks((current) => current.map((item) => item.id === task.id ? updated : item));
+            onNotify({ tone: 'success', message: `${updated.status === 'completed' ? 'Completed' : 'Reopened'} “${updated.title}”.` });
+        } catch {
+            onNotify({ tone: 'error', message: `Could not change the status of “${task.title}”. Please try again.` });
+        } finally { setSaving(false); mutation.end(); }
+    };
+    const formattedDueDate = task.dueDate && new Intl.DateTimeFormat(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }).format(new Date(task.dueDate));
     const dueState = getTaskDueState(task);
     const visibleTags = (task.tags ?? []).slice(0, 3);
     const remainingTagCount = (task.tags ?? []).length - visibleTags.length;
     const setChecklistItems = (checklistItems) => setAllTasks((currentTasks) => currentTasks.map((currentTask) => currentTask.id === task.id ? { ...currentTask, checklistItems } : currentTask));
 
     return (
-        <article className={`${styles.card} ${dueState ? styles[dueState.tone] : ''}`}>
+        <article ref={cardRef} className={`${styles.card} ${dueState ? styles[dueState.tone] : ''}`}>
             {editing ? (
                 <div className={styles.editForm}>
                     <div className={styles.field}>
                         <label htmlFor={`task-${task.id}-title`}>Title</label>
-                        <input id={`task-${task.id}-title`} type="text" value={title} maxLength="100" required onChange={(event) => setTitle(event.target.value)} />
+                        <input ref={editTitle} id={`task-${task.id}-title`} type="text" value={title} maxLength="100" required onChange={(event) => setTitle(event.target.value)} />
                     </div>
                     <TaskAssignmentFields projects={projects} tags={tags} projectId={projectId} tagIds={tagIds} onProjectChange={setProjectId} onTagIdsChange={setTagIds} onCreateTag={onCreateTag} />
                     <div className={styles.field}>
@@ -121,33 +145,41 @@ function TaskCard ({task, allTasks, setAllTasks, projects = [], tags = [], onCre
                     </div>
                     <div className={styles.actions}>
                         <button className={styles.cancelButton} type="button" onClick={() => { resetDraft(); setEditing(false); }}>Cancel</button>
-                        <button className={styles.saveButton} type="button" disabled={saving} onClick={handleSave}>{saving ? 'Saving…' : 'Save changes'}</button>
+                        <button className={styles.saveButton} type="button" disabled={mutation.busy} onClick={handleSave}>{saving ? 'Saving…' : 'Save changes'}</button>
                     </div>
                 </div>
             ) : (
                 <>
-                    <div className={`${styles.dragSurface} ${isDragEnabled ? styles.dragEnabled : ''}`} {...(isDragEnabled ? dragHandleProps : {})} role={isDragEnabled ? 'button' : undefined} tabIndex={isDragEnabled ? 0 : undefined} aria-label={isDragEnabled ? `Drag ${task.title} to reorder` : undefined} title={isDragEnabled ? 'Drag this task to reorder it' : undefined}>
+                    <div className={styles.dragSurface}>
                         <div className={styles.topRow}>
-                            <div className={styles.titleGroup}><span className={styles.dragGrip} aria-hidden="true">⋮⋮</span><h3 className={styles.title}>{task.title}</h3></div>
+                            <div className={styles.titleGroup}>{isDragEnabled && <span className={`${styles.dragGrip} ${styles.dragEnabled}`} {...dragHandleProps} aria-label={`Drag ${task.title} to reorder`} title="Drag this task to reorder it">⋮⋮</span>}<h3 className={styles.title}>{task.title}</h3></div>
                             <span className={`${styles.priority} ${styles[task.priority]}`}>{task.priority}</span>
                         </div>
-                        <p className={styles.description}>{task.description}</p>
+                        {task.description && <p className={styles.description}>{task.description}</p>}
                         {task.project && <p className={styles.meta}><span className={styles.dueLabel}>Project</span><span>{task.project.title}</span></p>}
                         {visibleTags.length > 0 && <div className={styles.meta}><span className={styles.dueLabel}>Tags</span><span className={styles.tagList}>{visibleTags.map((tag) => <span className={`${styles.tag} ${styles[`tag_${tag.color}`]}`} key={tag.id}>{tag.name}</span>)}{remainingTagCount > 0 && <span className={`${styles.tag} ${styles.tagMore}`} aria-label={`${remainingTagCount} more tags`}>+{remainingTagCount}</span>}</span></div>}
                         {formattedDueDate && <p className={styles.meta}><span className={styles.dueLabel}>{dueState?.label ?? 'Due'}</span><span>{formattedDueDate}</span></p>}
                     </div>
-                    <div className={styles.actions}>
-                        <button type="button" className={styles.button} onClick={() => setEditing(true)}>Edit</button>
-                        <button type="button" onClick={() => setConfirmingDelete(true)} className={`${styles.button} ${styles.deleteButton}`}>Delete</button>
+                    <div className={styles.cardControls}>
+                        <label className={styles.completion}><input type="checkbox" checked={task.status === 'completed'} disabled={mutation.busy} onChange={handleCompletion} aria-label={`${task.status === 'completed' ? 'Reopen' : 'Complete'} ${task.title}`} /><span>{task.status === 'completed' ? 'Completed' : 'Complete'}</span></label>
+                        <TaskActions taskId={task.id} disabled={mutation.busy} onEdit={() => { resetDraft(); setEditing(true); }} onDelete={() => setConfirmingDelete(true)} onAddChecklist={(task.checklistItems ?? []).length === 0 ? () => setChecklistOpenRequest((current) => current + 1) : undefined} />
                     </div>
                 </>
             )}
-            <Checklist taskId={task.id} items={task.checklistItems ?? []} getToken={getToken} onItemsChange={setChecklistItems} onNotify={onNotify} />
-            {confirmingDelete && <div className={styles.dialogBackdrop}><section className={styles.dialog} role="alertdialog" aria-modal="true" aria-labelledby={`delete-task-${task.id}-title`}>
+            <Checklist hideEmpty openRequest={checklistOpenRequest} disabled={saving || deleting} taskId={task.id} items={task.checklistItems ?? []} getToken={getToken} onItemsChange={setChecklistItems} onNotify={onNotify} />
+            {confirmingDelete && <div className={styles.dialogBackdrop}><section className={styles.dialog} role="alertdialog" aria-modal="true" aria-labelledby={`delete-task-${task.id}-title`} onKeyDown={(event) => {
+                if (event.key === 'Escape' && !deleting) { setConfirmingDelete(false); cardRef.current?.querySelector('[aria-haspopup="menu"]')?.focus(); }
+                if (event.key === 'Tab') {
+                    const buttons = [...event.currentTarget.querySelectorAll('button:not(:disabled)')];
+                    if (!buttons.length) { event.preventDefault(); return; }
+                    if (event.shiftKey && document.activeElement === buttons[0]) { event.preventDefault(); buttons.at(-1)?.focus(); }
+                    if (!event.shiftKey && document.activeElement === buttons.at(-1)) { event.preventDefault(); buttons[0]?.focus(); }
+                }
+            }}>
                 <h2 id={`delete-task-${task.id}-title`}>Delete task?</h2>
                 <p>Delete “{task.title}”? This cannot be undone.</p>
                 <div className={styles.dialogActions}>
-                    <button type="button" className={styles.cancelButton} disabled={deleting} onClick={() => setConfirmingDelete(false)}>Cancel</button>
+                    <button ref={deleteCancel} type="button" className={styles.cancelButton} disabled={deleting} onClick={() => { setConfirmingDelete(false); cardRef.current?.querySelector('[aria-haspopup="menu"]')?.focus(); }}>Cancel</button>
                     <button type="button" className={`${styles.button} ${styles.deleteButton}`} disabled={deleting} onClick={handleDelete}>{deleting ? 'Deleting…' : 'Delete task'}</button>
                 </div>
             </section></div>}

@@ -1,6 +1,7 @@
 import TaskCard from '../task-card/task-card';
 import { Draggable } from '@hello-pangea/dnd';
 import styles from './task-list.module.css';
+import { taskViewTabs } from '../../functions/taskViews';
 
 function TaskList({ tasks, status, allTasks, setAllTasks, loading, isManualOrder, isFiltered, selectedTab, projects, tags, onCreateTag, onNotify }) {
     const statusDetails = {
@@ -9,11 +10,7 @@ function TaskList({ tasks, status, allTasks, setAllTasks, loading, isManualOrder
         completed: { label: 'Completed', className: 'completed', emptyMessage: 'Completed tasks will appear here.' },
     };
     const { label, className, emptyMessage } = statusDetails[status];
-    const focusedEmptyMessage = selectedTab === 'completedRecently'
-        ? 'No recently completed tasks in this status.'
-        : selectedTab === 'completed'
-            ? status === 'completed' ? 'No completed tasks yet.' : 'Completed tasks appear in the Completed column.'
-            : status === 'completed' && selectedTab !== 'all' ? 'Completed tasks are shown in the Completed views.' : 'No tasks match this date view.';
+    const dateViewLabel = taskViewTabs.find(([value]) => value === selectedTab)?.[1] ?? 'All tasks';
 
     return (
         <section className={`${styles.taskList} ${styles[className]}`} aria-label={`${label} tasks`}>
@@ -24,7 +21,7 @@ function TaskList({ tasks, status, allTasks, setAllTasks, loading, isManualOrder
                 </div>
                 <span className={styles.count}>{tasks.length}</span>
             </div>
-            {loading ? <p className={styles.loadingState}>Loading tasks...</p> : tasks.length === 0 ? <p className={styles.emptyState}>{isFiltered ? focusedEmptyMessage : emptyMessage}</p> : tasks.map((task, index) => (
+            {loading ? <p className={styles.loadingState}>Loading tasks...</p> : tasks.length === 0 ? <p className={styles.emptyState}>{isFiltered ? `No ${label.toLowerCase()} tasks match “${dateViewLabel}” with the current search and filters.` : emptyMessage}</p> : tasks.map((task, index) => (
                 <Draggable key={task.id} draggableId={String(task.id)} index={index} isDragDisabled={!isManualOrder}>
                     {(provided) => (
                         <div className={styles.draggableItem} ref={provided.innerRef} {...provided.draggableProps}>
