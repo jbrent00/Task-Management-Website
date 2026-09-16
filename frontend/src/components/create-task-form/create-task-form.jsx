@@ -1,13 +1,15 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import styles from './create-task-form.module.css';
 import { createTask } from '../../api/createTask';
 import { useAuth } from '@clerk/react';
 import TaskAssignmentFields from '../task-assignment-fields/task-assignment-fields';
 import { getLocalDateTimeMinimum } from '../../functions/toLocalDateTime';
 import Checklist from '../checklist/checklist';
+import { useTaskMutation } from '../../functions/taskMutationContext';
 
-function CreateTaskForm ({tasks, setTasks, projects, tags, onCreateTag, onNotify}) {
+function CreateTaskForm ({tasks, setTasks, projects, tags, onCreateTag, onNotify, expanded, onCreated}) {
     const { getToken } = useAuth();
+    const mutation = useTaskMutation();
 
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
@@ -18,15 +20,17 @@ function CreateTaskForm ({tasks, setTasks, projects, tags, onCreateTag, onNotify
     const [submitting, setSubmitting] = useState(false);
     const [checklistItems, setChecklistItems] = useState([]);
     const [checklistResetKey, setChecklistResetKey] = useState(0);
-    const [expanded, setExpanded] = useState(false);
     const [detailsExpanded, setDetailsExpanded] = useState(false);
-    const disclosureRef = useRef(null);
+    const titleRef = useRef(null);
+    useEffect(() => { if (expanded) titleRef.current?.focus(); }, [expanded]);
     const hasAdditionalDetails = priority !== 'low' || Boolean(dueDate) || projectId !== null || tagIds.length > 0;
     const detailSummary = [priority !== 'low' && `${priority[0].toUpperCase()}${priority.slice(1)} priority`, dueDate && 'Due date', projectId !== null && projects.find((project) => project.id === projectId)?.title, tagIds.length > 0 && `${tagIds.length} tag${tagIds.length === 1 ? '' : 's'}`].filter(Boolean).join(' · ');
 
 
     const handleSubmit = async (e) => {
     e.preventDefault();
+    if (submitting || !title.trim() || title.length > 100 || description.length > 500) return;
+    if (!mutation.begin()) return;
     const submittedDueDate = new FormData(e.currentTarget).get('dueDate');
     // Handle task creation logic here
     // 1. Send a request to the backend to create a new task. Update tasks state in the parent component
@@ -52,31 +56,27 @@ function CreateTaskForm ({tasks, setTasks, projects, tags, onCreateTag, onNotify
         setChecklistItems([]);
         setChecklistResetKey((current) => current + 1);
         setDetailsExpanded(false);
-        setExpanded(false);
-        window.requestAnimationFrame(() => disclosureRef.current?.focus());
+        onCreated();
         onNotify({ tone: 'success', message: `Created “${newTask.title}”.` });
     } catch (error) {
         console.error('Error creating task', error);
         onNotify({ tone: 'error', message: 'Could not create the task. Your entries were kept so you can try again.' });
     } finally {
         setSubmitting(false);
+        mutation.end();
     }
 };
 
     return (
         <form onSubmit={handleSubmit} className={styles.createTask}>
-            <div className={styles.formIntro}>
-                <div><h2>Create a task</h2><p>Add details now, then organize it on the board.</p></div>
-                <button ref={disclosureRef} className={styles.disclosure} type="button" onClick={() => setExpanded((value) => !value)} aria-expanded={expanded} aria-controls="create-task-content">{expanded ? '▾ Hide form' : '▸ Create task'}</button>
-            </div>
             <div id="create-task-content" className={styles.formContent} hidden={!expanded}>
             <div className={styles.field}>
                 <label htmlFor="title">Title</label>
-                <input type="text" id="title" name="title" value={title} maxLength={100} required onChange={(e) => setTitle(e.target.value)} />
+                <input ref={titleRef} type="text" id="title" name="title" value={title} maxLength={100} required onChange={(e) => setTitle(e.target.value)} />
             </div>
             <div className={styles.field}>
-                <label htmlFor="description">Description <span className={styles.characterCount}>{description.length}/500</span></label>
-                <textarea id="description" name="description" value={description} maxLength={500} required onChange={(e) => setDescription(e.target.value)} />
+                <label htmlFor="description">Description (optional) <span className={styles.characterCount}>{description.length}/500</span></label>
+                <textarea id="description" name="description" value={description} maxLength={500} onChange={(e) => setDescription(e.target.value)} />
             </div>
             <section className={styles.additionalDetails}>
                 <button className={styles.sectionToggle} type="button" onClick={() => setDetailsExpanded((value) => !value)} aria-expanded={detailsExpanded} aria-controls="additional-task-details">{detailsExpanded ? '▾' : '▸'} Additional details {hasAdditionalDetails && !detailsExpanded && <span>{detailSummary}</span>}</button>
@@ -100,7 +100,7 @@ function CreateTaskForm ({tasks, setTasks, projects, tags, onCreateTag, onNotify
                 </div>
             </section>
             <Checklist items={checklistItems} draft resetKey={checklistResetKey} onItemsChange={setChecklistItems} onNotify={onNotify} />
-            <button className={styles.submitButton} disabled={submitting || !(title.trim() && description.trim())} type="submit">{submitting ? 'Creating…' : 'Create task'}</button>
+            <button className={styles.submitButton} disabled={mutation.busy || !title.trim()} type="submit">{submitting ? 'Creating…' : 'Create task'}</button>
             </div>
         </form>
     );

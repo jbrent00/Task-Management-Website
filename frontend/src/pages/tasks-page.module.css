@@ -6,6 +6,14 @@
 .taskTotal strong { color: var(--text); }
 .userButton { display: grid; width: 42px; height: 42px; place-items: center; border: 1px solid var(--border); border-radius: 50%; background: var(--surface); box-shadow: var(--shadow-sm); }
 .createTask { margin-bottom: 28px; }
+.createTask[hidden], .taskBoards > [hidden] { display: none; }
+.headerActions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.createButton { min-height: 42px; padding: 0 14px; border: 1px solid var(--primary); border-radius: 8px; background: var(--primary); color: white; font-weight: 700; }
+.statusSelectors { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+.statusSelectors button, .switchStatus { min-height: 42px; padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text); }
+.statusSelectors button[aria-pressed="true"] { background: var(--primary); color: white; border-color: var(--primary); }
+.switchStatus { margin: 8px 8px 0 0; color: var(--primary); }
+@media (max-width: 640px) { .header { flex-wrap: wrap; gap: 16px; } }
 .notice { position: sticky; z-index: 10; top: 12px; display: flex; align-items: center; justify-content: space-between; gap: 16px; margin: -12px 0 18px; padding: 11px 14px; border: 1px solid; border-radius: 10px; box-shadow: var(--shadow-md); font-size: .88rem; font-weight: 650; }
 .notice button { flex: none; padding: 0 4px; border: 0; background: transparent; color: inherit; font-size: 1.2rem; line-height: 1; }
 .success { border-color: #a7f3d0; background: var(--success-soft); color: var(--success); }

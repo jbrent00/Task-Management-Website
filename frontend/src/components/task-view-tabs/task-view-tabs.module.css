@@ -1,4 +1,6 @@
-.tabs { display: flex; gap: 8px; margin-bottom: 16px; overflow-x: auto; padding: 2px; }
+.tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; padding: 2px; }
+.selector { display: none; }
+@media (max-width: 640px) { .tabs { display: none; } .selector { display: grid; gap: 6px; margin-bottom: 14px; color: var(--text-muted); font-size: .82rem; font-weight: 700; } .selector select { min-height: 42px; width: 100%; padding: 0 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text); } }
 .tab { display: inline-flex; flex: none; align-items: center; gap: 7px; min-height: 38px; padding: 0 11px; border: 1px solid var(--border); border-radius: 999px; background: var(--surface); color: var(--text-muted); font-size: 0.82rem; font-weight: 700; white-space: nowrap; }
 .tab:hover { border-color: var(--primary); color: var(--primary); }
 .active { border-color: var(--primary); background: var(--primary); color: #fff; }
