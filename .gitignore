@@ -1,7 +1,8 @@
-# --------------------
-# Logs
-# --------------------
-logs
+# Dependencies
+node_modules/
+
+# Logs and diagnostic output
+logs/
 *.log
 npm-debug.log*
 yarn-debug.log*
@@ -9,67 +10,44 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-# --------------------
-# Node modules
-# --------------------
-node_modules/
-*/node_modules/
-
-# --------------------
-# Build output
-# --------------------
-dist/
-out/
-build/
-*.local
-frontend/dist/
-backend/build/
-node_modules/.vite/
-
-# --------------------
-# Environment variables
-# --------------------
+# Environment variables and local configuration
 .env
-.env.local
-.env.*.local
-backend/.env
-backend/.env.local
-backend/.env.*.local
-frontend/.env
-frontend/.env.local
-frontend/.env.*.local
-# --------------------
-# Editor directories and files
-# --------------------
+.env.*
+!.env.example
+*.local
+.envrc
+.direnv/
+
+# Build output and tool caches
+dist/
+build/
+out/
+.vite/
+.cache/
+.eslintcache
+*.tsbuildinfo
+
+# Tests and coverage
+coverage/
+*.lcov
+.nyc_output/
+test-results/
+
+# Generated Prisma client
+/backend/generated/
+
+# Editor and operating-system metadata
 .vscode/*
 !.vscode/extensions.json
 .idea/
 .DS_Store
+Thumbs.db
+Desktop.ini
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
-
-# --------------------
-# Testing / coverage
-# --------------------
-coverage/
-*.lcov
-
-# --------------------
-# Prisma
-# --------------------
-prisma/migrations/dev_*.db
-
-# --------------------
-# Optional package locks 
-# --------------------
-# package-lock.json
-# yarn.lock
-# pnpm-lock.yaml
-
-/backend/generated/prisma
 
 # Codex contributor guidance and local agent metadata
 AGENTS.md
