@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import styles from './create-task-form.module.css';
 import { createTask } from '../../api/createTask';
 import { useAuth } from '@clerk/react';
@@ -17,6 +17,12 @@ function CreateTaskForm ({tasks, setTasks, projects, tags, onCreateTag, onNotify
     const [tagIds, setTagIds] = useState([]);
     const [submitting, setSubmitting] = useState(false);
     const [checklistItems, setChecklistItems] = useState([]);
+    const [checklistResetKey, setChecklistResetKey] = useState(0);
+    const [expanded, setExpanded] = useState(false);
+    const [detailsExpanded, setDetailsExpanded] = useState(false);
+    const disclosureRef = useRef(null);
+    const hasAdditionalDetails = priority !== 'low' || Boolean(dueDate) || projectId !== null || tagIds.length > 0;
+    const detailSummary = [priority !== 'low' && `${priority[0].toUpperCase()}${priority.slice(1)} priority`, dueDate && 'Due date', projectId !== null && projects.find((project) => project.id === projectId)?.title, tagIds.length > 0 && `${tagIds.length} tag${tagIds.length === 1 ? '' : 's'}`].filter(Boolean).join(' · ');
 
 
     const handleSubmit = async (e) => {
@@ -44,6 +50,10 @@ function CreateTaskForm ({tasks, setTasks, projects, tags, onCreateTag, onNotify
         setProjectId(null);
         setTagIds([]);
         setChecklistItems([]);
+        setChecklistResetKey((current) => current + 1);
+        setDetailsExpanded(false);
+        setExpanded(false);
+        window.requestAnimationFrame(() => disclosureRef.current?.focus());
         onNotify({ tone: 'success', message: `Created “${newTask.title}”.` });
     } catch (error) {
         console.error('Error creating task', error);
@@ -56,9 +66,10 @@ function CreateTaskForm ({tasks, setTasks, projects, tags, onCreateTag, onNotify
     return (
         <form onSubmit={handleSubmit} className={styles.createTask}>
             <div className={styles.formIntro}>
-                <h2>Create a task</h2>
-                <p>Add details now, then organize it on the board.</p>
+                <div><h2>Create a task</h2><p>Add details now, then organize it on the board.</p></div>
+                <button ref={disclosureRef} className={styles.disclosure} type="button" onClick={() => setExpanded((value) => !value)} aria-expanded={expanded} aria-controls="create-task-content">{expanded ? '▾ Hide form' : '▸ Create task'}</button>
             </div>
+            <div id="create-task-content" className={styles.formContent} hidden={!expanded}>
             <div className={styles.field}>
                 <label htmlFor="title">Title</label>
                 <input type="text" id="title" name="title" value={title} maxLength={100} required onChange={(e) => setTitle(e.target.value)} />
@@ -67,6 +78,9 @@ function CreateTaskForm ({tasks, setTasks, projects, tags, onCreateTag, onNotify
                 <label htmlFor="description">Description <span className={styles.characterCount}>{description.length}/500</span></label>
                 <textarea id="description" name="description" value={description} maxLength={500} required onChange={(e) => setDescription(e.target.value)} />
             </div>
+            <section className={styles.additionalDetails}>
+                <button className={styles.sectionToggle} type="button" onClick={() => setDetailsExpanded((value) => !value)} aria-expanded={detailsExpanded} aria-controls="additional-task-details">{detailsExpanded ? '▾' : '▸'} Additional details {hasAdditionalDetails && !detailsExpanded && <span>{detailSummary}</span>}</button>
+                <div id="additional-task-details" className={styles.additionalDetailsContent} hidden={!detailsExpanded}>
             <div className={styles.details}>
                 <div className={styles.field}>
                     <label htmlFor="priority">Priority</label>
@@ -83,8 +97,11 @@ function CreateTaskForm ({tasks, setTasks, projects, tags, onCreateTag, onNotify
                 </div>
             </div>
             <div className={styles.assignments}><TaskAssignmentFields projects={projects} tags={tags} projectId={projectId} tagIds={tagIds} onProjectChange={setProjectId} onTagIdsChange={setTagIds} onCreateTag={onCreateTag} /></div>
-            <Checklist items={checklistItems} draft onItemsChange={setChecklistItems} onNotify={onNotify} />
+                </div>
+            </section>
+            <Checklist items={checklistItems} draft resetKey={checklistResetKey} onItemsChange={setChecklistItems} onNotify={onNotify} />
             <button className={styles.submitButton} disabled={submitting || !(title.trim() && description.trim())} type="submit">{submitting ? 'Creating…' : 'Create task'}</button>
+            </div>
         </form>
     );
 }

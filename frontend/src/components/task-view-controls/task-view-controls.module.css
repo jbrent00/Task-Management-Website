@@ -1,5 +1,8 @@
 .controls { display: grid; gap: 16px; margin-bottom: 28px; padding: 18px; border: 1px solid var(--border); border-radius: 16px; background: var(--surface); box-shadow: var(--shadow-sm); }
 .topRow { display: grid; grid-template-columns: minmax(0, 1fr) minmax(180px, 240px); gap: 16px; }
+.filterToggle { justify-self: start; padding: 0; border: 0; background: transparent; color: var(--text); font: inherit; font-size: .84rem; font-weight: 750; cursor: pointer; }
+.filterContent { display: grid; gap: 16px; }
+.filterContent[hidden] { display: none; }
 .searchField, .sortField { display: grid; gap: 6px; color: var(--text-muted); font-size: 0.78rem; font-weight: 700; }
 .searchField input, .sortField select { min-height: 40px; width: 100%; padding: 0 11px; border: 1px solid var(--border-strong); border-radius: 8px; background: var(--surface); color: var(--text); font-weight: 400; }
 .filters { display: flex; flex-wrap: wrap; gap: 12px 24px; }

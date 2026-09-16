@@ -3,11 +3,11 @@
 .header { gap: 8px; justify-content: space-between; }
 .toggle, .addChecklist, .itemText { border: 0; background: none; color: var(--text); font: inherit; text-align: left; }
 .toggle { font-size: .82rem; font-weight: 750; cursor: pointer; }
-.addChecklist { margin-top: 8px; color: var(--primary); font-size: .8rem; font-weight: 700; cursor: pointer; }
 .progressText, .limit { color: var(--text-muted); font-size: .75rem; }
 .progress { height: 5px; margin-top: 7px; overflow: hidden; border-radius: 99px; background: var(--surface-muted); }
 .progress span { display: block; height: 100%; border-radius: inherit; background: var(--primary); transition: width 160ms ease; }
 .content { margin-top: 10px; }
+.content[hidden] { display: none; }
 .items { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
 .item { position: relative; min-height: 38px; gap: 7px; border-radius: 6px; }
 .item:has(.confirm) { padding-bottom: 31px; }

@@ -1,10 +1,10 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import styles from './checklist.module.css';
 import { createChecklistItem, deleteChecklistItem, reorderChecklistItems, updateChecklistItem } from '../../api/checklistItems';
 
 const reorder = (items, from, to) => { const next = [...items]; const [item] = next.splice(from, 1); next.splice(to, 0, item); return next; };
 
-function Checklist({ taskId, items = [], getToken, onItemsChange, onNotify, draft = false }) {
+function Checklist({ taskId, items = [], getToken, onItemsChange, onNotify, draft = false, resetKey }) {
     const [expanded, setExpanded] = useState(false);
     const [newText, setNewText] = useState('');
     const [editingId, setEditingId] = useState(null);
@@ -16,6 +16,10 @@ function Checklist({ taskId, items = [], getToken, onItemsChange, onNotify, draf
     const completed = items.filter((item) => item.completed).length;
     const percent = items.length ? Math.round((completed / items.length) * 100) : 0;
     const replace = (next) => onItemsChange(next);
+
+    useEffect(() => {
+        if (resetKey !== undefined) setExpanded(false);
+    }, [resetKey]);
 
     const add = async () => {
         const text = newText.trim();
@@ -63,9 +67,9 @@ function Checklist({ taskId, items = [], getToken, onItemsChange, onNotify, draf
     };
 
     return <section className={styles.checklist} onPointerDown={(event) => event.stopPropagation()}>
-        <div className={styles.header}><button type="button" className={styles.toggle} onClick={() => setExpanded((value) => !value)} aria-expanded={expanded}>{expanded ? '▾' : '▸'} Checklist</button>{items.length > 0 && <span className={styles.progressText}>{completed} of {items.length} complete</span>}</div>
+        <div className={styles.header}><button type="button" className={styles.toggle} onClick={() => setExpanded((value) => !value)} aria-expanded={expanded} aria-controls={`checklist-${taskId ?? 'draft'}`}>{expanded ? '▾' : '▸'} {items.length === 0 && !expanded ? 'Add checklist' : 'Checklist'}</button>{items.length > 0 && <span className={styles.progressText}>{completed} of {items.length} complete</span>}</div>
         {items.length > 0 && <div className={styles.progress} role="progressbar" aria-label="Checklist progress" aria-valuemin="0" aria-valuemax={items.length} aria-valuenow={completed}><span style={{ width: `${percent}%` }} /></div>}
-        {expanded && <div className={styles.content}>
+        <div id={`checklist-${taskId ?? 'draft'}`} className={styles.content} hidden={!expanded}>
             <ul className={styles.items}>{items.map((item, index) => <li className={styles.item} key={item.id} onDragOver={(event) => event.preventDefault()} onDrop={() => { if (dragIndex.current !== null) move(dragIndex.current, index); dragIndex.current = null; }}>
                 <span className={styles.grip} draggable={!pending} onDragStart={() => { dragIndex.current = index; }} title="Drag to reorder" aria-hidden="true">⋮⋮</span>
                 <input type="checkbox" checked={item.completed} disabled={pending} onChange={() => toggle(item)} aria-label={`Mark ${item.text} complete`} />
@@ -75,8 +79,7 @@ function Checklist({ taskId, items = [], getToken, onItemsChange, onNotify, draf
             </li>)}</ul>
             <div className={styles.addRow}><input ref={inputRef} value={newText} maxLength="200" disabled={pending || items.length >= 100} placeholder={items.length ? 'Add an item' : 'Add checklist item'} onChange={(event) => setNewText(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); add(); } }} /><button type="button" disabled={pending || !newText.trim() || items.length >= 100} onClick={add}>Add</button></div>
             {items.length >= 100 && <p className={styles.limit}>Checklist limit reached (100 items).</p>}
-        </div>}
-        {!expanded && items.length === 0 && <button type="button" className={styles.addChecklist} onClick={() => setExpanded(true)}>Add checklist</button>}
+        </div>
     </section>;
 }
 export default Checklist;
