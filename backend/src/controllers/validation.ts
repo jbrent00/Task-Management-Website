@@ -38,6 +38,14 @@ export function isNonNegativeInteger(value: unknown): value is number {
     return Number.isInteger(value) && (value as number) >= 0;
 }
 
+export function isChecklistItemsInput(value: unknown): value is Array<{ text: string }> {
+    return Array.isArray(value) && value.length <= 100 && value.every((item) => item && typeof item === 'object' && cleanRequiredText((item as { text?: unknown }).text, 200) !== null);
+}
+
+export function isChecklistOrderInput(value: unknown): value is number[] {
+    return Array.isArray(value) && value.every(Number.isInteger) && new Set(value).size === value.length;
+}
+
 export function parseOptionalDate(value: unknown) {
     if (value === null || value === undefined || value === '') return null;
     if (typeof value !== 'string') return undefined;

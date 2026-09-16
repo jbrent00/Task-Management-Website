@@ -4,6 +4,7 @@ import { createTask } from '../../api/createTask';
 import { useAuth } from '@clerk/react';
 import TaskAssignmentFields from '../task-assignment-fields/task-assignment-fields';
 import { getLocalDateTimeMinimum } from '../../functions/toLocalDateTime';
+import Checklist from '../checklist/checklist';
 
 function CreateTaskForm ({tasks, setTasks, projects, tags, onCreateTag, onNotify}) {
     const { getToken } = useAuth();
@@ -15,6 +16,7 @@ function CreateTaskForm ({tasks, setTasks, projects, tags, onCreateTag, onNotify
     const [projectId, setProjectId] = useState(null);
     const [tagIds, setTagIds] = useState([]);
     const [submitting, setSubmitting] = useState(false);
+    const [checklistItems, setChecklistItems] = useState([]);
 
 
     const handleSubmit = async (e) => {
@@ -33,7 +35,7 @@ function CreateTaskForm ({tasks, setTasks, projects, tags, onCreateTag, onNotify
             ? Math.max(...todoTasks.map(task => task.orderIndex)) + 1
             : 0;
 
-        const newTask = await createTask(token, title, description, priority, submittedDueDate || null, orderIndex, projectId, tagIds);
+        const newTask = await createTask(token, title, description, priority, submittedDueDate || null, orderIndex, projectId, tagIds, checklistItems);
         setTasks((prevTasks) => [...prevTasks, newTask]); // Add the new task to the bottom of the todo list
         setTitle('');
         setDescription('');
@@ -41,6 +43,7 @@ function CreateTaskForm ({tasks, setTasks, projects, tags, onCreateTag, onNotify
         setDueDate('');
         setProjectId(null);
         setTagIds([]);
+        setChecklistItems([]);
         onNotify({ tone: 'success', message: `Created “${newTask.title}”.` });
     } catch (error) {
         console.error('Error creating task', error);
@@ -80,6 +83,7 @@ function CreateTaskForm ({tasks, setTasks, projects, tags, onCreateTag, onNotify
                 </div>
             </div>
             <div className={styles.assignments}><TaskAssignmentFields projects={projects} tags={tags} projectId={projectId} tagIds={tagIds} onProjectChange={setProjectId} onTagIdsChange={setTagIds} onCreateTag={onCreateTag} /></div>
+            <Checklist items={checklistItems} draft onItemsChange={setChecklistItems} onNotify={onNotify} />
             <button className={styles.submitButton} disabled={submitting || !(title.trim() && description.trim())} type="submit">{submitting ? 'Creating…' : 'Create task'}</button>
         </form>
     );

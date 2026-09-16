@@ -8,6 +8,8 @@ import {
     isTaskPriority,
     isTaskStatus,
     ownedTaskWhere,
+    isChecklistItemsInput,
+    isChecklistOrderInput,
     parseOptionalDate,
 } from './validation';
 
@@ -17,6 +19,19 @@ test('validates task text fields and limits', () => {
     assert.equal(cleanRequiredText('x'.repeat(101), 100), null);
     assert.equal(cleanOptionalText('', 500), null);
     assert.equal(cleanOptionalText('x'.repeat(501), 500), undefined);
+});
+
+test('rejects invalid checklist order arrays', () => {
+    assert.equal(isChecklistOrderInput([3, 1, 2]), true);
+    assert.equal(isChecklistOrderInput([1, 1]), false);
+    assert.equal(isChecklistOrderInput([1, '2']), false);
+});
+
+test('validates checklist item text and size limits', () => {
+    assert.equal(isChecklistItemsInput([{ text: ' First step ' }]), true);
+    assert.equal(isChecklistItemsInput([{ text: ' ' }]), false);
+    assert.equal(isChecklistItemsInput([{ text: 'x'.repeat(201) }]), false);
+    assert.equal(isChecklistItemsInput(Array.from({ length: 101 }, () => ({ text: 'Step' }))), false);
 });
 
 test('accepts only supported task enums and ordering values', () => {
