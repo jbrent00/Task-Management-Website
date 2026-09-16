@@ -1,6 +1,7 @@
 export const taskInclude = {
     project: { select: { id: true, title: true } },
     taskTags: { include: { tag: { select: { id: true, name: true, color: true } } } },
+    checklistItems: { orderBy: { orderIndex: 'asc' as const } },
 } as const;
 
 type TaskWithTags = { taskTags: Array<{ tag: { id: number; name: string; color: string } }> };

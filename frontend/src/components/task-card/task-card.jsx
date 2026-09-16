@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { useAuth } from '@clerk/react';
 import { getTaskDueState } from '../../functions/taskViews';
 import TaskAssignmentFields from '../task-assignment-fields/task-assignment-fields';
+import Checklist from '../checklist/checklist';
 
 function TaskCard ({task, allTasks, setAllTasks, projects = [], tags = [], onCreateTag, onNotify, dragHandleProps, isDragEnabled}) {
     const { getToken } = useAuth();
@@ -80,6 +81,7 @@ function TaskCard ({task, allTasks, setAllTasks, projects = [], tags = [], onCre
     const dueState = getTaskDueState(task);
     const visibleTags = (task.tags ?? []).slice(0, 3);
     const remainingTagCount = (task.tags ?? []).length - visibleTags.length;
+    const setChecklistItems = (checklistItems) => setAllTasks((currentTasks) => currentTasks.map((currentTask) => currentTask.id === task.id ? { ...currentTask, checklistItems } : currentTask));
 
     return (
         <article className={`${styles.card} ${dueState ? styles[dueState.tone] : ''}`}>
@@ -140,6 +142,7 @@ function TaskCard ({task, allTasks, setAllTasks, projects = [], tags = [], onCre
                     </div>
                 </>
             )}
+            <Checklist taskId={task.id} items={task.checklistItems ?? []} getToken={getToken} onItemsChange={setChecklistItems} onNotify={onNotify} />
             {confirmingDelete && <div className={styles.dialogBackdrop}><section className={styles.dialog} role="alertdialog" aria-modal="true" aria-labelledby={`delete-task-${task.id}-title`}>
                 <h2 id={`delete-task-${task.id}-title`}>Delete task?</h2>
                 <p>Delete “{task.title}”? This cannot be undone.</p>

@@ -1,0 +1,29 @@
+.checklist { margin-top: 14px; border-top: 1px solid var(--border); padding-top: 12px; }
+.header, .addRow, .item, .itemActions, .confirm { display: flex; align-items: center; }
+.header { gap: 8px; justify-content: space-between; }
+.toggle, .addChecklist, .itemText { border: 0; background: none; color: var(--text); font: inherit; text-align: left; }
+.toggle { font-size: .82rem; font-weight: 750; cursor: pointer; }
+.addChecklist { margin-top: 8px; color: var(--primary); font-size: .8rem; font-weight: 700; cursor: pointer; }
+.progressText, .limit { color: var(--text-muted); font-size: .75rem; }
+.progress { height: 5px; margin-top: 7px; overflow: hidden; border-radius: 99px; background: var(--surface-muted); }
+.progress span { display: block; height: 100%; border-radius: inherit; background: var(--primary); transition: width 160ms ease; }
+.content { margin-top: 10px; }
+.items { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.item { position: relative; min-height: 38px; gap: 7px; border-radius: 6px; }
+.item:has(.confirm) { padding-bottom: 31px; }
+.grip { display: grid; flex: 0 0 38px; align-self: stretch; min-height: 38px; place-items: center; border-radius: 6px; color: var(--text-muted); cursor: grab; font-weight: 800; letter-spacing: -3px; user-select: none; }
+.grip:hover { background: var(--surface-muted); color: var(--text); }
+.grip:active { cursor: grabbing; }
+.itemText, .editInput { flex: 1; min-width: 0; padding: 3px 0; font-size: .82rem; }
+.itemText { cursor: text; }
+.completed { color: var(--text-muted); text-decoration: line-through; }
+.editInput, .addRow input { border: 1px solid var(--border-strong); border-radius: 6px; background: var(--surface); color: var(--text); }
+.editInput { padding: 4px 6px; }
+.itemActions { gap: 2px; }
+.itemActions button, .addRow button, .confirm button { min-width: 24px; border: 1px solid var(--border); border-radius: 5px; background: var(--surface); color: var(--text); cursor: pointer; }
+.itemActions button:disabled { opacity: .45; cursor: default; }
+.confirm { position: absolute; bottom: 0; left: 25px; gap: 6px; color: var(--text-muted); font-size: .72rem; }
+.addRow { gap: 6px; margin-top: 10px; }
+.addRow input { flex: 1; min-width: 0; padding: 6px 8px; font-size: .8rem; }
+.addRow button { padding: 6px 9px; font-size: .78rem; font-weight: 700; }
+.limit { margin: 6px 0 0; }

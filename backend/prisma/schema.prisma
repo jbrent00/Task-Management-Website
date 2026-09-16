@@ -47,6 +47,18 @@ model Task {
   project     Project?     @relation(fields: [projectId], references: [id], onDelete: SetNull)
   user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   taskTags    TaskTag[]
+  checklistItems ChecklistItem[]
+}
+
+model ChecklistItem {
+  id         Int     @id @default(autoincrement())
+  text       String
+  completed  Boolean @default(false)
+  orderIndex Int     @default(0)
+  taskId     Int
+  task       Task    @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([taskId, orderIndex])
 }
 
 model TaskTag {
