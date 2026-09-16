@@ -19,6 +19,7 @@
 .success { border-color: #a7f3d0; background: var(--success-soft); color: var(--success); }
 .error { border-color: #fecaca; background: var(--danger-soft); color: var(--danger); }
 .loadError { margin: -8px 0 20px; padding: 12px 14px; border: 1px solid #fecaca; border-radius: 10px; background: var(--danger-soft); color: var(--danger); font-size: 0.9rem; font-weight: 600; line-height: 1.4; }
-.taskBoards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; align-items: start; }
+.taskBoards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; align-items: stretch; }
+.taskBoards > div:not([hidden]) { display: flex; flex-direction: column; }
 @media (max-width: 960px) { .taskBoards { grid-template-columns: 1fr; } }
 @media (max-width: 640px) { .tasksPage { padding: 24px 16px 36px; } .header { align-items: flex-start; margin-bottom: 22px; } }

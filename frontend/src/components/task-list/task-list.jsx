@@ -3,7 +3,7 @@ import { Draggable } from '@hello-pangea/dnd';
 import styles from './task-list.module.css';
 import { taskViewTabs } from '../../functions/taskViews';
 
-function TaskList({ tasks, status, allTasks, setAllTasks, loading, isManualOrder, isFiltered, selectedTab, projects, tags, onCreateTag, onNotify }) {
+function TaskList({ tasks, status, allTasks, setAllTasks, loading, isManualOrder, isFiltered, selectedTab, projects, tags, onCreateTag, onNotify, children }) {
     const statusDetails = {
         todo: { label: 'To do', className: 'todo', emptyMessage: 'No tasks yet. Create one above to get started.' },
         in_progress: { label: 'In progress', className: 'inProgress', emptyMessage: 'Move a task here when you are ready to focus.' },
@@ -30,6 +30,7 @@ function TaskList({ tasks, status, allTasks, setAllTasks, loading, isManualOrder
                     )}
                 </Draggable>
             ))}
+            {children}
         </section>
     );
 }
