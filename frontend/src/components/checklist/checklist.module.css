@@ -1,10 +1,14 @@
 .checklist { margin-top: 14px; border-top: 1px solid var(--border); padding-top: 12px; }
 .checklist[hidden] { display: none; }
 .editor { min-width: 0; margin: 0; padding: 0; border: 0; }
-.header, .addRow, .item, .itemActions, .confirm { display: flex; align-items: center; }
+.header, .headerActions, .addRow, .item, .itemActions, .confirm { display: flex; align-items: center; }
 .header { gap: 8px; justify-content: space-between; }
+.headerActions { gap: 10px; }
 .toggle, .addChecklist, .itemText { border: 0; background: none; color: var(--text); font: inherit; text-align: left; }
 .toggle { font-size: .82rem; font-weight: 750; cursor: pointer; }
+.generateButton { min-height: 30px; padding: 0 10px; border: 1px solid var(--primary); border-radius: 7px; background: var(--surface); color: var(--primary); font-size: .76rem; font-weight: 750; cursor: pointer; }
+.generateButton:hover:not(:disabled) { background: var(--surface-muted); }
+.generateButton:disabled { opacity: .55; cursor: default; }
 .progressText, .limit { color: var(--text-muted); font-size: .75rem; }
 .progress { height: 5px; margin-top: 7px; overflow: hidden; border-radius: 99px; background: var(--surface-muted); }
 .progress span { display: block; height: 100%; border-radius: inherit; background: var(--primary); transition: width 160ms ease; }
@@ -29,3 +33,4 @@
 .addRow input { flex: 1; min-width: 0; padding: 6px 8px; font-size: .8rem; }
 .addRow button { padding: 6px 9px; font-size: .78rem; font-weight: 700; }
 .limit { margin: 6px 0 0; }
+@media (max-width: 520px) { .header { align-items: flex-start; } .headerActions { align-items: flex-end; flex-direction: column; } }

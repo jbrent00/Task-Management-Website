@@ -71,13 +71,21 @@ model TaskTag {
 }
 
 model User {
-  id         String    @id  // Clerk's user ID, e.g. "user_2abc123xyz"
-  fname      String?
-  lname      String?
-  createdAt  DateTime  @default(now())
-  projects   Project[]
-  tags       Tag[]
-  tasks      Task[]
+  id                String             @id  // Clerk's user ID, e.g. "user_2abc123xyz"
+  fname             String?
+  lname             String?
+  createdAt         DateTime           @default(now())
+  projects          Project[]
+  tags              Tag[]
+  tasks             Task[]
+  aiGenerationLimit AiGenerationLimit?
+}
+
+model AiGenerationLimit {
+  userId          String   @id
+  windowStartedAt DateTime
+  requestCount    Int      @default(0)
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 enum TaskPriority {
