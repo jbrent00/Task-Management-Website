@@ -5,7 +5,7 @@ import { useTaskMutation } from '../../functions/taskMutationContext';
 
 const reorder = (items, from, to) => { const next = [...items]; const [item] = next.splice(from, 1); next.splice(to, 0, item); return next; };
 
-function Checklist({ taskId, items = [], getToken, onItemsChange, onNotify, draft = false, resetKey, openRequest = 0, hideEmpty = false, disabled = false }) {
+function Checklist({ taskId, items = [], getToken, onItemsChange, onNotify, draft = false, resetKey, openRequest = 0, hideEmpty = false, disabled = false, onGenerate, generating = false, generateDisabled = false }) {
     const mutation = useTaskMutation();
     const [expanded, setExpanded] = useState(false);
     const [newText, setNewText] = useState('');
@@ -81,7 +81,7 @@ function Checklist({ taskId, items = [], getToken, onItemsChange, onNotify, draf
 
     return <section hidden={hideEmpty && items.length === 0 && !expanded} className={styles.checklist} onPointerDown={(event) => event.stopPropagation()}>
         <fieldset disabled={blocked} className={styles.editor}>
-        <div className={styles.header}><button type="button" className={styles.toggle} onClick={() => setExpanded((value) => !value)} aria-expanded={expanded} aria-controls={`checklist-${taskId ?? 'draft'}`}>{expanded ? '▾' : '▸'} {items.length === 0 && !expanded ? 'Add checklist' : 'Checklist'}</button>{items.length > 0 && <span className={styles.progressText}>{completed} of {items.length} complete</span>}</div>
+        <div className={styles.header}><button type="button" className={styles.toggle} onClick={() => setExpanded((value) => !value)} aria-expanded={expanded} aria-controls={`checklist-${taskId ?? 'draft'}`}>{expanded ? '▾' : '▸'} {items.length === 0 && !expanded ? 'Add checklist' : 'Checklist'}</button><div className={styles.headerActions}>{items.length > 0 && <span className={styles.progressText}>{completed} of {items.length} complete</span>}{onGenerate && <button type="button" className={styles.generateButton} disabled={generateDisabled} onClick={() => { setExpanded(true); onGenerate(); }}>{generating ? 'Generating…' : 'Generate checklist'}</button>}</div></div>
         {items.length > 0 && <div className={styles.progress} role="progressbar" aria-label="Checklist progress" aria-valuemin="0" aria-valuemax={items.length} aria-valuenow={completed}><span style={{ width: `${percent}%` }} /></div>}
         <div id={`checklist-${taskId ?? 'draft'}`} className={styles.content} hidden={!expanded}>
             <ul className={styles.items}>{items.map((item, index) => <li className={styles.item} key={item.id} onDragOver={(event) => event.preventDefault()} onDrop={() => { if (dragIndex.current !== null) move(dragIndex.current, index); dragIndex.current = null; }}>

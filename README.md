@@ -18,6 +18,7 @@ The application uses Clerk for authentication and keeps every user's tasks, proj
 - Project creation, editing, deletion, and task-count summaries
 - Tag creation, editing, deletion, and a curated color picker
 - Per-user view preferences persisted in local storage
+- AI-assisted description and checklist drafting through an authenticated backend endpoint
 - Optimistic drag-and-drop updates with rollback and feedback when a request fails
 - Responsive layouts and keyboard-accessible task reordering
 
@@ -55,10 +56,11 @@ Task-Management-Website/
 
 Install or create the following before starting:
 
-- [Node.js](https://nodejs.org/) `20.19+` or `22.12+`
+- [Node.js](https://nodejs.org/) `22.12+`
 - npm
 - A running PostgreSQL database
 - A [Clerk](https://clerk.com/) application
+- An OpenAI API key for AI-assisted drafting
 
 ## Run the application locally
 
@@ -96,6 +98,8 @@ PORT=3000
 FRONTEND_URL="http://localhost:5173"
 CLERK_SECRET_KEY="sk_test_..."
 CLERK_WEBHOOK_SIGNING_SECRET="whsec_..."
+OPENAI_API_KEY="sk-..."
+OPENAI_MODEL="gpt-5.6-luna"
 ```
 
 Generate the Prisma client and apply the committed migrations:
@@ -151,6 +155,8 @@ Open `http://localhost:5173`. Sign up or sign in, then visit `/tasks` to use the
 | `FRONTEND_URL` | Production; recommended locally | Allowed frontend origin for CORS |
 | `PORT` | No | API port; defaults to `3000` |
 | `NODE_ENV` | No | Uses production CORS behavior when set to `production` |
+| `OPENAI_API_KEY` | Yes for AI drafting | Server-only key used by the authenticated AI generation endpoint |
+| `OPENAI_MODEL` | No | AI drafting model; defaults to `gpt-5.6-luna` |
 
 ### Frontend
 
@@ -197,6 +203,7 @@ All task, project, and tag routes require a valid Clerk session token. Data acce
 | `POST` | `/api/webhooks` | Receive Clerk user events |
 | `GET`, `POST` | `/tasks` | List or create tasks |
 | `PUT`, `DELETE` | `/tasks/:id` | Update or delete one task |
+| `POST` | `/tasks/ai/generate` | Generate a draft description or five checklist items |
 | `PATCH` | `/tasks/bulk-update` | Persist reordered or status-changed tasks |
 | `GET`, `POST` | `/projects` | List or create projects |
 | `PUT`, `DELETE` | `/projects/:id` | Update or delete one project |

@@ -11,14 +11,31 @@
 .sectionToggle span { overflow: hidden; color: var(--text-muted); font-size: .78rem; font-weight: 400; text-overflow: ellipsis; white-space: nowrap; }
 .additionalDetailsContent { display: grid; gap: 16px; margin-top: 14px; }
 .field { display: flex; min-width: 0; flex-direction: column; gap: 7px; }
+.fieldHeader { display: flex; min-width: 0; align-items: center; justify-content: space-between; gap: 10px; }
 .field label { color: var(--text); font-size: 0.84rem; font-weight: 650; }
 .field label span { color: var(--text-muted); font-weight: 400; }
 .field input, .field textarea, .field select { width: 100%; border: 1px solid var(--border-strong); border-radius: 9px; background: var(--surface); color: var(--text); }
 .field input, .field select { min-height: 42px; padding: 0 12px; }
 .field textarea { height: 42px; min-height: 42px; padding: 10px 12px; resize: none; }
+.generateButton { flex: none; min-height: 30px; padding: 0 10px; border: 1px solid var(--primary); border-radius: 7px; background: var(--surface); color: var(--primary); font-size: .76rem; font-weight: 750; cursor: pointer; }
+.generateButton:hover:not(:disabled) { background: var(--surface-muted); }
+.generateButton:disabled { opacity: .55; cursor: default; }
 .details { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
 .assignments { grid-column: 1 / -1; }
 .submitButton { grid-column: 1 / -1; justify-self: end; min-height: 42px; padding: 0 18px; border: 0; border-radius: 9px; background: var(--primary); color: #fff; font-weight: 700; white-space: nowrap; transition: background 160ms ease, transform 160ms ease; }
 .submitButton:hover:not(:disabled) { background: var(--primary-hover); transform: translateY(-1px); }
 .submitButton:disabled { background: #c7d2fe; color: #eef2ff; }
+.aiMessage { grid-column: 1 / -1; margin: 0; font-size: .82rem; }
+.status { color: var(--text-muted); }
+.success { color: var(--success, #047857); }
+.error { color: var(--danger); }
+.dialogBackdrop { position: fixed; z-index: 30; inset: 0; display: grid; padding: 20px; place-items: center; background: rgb(15 23 42 / 45%); }
+.dialog { width: min(420px, 100%); padding: 22px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface); box-shadow: var(--shadow-md); }
+.dialog h2 { margin: 0; color: var(--text-strong); font-size: 1.05rem; }
+.dialog p { margin: 10px 0 18px; color: var(--text-muted); font-size: .88rem; line-height: 1.45; }
+.dialogActions { display: flex; justify-content: flex-end; gap: 8px; }
+.cancelButton, .replaceButton { min-height: 38px; padding: 0 13px; border-radius: 8px; font-weight: 700; cursor: pointer; }
+.cancelButton { border: 1px solid var(--border-strong); background: var(--surface); color: var(--text); }
+.replaceButton { border: 0; background: var(--primary); color: #fff; }
 @media (max-width: 760px) { .formContent, .details { grid-template-columns: 1fr; } .submitButton { width: 100%; } }
+@media (max-width: 520px) { .fieldHeader { align-items: flex-start; flex-direction: column; } }
