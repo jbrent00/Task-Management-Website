@@ -11,7 +11,8 @@ export type ProjectTaskPolicy = {
     editorsCanCreateTasks: boolean;
     editorsCanAssignOthers: boolean;
     editorsCanEditAllTasks: boolean;
-    editorsCanSelfAssign: boolean;
+    editorsCanJoinTasks: boolean;
+    editorsCanLeaveTasks: boolean;
 };
 
 export type ProjectTaskIdentity = { createdById: string; assigneeId: string | null };
@@ -29,6 +30,8 @@ export function canEditProjectTask(role: ProjectRole, project: ProjectTaskPolicy
 export function canChangeAssignment(role: ProjectRole, project: ProjectTaskPolicy, userId: string, currentAssigneeId: string | null, nextAssigneeId: string | null) {
     if (project.archivedAt || role === 'viewer') return false;
     if (role === 'owner' || project.editorsCanAssignOthers) return true;
-    if (!project.editorsCanSelfAssign) return currentAssigneeId === nextAssigneeId;
-    return (nextAssigneeId === userId && currentAssigneeId === null) || (currentAssigneeId === userId && nextAssigneeId === null) || currentAssigneeId === nextAssigneeId;
+    if (currentAssigneeId === nextAssigneeId) return true;
+    if (nextAssigneeId === userId && currentAssigneeId === null) return project.editorsCanJoinTasks;
+    if (currentAssigneeId === userId && nextAssigneeId === null) return project.editorsCanLeaveTasks;
+    return false;
 }

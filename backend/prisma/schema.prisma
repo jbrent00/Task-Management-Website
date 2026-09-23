@@ -17,7 +17,8 @@ model Project {
   editorsCanCreateTasks    Boolean             @default(true)
   editorsCanAssignOthers   Boolean             @default(true)
   editorsCanEditAllTasks   Boolean             @default(true)
-  editorsCanSelfAssign     Boolean             @default(true)
+  editorsCanJoinTasks      Boolean             @default(true)
+  editorsCanLeaveTasks     Boolean             @default(true)
   memberships              ProjectMembership[]
   invitations              ProjectInvitation[]
   tasks                    Task[]

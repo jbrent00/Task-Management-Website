@@ -2,7 +2,7 @@ import type { ProjectRole } from '../../generated/prisma/client';
 import { canEditProjectTask, type ProjectTaskPolicy } from '../services/projectPolicy';
 
 export const taskInclude = {
-    project: { select: { id: true, title: true, archivedAt: true, editorsCanCreateTasks: true, editorsCanAssignOthers: true, editorsCanEditAllTasks: true, editorsCanSelfAssign: true } },
+    project: { select: { id: true, title: true, archivedAt: true, editorsCanCreateTasks: true, editorsCanAssignOthers: true, editorsCanEditAllTasks: true, editorsCanJoinTasks: true, editorsCanLeaveTasks: true } },
     createdBy: { select: { id: true, fname: true, lname: true, primaryEmail: true, imageUrl: true } },
     assignee: { select: { id: true, fname: true, lname: true, primaryEmail: true, imageUrl: true } },
     taskTags: { include: { tag: { select: { id: true, name: true, color: true } } } },
@@ -28,8 +28,8 @@ export function getProjectTaskCapabilities(role: ProjectRole, project: ProjectTa
         canDelete: canEdit,
         canReorder: canEdit,
         canAssignOthers: active && (role === 'owner' || project.editorsCanAssignOthers),
-        canJoin: active && task.assigneeId === null && (role === 'owner' || project.editorsCanSelfAssign),
-        canLeave: active && task.assigneeId === userId && (role === 'owner' || project.editorsCanSelfAssign),
+        canJoin: active && task.assigneeId === null && (role === 'owner' || project.editorsCanJoinTasks),
+        canLeave: active && task.assigneeId === userId && (role === 'owner' || project.editorsCanLeaveTasks),
     };
 }
 

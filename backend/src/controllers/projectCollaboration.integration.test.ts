@@ -163,12 +163,13 @@ test('project policy defaults preserve the existing open editor workflow', async
     assert.equal(stored.editorsCanCreateTasks, true);
     assert.equal(stored.editorsCanAssignOthers, true);
     assert.equal(stored.editorsCanEditAllTasks, true);
-    assert.equal(stored.editorsCanSelfAssign, true);
+    assert.equal(stored.editorsCanJoinTasks, true);
+    assert.equal(stored.editorsCanLeaveTasks, true);
 });
 
 test('restricted editor policies are enforced for creation, editing, and assignment', async () => {
     const project = await prisma.project.create({ data: {
-        title: `${runId} restricted policies`, editorsCanCreateTasks: false, editorsCanAssignOthers: false, editorsCanEditAllTasks: false, editorsCanSelfAssign: true,
+        title: `${runId} restricted policies`, editorsCanCreateTasks: false, editorsCanAssignOthers: false, editorsCanEditAllTasks: false, editorsCanJoinTasks: true, editorsCanLeaveTasks: true,
         memberships: { create: [{ userId: users.owner, role: 'owner' }, { userId: users.editor, role: 'editor' }, { userId: users.member, role: 'editor' }] },
     } });
     projectIds.push(project.id);
@@ -191,7 +192,8 @@ test('project settings endpoint persists every collaboration policy and remains 
         editorsCanCreateTasks: false,
         editorsCanAssignOthers: false,
         editorsCanEditAllTasks: false,
-        editorsCanSelfAssign: false,
+        editorsCanJoinTasks: false,
+        editorsCanLeaveTasks: false,
     };
     const ownerResponse = await invoke(updateProject, {
         userId: users.owner,
@@ -218,10 +220,10 @@ test('project settings endpoint persists every collaboration policy and remains 
     })).status, 400);
 });
 
-test('edit-all and self-assignment policies govern edit, delete, reorder, join, and leave', async () => {
+test('edit-all and participation policies govern edit, delete, reorder, join, and leave', async () => {
     const project = await prisma.project.create({ data: {
         title: `${runId} operation policies`, editorsCanCreateTasks: true, editorsCanAssignOthers: false,
-        editorsCanEditAllTasks: false, editorsCanSelfAssign: false,
+        editorsCanEditAllTasks: false, editorsCanJoinTasks: false, editorsCanLeaveTasks: false,
         memberships: { create: [{ userId: users.owner, role: 'owner' }, { userId: users.editor, role: 'editor' }] },
     } });
     projectIds.push(project.id);
@@ -259,6 +261,24 @@ test('edit-all and self-assignment policies govern edit, delete, reorder, join, 
             orderIndex: 4, assigneeId: users.editor, tagIds: [], checklistItems: [],
         },
     })).status, 201);
+});
+
+test('join and leave policies are enforced independently', async () => {
+    const project = await prisma.project.create({ data: {
+        title: `${runId} split participation`, editorsCanJoinTasks: false, editorsCanLeaveTasks: true,
+        memberships: { create: [{ userId: users.owner, role: 'owner' }, { userId: users.editor, role: 'editor' }] },
+    } });
+    projectIds.push(project.id);
+    const unassigned = await createTask(project.id);
+    const assigned = await createTask(project.id, users.editor);
+    const editor = { userId: users.editor };
+
+    assert.equal((await invoke(joinTask, { ...editor, params: { id: String(unassigned.id) } })).status, 403);
+    assert.equal((await invoke(leaveTask, { ...editor, params: { id: String(assigned.id) } })).status, 200);
+
+    await prisma.project.update({ where: { id: project.id }, data: { editorsCanJoinTasks: true, editorsCanLeaveTasks: false } });
+    assert.equal((await invoke(joinTask, { ...editor, params: { id: String(unassigned.id) } })).status, 200);
+    assert.equal((await invoke(leaveTask, { ...editor, params: { id: String(unassigned.id) } })).status, 403);
 });
 
 test('concurrent joins allow exactly one claim and leave releases the task', async () => {

@@ -17,8 +17,8 @@ test('only owners and editors can be task assignees', () => {
 });
 
 test('applies each configurable editor task policy without limiting owners', () => {
-    const open = { archivedAt: null, editorsCanCreateTasks: true, editorsCanAssignOthers: true, editorsCanEditAllTasks: true, editorsCanSelfAssign: true };
-    const restricted = { ...open, editorsCanCreateTasks: false, editorsCanAssignOthers: false, editorsCanEditAllTasks: false, editorsCanSelfAssign: false };
+    const open = { archivedAt: null, editorsCanCreateTasks: true, editorsCanAssignOthers: true, editorsCanEditAllTasks: true, editorsCanJoinTasks: true, editorsCanLeaveTasks: true };
+    const restricted = { ...open, editorsCanCreateTasks: false, editorsCanAssignOthers: false, editorsCanEditAllTasks: false, editorsCanJoinTasks: false, editorsCanLeaveTasks: false };
     const ownerTask = { createdById: 'owner', assigneeId: null };
     const editorTask = { createdById: 'editor', assigneeId: null };
     const assignedTask = { createdById: 'owner', assigneeId: 'editor' };
@@ -33,12 +33,15 @@ test('applies each configurable editor task policy without limiting owners', () 
     assert.equal(canChangeAssignment('editor', open, 'editor', null, 'member'), true);
     assert.equal(canChangeAssignment('editor', { ...open, editorsCanAssignOthers: false }, 'editor', null, 'member'), false);
     assert.equal(canChangeAssignment('editor', { ...open, editorsCanAssignOthers: false }, 'editor', null, 'editor'), true);
+    assert.equal(canChangeAssignment('editor', { ...open, editorsCanAssignOthers: false, editorsCanJoinTasks: false }, 'editor', null, 'editor'), false);
+    assert.equal(canChangeAssignment('editor', { ...open, editorsCanAssignOthers: false, editorsCanLeaveTasks: false }, 'editor', 'editor', null), false);
+    assert.equal(canChangeAssignment('editor', { ...open, editorsCanAssignOthers: false }, 'editor', 'editor', null), true);
     assert.equal(canChangeAssignment('editor', restricted, 'editor', null, 'editor'), false);
     assert.equal(canChangeAssignment('owner', restricted, 'owner', null, 'member'), true);
 });
 
 test('archive and viewer rules override collaboration settings', () => {
-    const archived = { archivedAt: new Date(), editorsCanCreateTasks: true, editorsCanAssignOthers: true, editorsCanEditAllTasks: true, editorsCanSelfAssign: true };
+    const archived = { archivedAt: new Date(), editorsCanCreateTasks: true, editorsCanAssignOthers: true, editorsCanEditAllTasks: true, editorsCanJoinTasks: true, editorsCanLeaveTasks: true };
     const task = { createdById: 'viewer', assigneeId: null };
     assert.equal(canCreateProjectTask('editor', archived), false);
     assert.equal(canEditProjectTask('owner', archived, task, 'owner'), false);

@@ -69,7 +69,7 @@ export async function updateProject(req: Request, res: Response) {
     if (access.project.archivedAt) { res.status(403).json({ error: 'Restore the project before editing it' }); return; }
     const title = cleanRequiredText(req.body.title, 100); const description = cleanOptionalText(req.body.description, 500);
     if (!title || description === undefined) { res.status(400).json({ error: 'Invalid project details' }); return; }
-    const policyKeys = ['editorsCanCreateTasks', 'editorsCanAssignOthers', 'editorsCanEditAllTasks', 'editorsCanSelfAssign'] as const;
+    const policyKeys = ['editorsCanCreateTasks', 'editorsCanAssignOthers', 'editorsCanEditAllTasks', 'editorsCanJoinTasks', 'editorsCanLeaveTasks'] as const;
     if (policyKeys.some((key) => key in req.body && typeof req.body[key] !== 'boolean')) { res.status(400).json({ error: 'Invalid collaboration settings' }); return; }
     const policies = Object.fromEntries(policyKeys.filter((key) => key in req.body).map((key) => [key, req.body[key]]));
     res.json(await prisma.project.update({ where: { id }, data: { title, description, ...policies } }));

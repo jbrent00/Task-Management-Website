@@ -10,7 +10,8 @@ async function participation(req: Request, res: Response, action: 'join' | 'leav
     if (!Number.isInteger(taskId)) { res.status(400).json({ error: 'Invalid task id' }); return; }
     const access = await getTaskAccess(taskId, userId);
     if (!access || !access.task.projectId || !access.task.project || !access.role) { res.status(404).json({ error: 'Project task not found' }); return; }
-    if (access.task.project.archivedAt || access.role === 'viewer' || (access.role === 'editor' && !access.task.project.editorsCanSelfAssign)) {
+    const editorAllowed = action === 'join' ? access.task.project.editorsCanJoinTasks : access.task.project.editorsCanLeaveTasks;
+    if (access.task.project.archivedAt || access.role === 'viewer' || (access.role === 'editor' && !editorAllowed)) {
         res.status(403).json({ error: `You cannot ${action} this task` }); return;
     }
     const where = action === 'join'
