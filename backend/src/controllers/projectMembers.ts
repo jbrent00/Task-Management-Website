@@ -21,7 +21,11 @@ export async function updateMember(req: Request, res: Response) {
     if (role === 'viewer' && await prisma.task.count({ where: { projectId, assigneeId: memberId } })) {
         res.status(409).json({ error: 'Unassign this member’s tasks before changing them to viewer' }); return;
     }
-    const updated = await prisma.projectMembership.update({ where: { projectId_userId: { projectId, userId: memberId } }, data: { role } });
+    const updated = await prisma.$transaction(async (tx) => {
+        const result = await tx.projectMembership.update({ where: { projectId_userId: { projectId, userId: memberId } }, data: { role } });
+        if (memberId !== userId && member.role !== role) await tx.notification.create({ data: { userId: memberId, actorId: userId, projectId, type: 'role_changed', metadata: { projectTitle: access.project.title, previousRole: member.role, role } } });
+        return result;
+    });
     res.json(updated);
 }
 
@@ -36,10 +40,11 @@ export async function removeMember(req: Request, res: Response) {
     const member = await prisma.projectMembership.findUnique({ where: { projectId_userId: { projectId, userId: memberId } } });
     if (!member) { res.status(404).json({ error: 'Member not found' }); return; }
     if (member.role === 'owner') { res.status(400).json({ error: 'Transfer ownership before leaving' }); return; }
-    await prisma.$transaction([
-        prisma.task.updateMany({ where: { projectId, assigneeId: memberId }, data: { assigneeId: null } }),
-        prisma.projectMembership.delete({ where: { projectId_userId: { projectId, userId: memberId } } }),
-    ]);
+    await prisma.$transaction(async (tx) => {
+        await tx.task.updateMany({ where: { projectId, assigneeId: memberId }, data: { assigneeId: null } });
+        await tx.projectMembership.delete({ where: { projectId_userId: { projectId, userId: memberId } } });
+        if (!selfLeaving) await tx.notification.create({ data: { userId: memberId, actorId: userId, projectId, type: 'project_removed', metadata: { projectTitle: access.project.title } } });
+    });
     res.status(204).end();
 }
 
@@ -57,6 +62,7 @@ export async function transferOwnership(req: Request, res: Response) {
         await tx.$executeRaw`SELECT pg_advisory_xact_lock(${projectId})`;
         await tx.projectMembership.update({ where: { projectId_userId: { projectId, userId } }, data: { role: 'editor' } });
         await tx.projectMembership.update({ where: { projectId_userId: { projectId, userId: nextOwnerId } }, data: { role: 'owner' } });
+        await tx.notification.create({ data: { userId: nextOwnerId, actorId: userId, projectId, type: 'ownership_transferred', metadata: { projectTitle: access.project.title } } });
     });
     res.status(204).end();
 }

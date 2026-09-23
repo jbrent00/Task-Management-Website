@@ -8,16 +8,21 @@ datasource db {
 }
 
 model Project {
-  id          Int                 @id @default(autoincrement())
-  title       String
-  description String?
-  createdAt   DateTime            @default(now())
-  updatedAt   DateTime            @updatedAt
-  archivedAt  DateTime?
-  memberships ProjectMembership[]
-  invitations ProjectInvitation[]
-  tasks       Task[]
-  tags        ProjectTag[]
+  id                       Int                 @id @default(autoincrement())
+  title                    String
+  description              String?
+  createdAt                DateTime            @default(now())
+  updatedAt                DateTime            @updatedAt
+  archivedAt               DateTime?
+  editorsCanCreateTasks    Boolean             @default(true)
+  editorsCanAssignOthers   Boolean             @default(true)
+  editorsCanEditAllTasks   Boolean             @default(true)
+  editorsCanSelfAssign     Boolean             @default(true)
+  memberships              ProjectMembership[]
+  invitations              ProjectInvitation[]
+  tasks                    Task[]
+  tags                     ProjectTag[]
+  notifications            Notification[]
 }
 
 model ProjectMembership {
@@ -94,6 +99,7 @@ model Task {
   taskTags        TaskTag[]
   projectTaskTags ProjectTaskTag[]
   checklistItems  ChecklistItem[]
+  notifications   Notification[]
 
   @@index([createdById, projectId])
   @@index([assigneeId, projectId])
@@ -142,6 +148,28 @@ model User {
   tasksCreated      Task[]              @relation("TasksCreated")
   tasksAssigned     Task[]              @relation("TasksAssigned")
   aiGenerationLimit AiGenerationLimit?
+  notifications     Notification[]        @relation("NotificationRecipient")
+  notificationActs  Notification[]        @relation("NotificationActor")
+}
+
+model Notification {
+  id        Int              @id @default(autoincrement())
+  userId    String
+  actorId   String?
+  projectId Int?
+  taskId    Int?
+  type      NotificationType
+  metadata  Json
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+  user      User             @relation("NotificationRecipient", fields: [userId], references: [id], onDelete: Cascade)
+  actor     User?            @relation("NotificationActor", fields: [actorId], references: [id], onDelete: SetNull)
+  project   Project?         @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  task      Task?            @relation(fields: [taskId], references: [id], onDelete: SetNull)
+
+  @@index([userId, readAt, createdAt])
+  @@index([projectId, createdAt])
+  @@index([taskId, createdAt])
 }
 
 model UserEmail {
@@ -175,6 +203,14 @@ enum InvitationStatus {
   declined
   revoked
   expired
+}
+
+enum NotificationType {
+  task_assigned
+  task_unassigned
+  role_changed
+  project_removed
+  ownership_transferred
 }
 
 enum TaskPriority {

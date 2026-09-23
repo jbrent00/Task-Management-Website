@@ -1,6 +1,6 @@
 import { prisma } from './prisma';
 import type { ProjectRole } from '../../generated/prisma/client';
-import { canWriteProject } from './projectPolicy';
+import { canEditProjectTask, canWriteProject } from './projectPolicy';
 
 export const writableRoles: ProjectRole[] = ['owner', 'editor'];
 
@@ -26,7 +26,7 @@ export async function getTaskAccess(taskId: number, userId: string) {
     }
     const role = task.project?.memberships[0]?.role;
     if (!role) return null;
-    return { task, role, canEdit: canWriteProject(role, task.project?.archivedAt ?? null) };
+    return { task, role, canEdit: canEditProjectTask(role, task.project!, task, userId) };
 }
 
 export function isProjectWriter(role: ProjectRole) {

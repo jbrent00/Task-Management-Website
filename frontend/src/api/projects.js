@@ -8,7 +8,7 @@ async function request(token, path = '', options = {}) {
 export const getProjects = (token) => request(token);
 export const getProject = (token, id) => request(token, `/${id}`);
 export const createProject = (token, title, description) => request(token, '', { method: 'POST', body: JSON.stringify({ title, description }) });
-export const updateProject = (token, id, title, description) => request(token, `/${id}`, { method: 'PATCH', body: JSON.stringify({ title, description }) });
+export const updateProject = (token, id, title, description, policies = {}) => request(token, `/${id}`, { method: 'PATCH', body: JSON.stringify({ title, description, ...policies }) });
 export const archiveProject = (token, id) => request(token, `/${id}/archive`, { method: 'POST' });
 export const restoreProject = (token, id) => request(token, `/${id}/restore`, { method: 'POST' });
 export const deleteProject = (token, id, confirmTitle) => request(token, `/${id}`, { method: 'DELETE', body: JSON.stringify({ confirmTitle }) });

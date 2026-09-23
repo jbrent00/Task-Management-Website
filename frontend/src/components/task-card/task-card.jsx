@@ -9,6 +9,7 @@ import { useAuth } from '@clerk/react';
 import { getTaskDueState } from '../../functions/taskViews';
 import TaskAssignmentFields from '../task-assignment-fields/task-assignment-fields';
 import Checklist from '../checklist/checklist';
+import { joinProjectTask, leaveProjectTask } from '../../api/projectTasks';
 
 function TaskCard ({task, setAllTasks, projects = [], tags = [], members = [], projectMode = false, onCreateTag, onNotify, dragHandleProps, isDragEnabled}) {
     const { getToken } = useAuth();
@@ -103,6 +104,18 @@ function TaskCard ({task, setAllTasks, projects = [], tags = [], members = [], p
             onNotify({ tone: 'error', message: `Could not change the status of “${task.title}”. Please try again.` });
         } finally { setSaving(false); mutation.end(); }
     };
+    const handleParticipation = async () => {
+        const joining = task.capabilities?.canJoin;
+        if (!joining && !task.capabilities?.canLeave) return;
+        if (!mutation.begin()) return;
+        setSaving(true);
+        try {
+            const updated = joining ? await joinProjectTask(await getToken(), task.id) : await leaveProjectTask(await getToken(), task.id);
+            setAllTasks((current) => current.map((item) => item.id === task.id ? updated : item));
+            onNotify({ tone: 'success', message: `${joining ? 'Joined' : 'Left'} “${task.title}”.` });
+        } catch (error) { onNotify({ tone: 'error', message: error.message }); }
+        finally { setSaving(false); mutation.end(); }
+    };
     const formattedDueDate = task.dueDate && new Intl.DateTimeFormat(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }).format(new Date(task.dueDate));
     const dueState = getTaskDueState(task);
     const visibleTags = (task.tags ?? []).slice(0, 3);
@@ -117,7 +130,7 @@ function TaskCard ({task, setAllTasks, projects = [], tags = [], members = [], p
                         <label htmlFor={`task-${task.id}-title`}>Title</label>
                         <input ref={editTitle} id={`task-${task.id}-title`} type="text" value={title} maxLength="100" required onChange={(event) => setTitle(event.target.value)} />
                     </div>
-                    {(!task.projectId || projectMode) && <TaskAssignmentFields projects={projects} tags={tags} projectId={projectId} tagIds={tagIds} onProjectChange={setProjectId} onTagIdsChange={setTagIds} onCreateTag={onCreateTag} showProject={false} members={members} assigneeId={assigneeId} onAssigneeChange={task.projectId ? setAssigneeId : undefined} />}
+                    {(!task.projectId || projectMode) && <TaskAssignmentFields projects={projects} tags={tags} projectId={projectId} tagIds={tagIds} onProjectChange={setProjectId} onTagIdsChange={setTagIds} onCreateTag={onCreateTag} showProject={false} members={members} assigneeId={assigneeId} onAssigneeChange={task.projectId && task.capabilities?.canAssignOthers !== false ? setAssigneeId : undefined} />}
                     <div className={styles.field}>
                         <label htmlFor={`task-${task.id}-description`}>Description</label>
                         <textarea id={`task-${task.id}-description`} value={description} maxLength="500" onChange={(event) => setDescription(event.target.value)} />
@@ -159,13 +172,14 @@ function TaskCard ({task, setAllTasks, projects = [], tags = [], members = [], p
                         </div>
                         {task.description && <p className={styles.description}>{task.description}</p>}
                         {task.project && <p className={styles.meta}><span className={styles.dueLabel}>Project</span><span>{task.project.title}</span></p>}
-                        {task.assignee && <p className={styles.meta}><span className={styles.dueLabel}>Assignee</span><span>{[task.assignee.fname, task.assignee.lname].filter(Boolean).join(' ') || task.assignee.primaryEmail}</span></p>}
+                        <p className={styles.meta}><span className={styles.dueLabel}>Assignee</span><span>{task.assignee ? ([task.assignee.fname, task.assignee.lname].filter(Boolean).join(' ') || task.assignee.primaryEmail) : 'Unassigned'}</span></p>
                         {visibleTags.length > 0 && <div className={styles.meta}><span className={styles.dueLabel}>Tags</span><span className={styles.tagList}>{visibleTags.map((tag) => <span className={`${styles.tag} ${styles[`tag_${tag.color}`]}`} key={tag.id}>{tag.name}</span>)}{remainingTagCount > 0 && <span className={`${styles.tag} ${styles.tagMore}`} aria-label={`${remainingTagCount} more tags`}>+{remainingTagCount}</span>}</span></div>}
                         {formattedDueDate && <p className={styles.meta}><span className={styles.dueLabel}>{dueState?.label ?? 'Due'}</span><span>{formattedDueDate}</span></p>}
                     </div>
                     <div className={styles.cardControls}>
-                        {task.capabilities?.canEdit !== false && <><label className={styles.completion}><input type="checkbox" checked={task.status === 'completed'} disabled={mutation.busy} onChange={handleCompletion} aria-label={`${task.status === 'completed' ? 'Reopen' : 'Complete'} ${task.title}`} /><span>{task.status === 'completed' ? 'Completed' : 'Complete'}</span></label>
-                        <TaskActions taskId={task.id} disabled={mutation.busy} onEdit={() => { resetDraft(); setEditing(true); }} onDelete={() => setConfirmingDelete(true)} onAddChecklist={(task.checklistItems ?? []).length === 0 ? () => setChecklistOpenRequest((current) => current + 1) : undefined} /></>}
+                        {(task.capabilities?.canJoin || task.capabilities?.canLeave) && <button className={styles.participation} type="button" disabled={mutation.busy} onClick={handleParticipation}>{task.capabilities.canJoin ? 'Join task' : 'Leave task'}</button>}
+                        {task.capabilities?.canEdit !== false && <label className={styles.completion}><input type="checkbox" checked={task.status === 'completed'} disabled={mutation.busy} onChange={handleCompletion} aria-label={`${task.status === 'completed' ? 'Reopen' : 'Complete'} ${task.title}`} /><span>{task.status === 'completed' ? 'Completed' : 'Complete'}</span></label>}
+                        {(task.capabilities?.canEdit !== false || task.capabilities?.canJoin || task.capabilities?.canLeave) && <TaskActions taskId={task.id} disabled={mutation.busy} onParticipation={(task.capabilities?.canJoin || task.capabilities?.canLeave) ? handleParticipation : undefined} participationLabel={task.capabilities?.canJoin ? 'Join task' : 'Leave task'} onEdit={task.capabilities?.canEdit !== false ? () => { resetDraft(); setEditing(true); } : undefined} onDelete={task.capabilities?.canDelete ? () => setConfirmingDelete(true) : undefined} onAddChecklist={task.capabilities?.canEdit !== false && (task.checklistItems ?? []).length === 0 ? () => setChecklistOpenRequest((current) => current + 1) : undefined} />}
                     </div>
                 </>
             )}

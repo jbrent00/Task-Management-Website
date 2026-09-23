@@ -10,9 +10,13 @@ import { removeMember, transferOwnership, updateMember } from './projectMembers'
 import { createProjectTask, getProjectTasks } from './projectTasks';
 import { archiveProject, getProjects, updateProject } from './projects';
 import updateTask from './updateTask';
+import { joinTask, leaveTask } from './taskParticipation';
+import { getNotifications, markNotificationsRead } from './notifications';
+import deleteTask from './deleteTask';
+import bulkUpdateTasks from './bulkUpdateTasks';
 
 type Controller = (req: Request, res: Response) => void | Promise<void>;
-type Invocation = { userId: string; params?: Record<string, string>; body?: Record<string, unknown> };
+type Invocation = { userId: string; params?: Record<string, string>; body?: Record<string, unknown>; query?: Record<string, string> };
 
 const runId = `collab_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 const users = {
@@ -25,10 +29,10 @@ const users = {
 const emails = Object.fromEntries(Object.entries(users).map(([key, id]) => [key, `${id}@example.test`])) as Record<keyof typeof users, string>;
 const projectIds: number[] = [];
 
-async function invoke(controller: Controller, { userId, params = {}, body = {} }: Invocation) {
+async function invoke(controller: Controller, { userId, params = {}, body = {}, query = {} }: Invocation) {
     let statusCode = 200;
     let responseBody: unknown;
-    const req = { params, body, auth: () => ({ userId, tokenType: 'session_token' }) } as unknown as Request;
+    const req = { params, body, query, auth: () => ({ userId, tokenType: 'session_token' }) } as unknown as Request;
     const res = {
         status(code: number) { statusCode = code; return this; },
         json(value: unknown) { responseBody = value; return this; },
@@ -149,6 +153,146 @@ test('member removal clears project task assignments', async () => {
     assert.equal(response.status, 204);
     assert.equal(await prisma.projectMembership.findUnique({ where: { projectId_userId: { projectId: project.id, userId: users.member } } }), null);
     assert.equal((await prisma.task.findUniqueOrThrow({ where: { id: task.id } })).assigneeId, null);
+});
+
+test('project policy defaults preserve the existing open editor workflow', async () => {
+    const project = await createProject('policy defaults', [
+        { userId: users.owner, role: 'owner' }, { userId: users.editor, role: 'editor' },
+    ]);
+    const stored = await prisma.project.findUniqueOrThrow({ where: { id: project.id } });
+    assert.equal(stored.editorsCanCreateTasks, true);
+    assert.equal(stored.editorsCanAssignOthers, true);
+    assert.equal(stored.editorsCanEditAllTasks, true);
+    assert.equal(stored.editorsCanSelfAssign, true);
+});
+
+test('restricted editor policies are enforced for creation, editing, and assignment', async () => {
+    const project = await prisma.project.create({ data: {
+        title: `${runId} restricted policies`, editorsCanCreateTasks: false, editorsCanAssignOthers: false, editorsCanEditAllTasks: false, editorsCanSelfAssign: true,
+        memberships: { create: [{ userId: users.owner, role: 'owner' }, { userId: users.editor, role: 'editor' }, { userId: users.member, role: 'editor' }] },
+    } });
+    projectIds.push(project.id);
+    const ownerTask = await createTask(project.id);
+    const body = { title: 'Blocked edit', description: null, priority: 'low', status: 'todo', dueDate: null, tagIds: [], assigneeId: null };
+    assert.equal((await invoke(updateTask, { userId: users.editor, params: { id: String(ownerTask.id) }, body })).status, 403);
+    assert.equal((await invoke(createProjectTask, { userId: users.editor, params: { projectId: String(project.id) }, body: { title: 'No', description: null, priority: 'low', dueDate: null, orderIndex: 0, assigneeId: null, tagIds: [], checklistItems: [] } })).status, 403);
+
+    const editorTask = await prisma.task.create({ data: { title: 'Editor task', status: 'todo', priority: 'low', orderIndex: 0, projectId: project.id, createdById: users.editor } });
+    assert.equal((await invoke(updateTask, { userId: users.editor, params: { id: String(editorTask.id) }, body: { ...body, title: 'Allowed edit' } })).status, 200);
+    const assignOther = await invoke(updateTask, { userId: users.editor, params: { id: String(editorTask.id) }, body: { ...body, title: 'Assign other', assigneeId: users.member } });
+    assert.equal(assignOther.status, 403);
+});
+
+test('project settings endpoint persists every collaboration policy and remains owner-only', async () => {
+    const project = await createProject('settings persistence', [
+        { userId: users.owner, role: 'owner' }, { userId: users.editor, role: 'editor' },
+    ]);
+    const policies = {
+        editorsCanCreateTasks: false,
+        editorsCanAssignOthers: false,
+        editorsCanEditAllTasks: false,
+        editorsCanSelfAssign: false,
+    };
+    const ownerResponse = await invoke(updateProject, {
+        userId: users.owner,
+        params: { id: String(project.id) },
+        body: { title: project.title, description: null, ...policies },
+    });
+    assert.equal(ownerResponse.status, 200);
+    assert.deepEqual(
+        Object.fromEntries(Object.keys(policies).map((key) => [key, (ownerResponse.body as Record<string, unknown>)[key]])),
+        policies,
+    );
+    const stored = await prisma.project.findUniqueOrThrow({ where: { id: project.id } });
+    for (const [key, value] of Object.entries(policies)) assert.equal(stored[key as keyof typeof policies], value);
+
+    assert.equal((await invoke(updateProject, {
+        userId: users.editor,
+        params: { id: String(project.id) },
+        body: { title: project.title, description: null, editorsCanCreateTasks: true },
+    })).status, 403);
+    assert.equal((await invoke(updateProject, {
+        userId: users.owner,
+        params: { id: String(project.id) },
+        body: { title: project.title, description: null, editorsCanCreateTasks: 'yes' },
+    })).status, 400);
+});
+
+test('edit-all and self-assignment policies govern edit, delete, reorder, join, and leave', async () => {
+    const project = await prisma.project.create({ data: {
+        title: `${runId} operation policies`, editorsCanCreateTasks: true, editorsCanAssignOthers: false,
+        editorsCanEditAllTasks: false, editorsCanSelfAssign: false,
+        memberships: { create: [{ userId: users.owner, role: 'owner' }, { userId: users.editor, role: 'editor' }] },
+    } });
+    projectIds.push(project.id);
+    const ownerTask = await createTask(project.id);
+    const editorTask = await prisma.task.create({ data: {
+        title: `${runId} editor task`, status: 'todo', priority: 'low', orderIndex: 1,
+        projectId: project.id, createdById: users.editor,
+    } });
+    const assignedTask = await createTask(project.id, users.editor);
+    const taskBody = { description: null, priority: 'low', status: 'todo', dueDate: null, tagIds: [] };
+
+    assert.equal((await invoke(updateTask, {
+        userId: users.editor, params: { id: String(ownerTask.id) }, body: { ...taskBody, title: 'Blocked', assigneeId: null },
+    })).status, 403);
+    assert.equal((await invoke(deleteTask, { userId: users.editor, params: { id: String(ownerTask.id) } })).status, 403);
+    assert.equal((await invoke(bulkUpdateTasks, {
+        userId: users.editor, body: { tasks: [{ id: ownerTask.id, orderIndex: 2, status: 'todo' }] },
+    })).status, 403);
+    assert.equal((await invoke(joinTask, { userId: users.editor, params: { id: String(ownerTask.id) } })).status, 403);
+    assert.equal((await invoke(leaveTask, { userId: users.editor, params: { id: String(assignedTask.id) } })).status, 403);
+
+    assert.equal((await invoke(updateTask, {
+        userId: users.editor, params: { id: String(editorTask.id) }, body: { ...taskBody, title: 'Editor-owned edit', assigneeId: null },
+    })).status, 200);
+    assert.equal((await invoke(updateTask, {
+        userId: users.editor, params: { id: String(assignedTask.id) }, body: { ...taskBody, title: 'Assigned edit', assigneeId: users.editor },
+    })).status, 200);
+    assert.equal((await invoke(bulkUpdateTasks, {
+        userId: users.editor, body: { tasks: [{ id: editorTask.id, orderIndex: 3, status: 'in_progress' }] },
+    })).status, 200);
+
+    assert.equal((await invoke(createProjectTask, {
+        userId: users.owner, params: { projectId: String(project.id) }, body: {
+            title: 'Owner override', description: null, priority: 'low', dueDate: null,
+            orderIndex: 4, assigneeId: users.editor, tagIds: [], checklistItems: [],
+        },
+    })).status, 201);
+});
+
+test('concurrent joins allow exactly one claim and leave releases the task', async () => {
+    const project = await createProject('task participation', [
+        { userId: users.owner, role: 'owner' }, { userId: users.editor, role: 'editor' },
+    ]);
+    const task = await createTask(project.id);
+    const request = { userId: users.editor, params: { id: String(task.id) } };
+    const joins = await Promise.all([invoke(joinTask, request), invoke(joinTask, request)]);
+    assert.deepEqual(joins.map((response) => response.status).sort(), [200, 409]);
+    assert.equal((await prisma.task.findUniqueOrThrow({ where: { id: task.id } })).assigneeId, users.editor);
+    assert.equal((await invoke(leaveTask, request)).status, 200);
+    assert.equal((await prisma.task.findUniqueOrThrow({ where: { id: task.id } })).assigneeId, null);
+});
+
+test('assignment and membership changes create private, readable notifications', async () => {
+    const project = await createProject('notifications', [
+        { userId: users.owner, role: 'owner' }, { userId: users.editor, role: 'editor' }, { userId: users.member, role: 'viewer' },
+    ]);
+    const task = await createTask(project.id);
+    const taskBody = { title: task.title, description: null, priority: 'low', status: 'todo', dueDate: null, tagIds: [], assigneeId: users.editor };
+    assert.equal((await invoke(updateTask, { userId: users.owner, params: { id: String(task.id) }, body: taskBody })).status, 200);
+    assert.equal((await invoke(updateMember, { userId: users.owner, params: { projectId: String(project.id), userId: users.member }, body: { role: 'editor' } })).status, 200);
+
+    const editorInbox = await invoke(getNotifications, { userId: users.editor, query: { limit: '20' } });
+    assert.equal(editorInbox.status, 200);
+    const editorBody = editorInbox.body as { unreadCount: number; items: Array<{ kind: string; notification?: { id: number; type: string } }> };
+    const assignment = editorBody.items.find((item) => item.notification?.type === 'task_assigned')?.notification;
+    assert.ok(assignment);
+    assert.ok(editorBody.unreadCount >= 1);
+    assert.equal((await invoke(markNotificationsRead, { userId: users.member, body: { ids: [assignment.id] } })).status, 200);
+    assert.equal((await prisma.notification.findUniqueOrThrow({ where: { id: assignment.id } })).readAt, null);
+    assert.equal((await invoke(markNotificationsRead, { userId: users.editor, body: { ids: [assignment.id] } })).status, 200);
+    assert.ok((await prisma.notification.findUniqueOrThrow({ where: { id: assignment.id } })).readAt);
 });
 
 test('archived projects reject mutations and stay out of active project and task results', async () => {

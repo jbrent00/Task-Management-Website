@@ -8,6 +8,7 @@ import projectRoutes from './routes/projects';
 import tagRoutes from './routes/tags';
 import createUser from './controllers/createUser';
 import projectInvitationRoutes from './routes/projectInvitations';
+import notificationRoutes from './routes/notifications';
 import { ensureCurrentUserProfile } from './services/userProfile';
 
 const app = express();
@@ -40,6 +41,7 @@ const authenticated = [requireAuth(), async (req: express.Request, res: express.
 app.use("/tasks", ...authenticated, taskRoutes);
 app.use('/projects', ...authenticated, projectRoutes);
 app.use('/project-invitations', ...authenticated, projectInvitationRoutes);
+app.use('/notifications', ...authenticated, notificationRoutes);
 app.use('/tags', ...authenticated, tagRoutes);
 
 app.get("/api/health", (req, res) => {

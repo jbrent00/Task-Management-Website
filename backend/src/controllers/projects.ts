@@ -3,6 +3,7 @@ import { getAuth } from '@clerk/express';
 import { prisma } from '../services/prisma';
 import { getProjectAccess } from '../services/authorization';
 import { cleanOptionalText, cleanRequiredText } from './validation';
+import { canCreateProjectTask } from '../services/projectPolicy';
 
 const personSelect = { id: true, fname: true, lname: true, primaryEmail: true, imageUrl: true } as const;
 
@@ -12,17 +13,21 @@ export async function getProjects(req: Request, res: Response) {
         const memberships = await prisma.projectMembership.findMany({
             where: { userId },
             include: { project: { include: {
-                tasks: { select: { status: true } },
+                tasks: { select: { status: true, updatedAt: true, dueDate: true, assigneeId: true } },
                 memberships: { include: { user: { select: personSelect } }, orderBy: { joinedAt: 'asc' } },
             } } },
             orderBy: { project: { title: 'asc' } },
         });
+        const now = new Date();
         res.json(memberships.map(({ role, project }) => ({
             id: project.id, title: project.title, description: project.description, createdAt: project.createdAt, updatedAt: project.updatedAt,
             archivedAt: project.archivedAt, role, memberCount: project.memberships.length,
             members: project.memberships.map((item) => ({ ...item.user, role: item.role, userId: item.userId })),
             taskCount: project.tasks.length, completedTaskCount: project.tasks.filter((task) => task.status === 'completed').length,
-            capabilities: { canEdit: role === 'owner', canManageMembers: role === 'owner', canCreateTasks: role !== 'viewer' && !project.archivedAt },
+            overdueTaskCount: project.tasks.filter((task) => task.status !== 'completed' && task.dueDate && task.dueDate < now).length,
+            unassignedTaskCount: project.tasks.filter((task) => task.status !== 'completed' && !task.assigneeId).length,
+            lastActivityAt: new Date(Math.max(project.updatedAt.getTime(), ...project.tasks.map((task) => task.updatedAt.getTime()), ...project.memberships.map((item) => item.joinedAt.getTime()))),
+            capabilities: { canEdit: role === 'owner', canManageMembers: role === 'owner', canCreateTasks: canCreateProjectTask(role, project) },
         })));
     } catch (error) { console.error(error); res.status(500).json({ error: 'Failed to fetch projects' }); }
 }
@@ -40,6 +45,7 @@ export async function getProject(req: Request, res: Response) {
         canEditProject: access.role === 'owner' && !project?.archivedAt,
         canManageMembers: access.role === 'owner' && !project?.archivedAt,
         canEditTasks: access.role !== 'viewer' && !project?.archivedAt,
+        canCreateTasks: project ? canCreateProjectTask(access.role, project) : false,
         canRestore: access.role === 'owner' && Boolean(project?.archivedAt),
         canDelete: access.role === 'owner',
     } });
@@ -51,7 +57,7 @@ export async function createProject(req: Request, res: Response) {
     if (!title || description === undefined) { res.status(400).json({ error: 'Project title is required and description must be at most 500 characters' }); return; }
     try {
         const project = await prisma.project.create({ data: { title, description, memberships: { create: { userId, role: 'owner' } } }, include: { memberships: { include: { user: { select: personSelect } } } } });
-        res.status(201).json({ ...project, role: 'owner', memberCount: 1, taskCount: 0, completedTaskCount: 0, members: project.memberships.map((item) => ({ ...item.user, role: item.role, userId: item.userId })), capabilities: { canEdit: true, canManageMembers: true, canCreateTasks: true } });
+        res.status(201).json({ ...project, role: 'owner', memberCount: 1, taskCount: 0, completedTaskCount: 0, overdueTaskCount: 0, unassignedTaskCount: 0, lastActivityAt: project.createdAt, members: project.memberships.map((item) => ({ ...item.user, role: item.role, userId: item.userId })), capabilities: { canEdit: true, canManageMembers: true, canCreateTasks: true } });
     } catch (error) { console.error(error); res.status(500).json({ error: 'Failed to create project' }); }
 }
 
@@ -63,7 +69,10 @@ export async function updateProject(req: Request, res: Response) {
     if (access.project.archivedAt) { res.status(403).json({ error: 'Restore the project before editing it' }); return; }
     const title = cleanRequiredText(req.body.title, 100); const description = cleanOptionalText(req.body.description, 500);
     if (!title || description === undefined) { res.status(400).json({ error: 'Invalid project details' }); return; }
-    res.json(await prisma.project.update({ where: { id }, data: { title, description } }));
+    const policyKeys = ['editorsCanCreateTasks', 'editorsCanAssignOthers', 'editorsCanEditAllTasks', 'editorsCanSelfAssign'] as const;
+    if (policyKeys.some((key) => key in req.body && typeof req.body[key] !== 'boolean')) { res.status(400).json({ error: 'Invalid collaboration settings' }); return; }
+    const policies = Object.fromEntries(policyKeys.filter((key) => key in req.body).map((key) => [key, req.body[key]]));
+    res.json(await prisma.project.update({ where: { id }, data: { title, description, ...policies } }));
 }
 
 async function setArchived(req: Request, res: Response, archived: boolean) {

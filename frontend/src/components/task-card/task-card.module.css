@@ -62,3 +62,4 @@
 .dialog { display: grid; width: min(100%, 420px); gap: 12px; padding: 18px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); box-shadow: var(--shadow-md); }
 .dialog h2, .dialog p { margin: 0; }
 .dialogActions { display: flex; justify-content: flex-end; gap: 8px; }
+.participation { min-height: 32px; padding: 0 10px; border: 1px solid var(--primary); border-radius: 7px; background: var(--primary-soft); color: var(--primary); font-weight: 750; }
