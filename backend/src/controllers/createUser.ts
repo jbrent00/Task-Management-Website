@@ -1,26 +1,16 @@
 import { verifyWebhook } from '@clerk/express/webhooks'
-import { prisma } from "../services/prisma";
 import type { Request, Response } from "express";
+import { syncUserProfile } from '../services/userProfile';
 
 async function createUser(req: Request, res: Response) {
   try {
     const evt = await verifyWebhook(req);
 
-    if (evt.type !== 'user.created') {
+    if (evt.type !== 'user.created' && evt.type !== 'user.updated') {
       return res.status(200).send('Event ignored');
     }
 
-    const { id, first_name, last_name } = evt.data;
-
-    const newUser =await prisma.user.upsert({
-      where: { id },
-      update: {},
-      create: {
-        id,
-        fname: first_name,
-        lname: last_name,
-      },
-    });
+    const newUser = await syncUserProfile(evt.data);
 
      console.log('Created new user:', newUser); // REMOVE LATER ON
 

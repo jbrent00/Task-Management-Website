@@ -3,7 +3,7 @@ import styles from './task-assignment-fields.module.css';
 
 const colors = ['slate', 'red', 'orange', 'yellow', 'green', 'teal', 'blue', 'purple'];
 
-function TaskAssignmentFields({ projects, tags, projectId, tagIds, onProjectChange, onTagIdsChange, onCreateTag }) {
+function TaskAssignmentFields({ projects = [], tags, projectId, tagIds, onProjectChange, onTagIdsChange, onCreateTag, showProject = true, members = [], assigneeId = null, onAssigneeChange }) {
     const [newTagName, setNewTagName] = useState('');
     const [newTagColor, setNewTagColor] = useState('blue');
     const [creating, setCreating] = useState(false);
@@ -22,12 +22,13 @@ function TaskAssignmentFields({ projects, tags, projectId, tagIds, onProjectChan
         } finally { setCreating(false); }
     };
     return <div className={styles.assignments}>
-        <label className={styles.field}>Project
+        {showProject && <label className={styles.field}>Project
             <select value={projectId ?? ''} onChange={(event) => onProjectChange(event.target.value ? Number(event.target.value) : null)}>
                 <option value="">No project</option>
                 {projects.map((project) => <option key={project.id} value={project.id}>{project.title}</option>)}
             </select>
-        </label>
+        </label>}
+        {onAssigneeChange && <label className={styles.field}>Assignee<select value={assigneeId ?? ''} onChange={(event) => onAssigneeChange(event.target.value || null)}><option value="">Unassigned</option>{members.filter((member) => member.role !== 'viewer').map((member) => <option key={member.userId} value={member.userId}>{[member.user?.fname, member.user?.lname].filter(Boolean).join(' ') || member.user?.primaryEmail || 'Member'}</option>)}</select></label>}
         <fieldset className={styles.tags}><legend>Tags</legend>
             <div className={styles.tagList}>{tags.map((tag) => <label className={styles.tagLabel} key={tag.id}><input type="checkbox" checked={tagIds.includes(tag.id)} onChange={() => toggleTag(tag.id)} /><span className={`${styles.tag} ${styles[`tag_${tag.color}`]}`}>{tag.name}</span></label>)}</div>
             <div className={styles.newTag}><input aria-label="New tag name" maxLength="24" value={newTagName} onChange={(event) => setNewTagName(event.target.value)} placeholder="New tag" /><select aria-label="New tag color" value={newTagColor} onChange={(event) => setNewTagColor(event.target.value)}>{colors.map((color) => <option key={color} value={color}>{color}</option>)}</select><button type="button" onClick={submitTag} disabled={creating || !newTagName.trim()}>Add tag</button></div>

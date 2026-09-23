@@ -3,6 +3,7 @@ import { getAuth } from '@clerk/express';
 import { prisma } from '../services/prisma';
 import { Prisma } from '../../generated/prisma/client';
 import { cleanRequiredText, isChecklistOrderInput } from './validation';
+import { getTaskAccess } from '../services/authorization';
 
 const getIds = (req: Request) => ({ taskId: Number(req.params.taskId), itemId: Number(req.params.itemId) });
 
@@ -10,9 +11,11 @@ async function ownedTaskId(req: Request, res: Response) {
     const { userId } = getAuth(req);
     const taskId = Number(req.params.taskId);
     if (!userId) { res.status(401).json({ error: 'Unauthorized' }); return null; }
-    if (!Number.isInteger(taskId) || !await prisma.task.findFirst({ where: { id: taskId, userId }, select: { id: true } })) {
+    const access = Number.isInteger(taskId) ? await getTaskAccess(taskId, userId) : null;
+    if (!access) {
         res.status(404).json({ error: 'Task not found' }); return null;
     }
+    if (!access.canEdit) { res.status(403).json({ error: 'You cannot edit this checklist' }); return null; }
     return taskId;
 }
 

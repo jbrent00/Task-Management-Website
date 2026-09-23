@@ -1,12 +1,14 @@
 // Backend entry point
 import express from "express";
 import cors from "cors";
-import { clerkMiddleware, clerkClient, requireAuth, getAuth } from '@clerk/express'
+import { clerkMiddleware, requireAuth, getAuth } from '@clerk/express'
 import { prisma } from "./services/prisma";
 import taskRoutes from './routes/tasks';
 import projectRoutes from './routes/projects';
 import tagRoutes from './routes/tags';
 import createUser from './controllers/createUser';
+import projectInvitationRoutes from './routes/projectInvitations';
+import { ensureCurrentUserProfile } from './services/userProfile';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -30,12 +32,23 @@ app.use(cors({
 app.use(express.json());
 
 // Routes
-app.use("/tasks", requireAuth(), taskRoutes);
-app.use('/projects', requireAuth(), projectRoutes);
-app.use('/tags', requireAuth(), tagRoutes);
+const authenticated = [requireAuth(), async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+  const { userId } = getAuth(req);
+  try { if (userId) await ensureCurrentUserProfile(userId); next(); }
+  catch (error) { console.error('Failed to synchronize user profile', error); res.status(500).json({ error: 'Failed to load user profile' }); }
+}] as const;
+app.use("/tasks", ...authenticated, taskRoutes);
+app.use('/projects', ...authenticated, projectRoutes);
+app.use('/project-invitations', ...authenticated, projectInvitationRoutes);
+app.use('/tags', ...authenticated, tagRoutes);
 
 app.get("/api/health", (req, res) => {
   res.json({ status: "Backend is running!" });
+});
+
+app.use((error: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  console.error('Unhandled request error', error);
+  if (!res.headersSent) res.status(500).json({ error: 'The request could not be completed' });
 });
 
 // Start server

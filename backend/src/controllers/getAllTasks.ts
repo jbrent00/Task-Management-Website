@@ -1,32 +1,25 @@
-// This file handles querying the database to get all tasks
 import { prisma } from '../services/prisma';
-import type { Request, Response } from "express";
+import type { Request, Response } from 'express';
 import { getAuth } from '@clerk/express';
 import { serializeTask, taskInclude } from './taskResponse';
 
-async function getAllTasks(req: Request, res: Response) {
+export default async function getAllTasks(req: Request, res: Response) {
+    const { userId } = getAuth(req);
+    if (!userId) { res.status(401).json({ error: 'Unauthorized' }); return; }
     try {
-        const { userId } = getAuth(req);
-
-        if (!userId) {
-            res.status(401).json({ error: "Unauthorized" });
-            return;
-        }
-
         const tasks = await prisma.task.findMany({
-            where: {
-                userId
-            },
+            where: { OR: [
+                { projectId: null, createdById: userId },
+                { assigneeId: userId, project: { archivedAt: null, memberships: { some: { userId } } } },
+            ] },
             include: taskInclude,
         });
-        
-        res.json(tasks.map(serializeTask));
+        const projectIds = [...new Set(tasks.flatMap((task) => task.projectId ? [task.projectId] : []))];
+        const memberships = await prisma.projectMembership.findMany({ where: { userId, projectId: { in: projectIds } } });
+        const roles = new Map(memberships.map((item) => [item.projectId, item.role]));
+        res.json(tasks.map((task) => serializeTask(task, !task.projectId || roles.get(task.projectId) !== 'viewer')));
     } catch (error) {
-        console.error("Error fetching tasks: ", error);
-        res.status(500).json({error: "Failed to fetch tasks"});
-    } 
+        console.error('Error fetching tasks:', error);
+        res.status(500).json({ error: 'Failed to fetch tasks' });
+    }
 }
-
-
-
-export default getAllTasks;

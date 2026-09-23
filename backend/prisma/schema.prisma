@@ -8,16 +8,46 @@ datasource db {
 }
 
 model Project {
-  id              Int      @id @default(autoincrement())
-  title           String
-  normalizedTitle String
-  description     String?
-  createdAt       DateTime @default(now())
-  userId          String
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  tasks           Task[]
+  id          Int                 @id @default(autoincrement())
+  title       String
+  description String?
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  archivedAt  DateTime?
+  memberships ProjectMembership[]
+  invitations ProjectInvitation[]
+  tasks       Task[]
+  tags        ProjectTag[]
+}
 
-  @@unique([userId, normalizedTitle])
+model ProjectMembership {
+  projectId Int
+  userId    String
+  role      ProjectRole
+  joinedAt  DateTime    @default(now())
+  project   Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([projectId, userId])
+  @@index([userId, role])
+}
+
+model ProjectInvitation {
+  id              Int              @id @default(autoincrement())
+  projectId       Int
+  inviterId       String
+  email           String
+  normalizedEmail String
+  role            ProjectRole
+  status          InvitationStatus @default(pending)
+  expiresAt       DateTime
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  project         Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  inviter         User             @relation("InvitedBy", fields: [inviterId], references: [id], onDelete: Cascade)
+
+  @@index([normalizedEmail, status, expiresAt])
+  @@index([projectId, normalizedEmail, status])
 }
 
 model Tag {
@@ -32,22 +62,41 @@ model Tag {
   @@unique([userId, normalizedName])
 }
 
+model ProjectTag {
+  id             Int              @id @default(autoincrement())
+  name           String
+  normalizedName String
+  color          String
+  projectId      Int
+  project        Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  taskTags       ProjectTaskTag[]
+
+  @@unique([projectId, normalizedName])
+}
+
 model Task {
-  id          Int          @id @default(autoincrement())
-  title       String
-  description String?
-  status      TaskStatus
-  priority    TaskPriority
-  dueDate     DateTime?
-  completedAt DateTime?
-  createdAt   DateTime     @default(now())
-  orderIndex  Int          @default(0)
-  projectId   Int?
-  userId      String
-  project     Project?     @relation(fields: [projectId], references: [id], onDelete: SetNull)
-  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  taskTags    TaskTag[]
-  checklistItems ChecklistItem[]
+  id              Int              @id @default(autoincrement())
+  title           String
+  description     String?
+  status          TaskStatus
+  priority        TaskPriority
+  dueDate         DateTime?
+  completedAt     DateTime?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  orderIndex      Int              @default(0)
+  projectId       Int?
+  createdById     String
+  assigneeId      String?
+  project         Project?         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdBy       User             @relation("TasksCreated", fields: [createdById], references: [id], onDelete: Cascade)
+  assignee        User?            @relation("TasksAssigned", fields: [assigneeId], references: [id], onDelete: SetNull)
+  taskTags        TaskTag[]
+  projectTaskTags ProjectTaskTag[]
+  checklistItems  ChecklistItem[]
+
+  @@index([createdById, projectId])
+  @@index([assigneeId, projectId])
 }
 
 model ChecklistItem {
@@ -70,15 +119,41 @@ model TaskTag {
   @@id([taskId, tagId])
 }
 
+model ProjectTaskTag {
+  taskId Int
+  tagId  Int
+  tag    ProjectTag @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  task   Task       @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@id([taskId, tagId])
+}
+
 model User {
-  id                String             @id  // Clerk's user ID, e.g. "user_2abc123xyz"
+  id                String              @id
   fname             String?
   lname             String?
-  createdAt         DateTime           @default(now())
-  projects          Project[]
+  primaryEmail      String?
+  imageUrl          String?
+  createdAt         DateTime            @default(now())
+  memberships       ProjectMembership[]
+  invitationsSent   ProjectInvitation[] @relation("InvitedBy")
+  emails            UserEmail[]
   tags              Tag[]
-  tasks             Task[]
+  tasksCreated      Task[]              @relation("TasksCreated")
+  tasksAssigned     Task[]              @relation("TasksAssigned")
   aiGenerationLimit AiGenerationLimit?
+}
+
+model UserEmail {
+  id              Int     @id @default(autoincrement())
+  userId          String
+  email           String
+  normalizedEmail String
+  primary         Boolean @default(false)
+  user            User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, normalizedEmail])
+  @@index([normalizedEmail])
 }
 
 model AiGenerationLimit {
@@ -86,6 +161,20 @@ model AiGenerationLimit {
   windowStartedAt DateTime
   requestCount    Int      @default(0)
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum ProjectRole {
+  owner
+  editor
+  viewer
+}
+
+enum InvitationStatus {
+  pending
+  accepted
+  declined
+  revoked
+  expired
 }
 
 enum TaskPriority {
