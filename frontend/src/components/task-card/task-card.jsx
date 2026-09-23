@@ -10,9 +10,10 @@ import { getTaskDueState } from '../../functions/taskViews';
 import TaskAssignmentFields from '../task-assignment-fields/task-assignment-fields';
 import Checklist from '../checklist/checklist';
 import { joinProjectTask, leaveProjectTask } from '../../api/projectTasks';
+import { canChangeProjectTaskAssignment } from '../../functions/projectAssignmentPolicy';
 
 function TaskCard ({task, setAllTasks, projects = [], tags = [], members = [], projectMode = false, onCreateTag, onNotify, dragHandleProps, isDragEnabled}) {
-    const { getToken } = useAuth();
+    const { getToken, userId } = useAuth();
     const mutation = useTaskMutation();
     const [checklistOpenRequest, setChecklistOpenRequest] = useState(0);
     const editTitle = useRef(null);
@@ -30,6 +31,13 @@ function TaskCard ({task, setAllTasks, projects = [], tags = [], members = [], p
     const [saving, setSaving] = useState(false);
     const [confirmingDelete, setConfirmingDelete] = useState(false);
     const [deleting, setDeleting] = useState(false);
+    const project = task.projectId ? projects.find((item) => item.id === task.projectId) : null;
+    const eligibleAssignees = project
+        ? members.filter((member) => member.role !== 'viewer' && canChangeProjectTaskAssignment(project, userId, task.assigneeId ?? null, member.userId))
+        : members;
+    const allowUnassigned = project ? canChangeProjectTaskAssignment(project, userId, task.assigneeId ?? null, null) : true;
+    const canChooseAnotherAssignee = allowUnassigned && task.assigneeId !== null
+        || eligibleAssignees.some((member) => member.userId !== task.assigneeId);
     useEffect(() => { if (editing) editTitle.current?.focus(); }, [editing]);
     useEffect(() => { if (confirmingDelete) deleteCancel.current?.focus(); }, [confirmingDelete]);
 
@@ -130,7 +138,7 @@ function TaskCard ({task, setAllTasks, projects = [], tags = [], members = [], p
                         <label htmlFor={`task-${task.id}-title`}>Title</label>
                         <input ref={editTitle} id={`task-${task.id}-title`} type="text" value={title} maxLength="100" required onChange={(event) => setTitle(event.target.value)} />
                     </div>
-                    {(!task.projectId || projectMode) && <TaskAssignmentFields projects={projects} tags={tags} projectId={projectId} tagIds={tagIds} onProjectChange={setProjectId} onTagIdsChange={setTagIds} onCreateTag={onCreateTag} showProject={false} members={members} assigneeId={assigneeId} onAssigneeChange={task.projectId && task.capabilities?.canAssignOthers !== false ? setAssigneeId : undefined} />}
+                    {(!task.projectId || projectMode) && <TaskAssignmentFields projects={projects} tags={tags} projectId={projectId} tagIds={tagIds} onProjectChange={setProjectId} onTagIdsChange={setTagIds} onCreateTag={onCreateTag} showProject={false} members={eligibleAssignees} assigneeId={assigneeId} allowUnassigned={allowUnassigned} onAssigneeChange={task.projectId && canChooseAnotherAssignee ? setAssigneeId : undefined} />}
                     <div className={styles.field}>
                         <label htmlFor={`task-${task.id}-description`}>Description</label>
                         <textarea id={`task-${task.id}-description`} value={description} maxLength="500" onChange={(event) => setDescription(event.target.value)} />

@@ -29,9 +29,17 @@ export function canEditProjectTask(role: ProjectRole, project: ProjectTaskPolicy
 
 export function canChangeAssignment(role: ProjectRole, project: ProjectTaskPolicy, userId: string, currentAssigneeId: string | null, nextAssigneeId: string | null) {
     if (project.archivedAt || role === 'viewer') return false;
-    if (role === 'owner' || project.editorsCanAssignOthers) return true;
+    if (role === 'owner') return true;
     if (currentAssigneeId === nextAssigneeId) return true;
-    if (nextAssigneeId === userId && currentAssigneeId === null) return project.editorsCanJoinTasks;
-    if (currentAssigneeId === userId && nextAssigneeId === null) return project.editorsCanLeaveTasks;
-    return false;
+
+    // Model an assignment change by its independent effects. These checks map
+    // directly to additions/removals when tasks support multiple assignees.
+    const actorAdded = currentAssigneeId !== userId && nextAssigneeId === userId;
+    const actorRemoved = currentAssigneeId === userId && nextAssigneeId !== userId;
+    const otherAssigneeChanged = (currentAssigneeId !== null && currentAssigneeId !== userId)
+        || (nextAssigneeId !== null && nextAssigneeId !== userId);
+
+    return (!actorAdded || project.editorsCanJoinTasks)
+        && (!actorRemoved || project.editorsCanLeaveTasks)
+        && (!otherAssigneeChanged || project.editorsCanAssignOthers);
 }

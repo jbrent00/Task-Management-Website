@@ -40,6 +40,44 @@ test('applies each configurable editor task policy without limiting owners', () 
     assert.equal(canChangeAssignment('owner', restricted, 'owner', null, 'member'), true);
 });
 
+test('requires every policy implicated by an assignment transition', () => {
+    const base = { archivedAt: null, editorsCanCreateTasks: true, editorsCanEditAllTasks: true };
+    const policy = (assignOthers: boolean, join: boolean, leave: boolean) => ({
+        ...base,
+        editorsCanAssignOthers: assignOthers,
+        editorsCanJoinTasks: join,
+        editorsCanLeaveTasks: leave,
+    });
+    const cases = [
+        { name: 'unassigned to self', current: null, next: 'editor', required: [false, true, false] },
+        { name: 'other to self', current: 'member', next: 'editor', required: [true, true, false] },
+        { name: 'self to unassigned', current: 'editor', next: null, required: [false, false, true] },
+        { name: 'self to other', current: 'editor', next: 'member', required: [true, false, true] },
+        { name: 'unassigned to other', current: null, next: 'member', required: [true, false, false] },
+        { name: 'other to unassigned', current: 'member', next: null, required: [true, false, false] },
+        { name: 'other to different other', current: 'member', next: 'teammate', required: [true, false, false] },
+    ] as const;
+
+    for (const assignmentCase of cases) {
+        for (const assignOthers of [false, true]) {
+            for (const join of [false, true]) {
+                for (const leave of [false, true]) {
+                    const enabled = [assignOthers, join, leave];
+                    const expected = assignmentCase.required.every((required, index) => !required || enabled[index]);
+                    assert.equal(
+                        canChangeAssignment('editor', policy(assignOthers, join, leave), 'editor', assignmentCase.current, assignmentCase.next),
+                        expected,
+                        `${assignmentCase.name}: assignOthers=${assignOthers}, join=${join}, leave=${leave}`,
+                    );
+                }
+            }
+        }
+    }
+
+    assert.equal(canChangeAssignment('editor', policy(false, false, false), 'editor', 'editor', 'editor'), true);
+    assert.equal(canChangeAssignment('editor', policy(false, false, false), 'editor', 'member', 'member'), true);
+});
+
 test('archive and viewer rules override collaboration settings', () => {
     const archived = { archivedAt: new Date(), editorsCanCreateTasks: true, editorsCanAssignOthers: true, editorsCanEditAllTasks: true, editorsCanJoinTasks: true, editorsCanLeaveTasks: true };
     const task = { createdById: 'viewer', assigneeId: null };

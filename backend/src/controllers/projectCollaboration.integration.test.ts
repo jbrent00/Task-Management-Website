@@ -281,6 +281,64 @@ test('join and leave policies are enforced independently', async () => {
     assert.equal((await invoke(leaveTask, { ...editor, params: { id: String(unassigned.id) } })).status, 403);
 });
 
+test('assign-others cannot bypass join or leave policies', async () => {
+    const project = await prisma.project.create({ data: {
+        title: `${runId} assignment policy composition`, editorsCanAssignOthers: true,
+        editorsCanJoinTasks: false, editorsCanLeaveTasks: false,
+        memberships: { create: [
+            { userId: users.owner, role: 'owner' },
+            { userId: users.editor, role: 'editor' },
+            { userId: users.member, role: 'editor' },
+        ] },
+    } });
+    projectIds.push(project.id);
+    const unassigned = await createTask(project.id);
+    const assignedToEditor = await createTask(project.id, users.editor);
+    const assignedToMember = await createTask(project.id, users.member);
+    const taskBody = { title: 'Policy transition', description: null, priority: 'low', status: 'todo', dueDate: null, tagIds: [] };
+
+    assert.equal((await invoke(createProjectTask, {
+        userId: users.editor, params: { projectId: String(project.id) }, body: {
+            ...taskBody, orderIndex: 3, assigneeId: users.editor, checklistItems: [],
+        },
+    })).status, 403);
+    assert.equal((await invoke(createProjectTask, {
+        userId: users.editor, params: { projectId: String(project.id) }, body: {
+            ...taskBody, orderIndex: 3, assigneeId: users.member, checklistItems: [],
+        },
+    })).status, 201);
+    assert.equal((await invoke(updateTask, {
+        userId: users.editor, params: { id: String(unassigned.id) }, body: { ...taskBody, assigneeId: users.editor },
+    })).status, 403);
+    assert.equal((await invoke(updateTask, {
+        userId: users.editor, params: { id: String(assignedToMember.id) }, body: { ...taskBody, assigneeId: users.editor },
+    })).status, 403);
+    assert.equal((await invoke(updateTask, {
+        userId: users.editor, params: { id: String(assignedToEditor.id) }, body: { ...taskBody, assigneeId: null },
+    })).status, 403);
+    assert.equal((await invoke(updateTask, {
+        userId: users.editor, params: { id: String(assignedToEditor.id) }, body: { ...taskBody, assigneeId: users.member },
+    })).status, 403);
+
+    await prisma.project.update({ where: { id: project.id }, data: {
+        editorsCanAssignOthers: false, editorsCanJoinTasks: true, editorsCanLeaveTasks: true,
+    } });
+    assert.equal((await invoke(updateTask, {
+        userId: users.editor, params: { id: String(unassigned.id) }, body: { ...taskBody, assigneeId: users.editor },
+    })).status, 200);
+    assert.equal((await invoke(updateTask, {
+        userId: users.editor, params: { id: String(assignedToMember.id) }, body: { ...taskBody, assigneeId: users.editor },
+    })).status, 403);
+    assert.equal((await invoke(updateTask, {
+        userId: users.editor, params: { id: String(assignedToEditor.id) }, body: { ...taskBody, assigneeId: null },
+    })).status, 200);
+
+    const ownerOverride = await createTask(project.id, users.editor);
+    assert.equal((await invoke(updateTask, {
+        userId: users.owner, params: { id: String(ownerOverride.id) }, body: { ...taskBody, assigneeId: users.member },
+    })).status, 200);
+});
+
 test('concurrent joins allow exactly one claim and leave releases the task', async () => {
     const project = await createProject('task participation', [
         { userId: users.owner, role: 'owner' }, { userId: users.editor, role: 'editor' },
