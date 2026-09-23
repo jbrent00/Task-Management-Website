@@ -10,7 +10,7 @@ import { getTaskDueState } from '../../functions/taskViews';
 import TaskAssignmentFields from '../task-assignment-fields/task-assignment-fields';
 import Checklist from '../checklist/checklist';
 
-function TaskCard ({task, setAllTasks, projects = [], tags = [], onCreateTag, onNotify, dragHandleProps, isDragEnabled}) {
+function TaskCard ({task, setAllTasks, projects = [], tags = [], members = [], projectMode = false, onCreateTag, onNotify, dragHandleProps, isDragEnabled}) {
     const { getToken } = useAuth();
     const mutation = useTaskMutation();
     const [checklistOpenRequest, setChecklistOpenRequest] = useState(0);
@@ -25,6 +25,7 @@ function TaskCard ({task, setAllTasks, projects = [], tags = [], onCreateTag, on
     const [description, setDescription] = useState(task.description ?? '');
     const [projectId, setProjectId] = useState(task.projectId);
     const [tagIds, setTagIds] = useState((task.tags ?? []).map((tag) => tag.id));
+    const [assigneeId, setAssigneeId] = useState(task.assigneeId ?? null);
     const [saving, setSaving] = useState(false);
     const [confirmingDelete, setConfirmingDelete] = useState(false);
     const [deleting, setDeleting] = useState(false);
@@ -39,6 +40,7 @@ function TaskCard ({task, setAllTasks, projects = [], tags = [], onCreateTag, on
         setDueDate(task.dueDate ? toLocalDateTimeInput(task.dueDate) : '');
         setProjectId(task.projectId);
         setTagIds((task.tags ?? []).map((tag) => tag.id));
+        setAssigneeId(task.assigneeId ?? null);
     };
 
     const handleDelete = async () => {
@@ -63,7 +65,7 @@ function TaskCard ({task, setAllTasks, projects = [], tags = [], onCreateTag, on
         const dueDateForComparing = task.dueDate ? toLocalDateTimeInput(task.dueDate) : '';
 
         if (title === task.title && description === task.description && status === task.status
-            && priority === task.priority && dueDate === dueDateForComparing && projectId === task.projectId && tagIds.length === (task.tags ?? []).length && tagIds.every((id) => (task.tags ?? []).some((tag) => tag.id === id))) {
+            && priority === task.priority && dueDate === dueDateForComparing && projectId === task.projectId && assigneeId === task.assigneeId && tagIds.length === (task.tags ?? []).length && tagIds.every((id) => (task.tags ?? []).some((tag) => tag.id === id))) {
             setEditing(false);
             return;
         }
@@ -77,7 +79,7 @@ function TaskCard ({task, setAllTasks, projects = [], tags = [], onCreateTag, on
         setSaving(true);
         try {
             const token = await getToken();
-            const updatedTask = await updateTask(token, task.id, title, description, status, priority, dueDate || null, projectId, tagIds);
+            const updatedTask = await updateTask(token, task.id, title, description, status, priority, dueDate || null, projectId, tagIds, assigneeId);
             setAllTasks((currentTasks) => currentTasks.map((currentTask) => currentTask.id === task.id ? updatedTask : currentTask));
             setEditing(false);
             onNotify({ tone: 'success', message: `Saved “${updatedTask.title}”.` });
@@ -94,7 +96,7 @@ function TaskCard ({task, setAllTasks, projects = [], tags = [], onCreateTag, on
         if (!mutation.begin()) return;
         setSaving(true);
         try {
-            const updated = await updateTask(await getToken(), task.id, task.title, task.description ?? '', task.status === 'completed' ? 'todo' : 'completed', task.priority, task.dueDate, task.projectId, (task.tags ?? []).map((tag) => tag.id));
+            const updated = await updateTask(await getToken(), task.id, task.title, task.description ?? '', task.status === 'completed' ? 'todo' : 'completed', task.priority, task.dueDate, task.projectId, (task.tags ?? []).map((tag) => tag.id), task.assigneeId ?? null);
             setAllTasks((current) => current.map((item) => item.id === task.id ? updated : item));
             onNotify({ tone: 'success', message: `${updated.status === 'completed' ? 'Completed' : 'Reopened'} “${updated.title}”.` });
         } catch {
@@ -115,7 +117,7 @@ function TaskCard ({task, setAllTasks, projects = [], tags = [], onCreateTag, on
                         <label htmlFor={`task-${task.id}-title`}>Title</label>
                         <input ref={editTitle} id={`task-${task.id}-title`} type="text" value={title} maxLength="100" required onChange={(event) => setTitle(event.target.value)} />
                     </div>
-                    <TaskAssignmentFields projects={projects} tags={tags} projectId={projectId} tagIds={tagIds} onProjectChange={setProjectId} onTagIdsChange={setTagIds} onCreateTag={onCreateTag} />
+                    {(!task.projectId || projectMode) && <TaskAssignmentFields projects={projects} tags={tags} projectId={projectId} tagIds={tagIds} onProjectChange={setProjectId} onTagIdsChange={setTagIds} onCreateTag={onCreateTag} showProject={false} members={members} assigneeId={assigneeId} onAssigneeChange={task.projectId ? setAssigneeId : undefined} />}
                     <div className={styles.field}>
                         <label htmlFor={`task-${task.id}-description`}>Description</label>
                         <textarea id={`task-${task.id}-description`} value={description} maxLength="500" onChange={(event) => setDescription(event.target.value)} />
@@ -157,16 +159,17 @@ function TaskCard ({task, setAllTasks, projects = [], tags = [], onCreateTag, on
                         </div>
                         {task.description && <p className={styles.description}>{task.description}</p>}
                         {task.project && <p className={styles.meta}><span className={styles.dueLabel}>Project</span><span>{task.project.title}</span></p>}
+                        {task.assignee && <p className={styles.meta}><span className={styles.dueLabel}>Assignee</span><span>{[task.assignee.fname, task.assignee.lname].filter(Boolean).join(' ') || task.assignee.primaryEmail}</span></p>}
                         {visibleTags.length > 0 && <div className={styles.meta}><span className={styles.dueLabel}>Tags</span><span className={styles.tagList}>{visibleTags.map((tag) => <span className={`${styles.tag} ${styles[`tag_${tag.color}`]}`} key={tag.id}>{tag.name}</span>)}{remainingTagCount > 0 && <span className={`${styles.tag} ${styles.tagMore}`} aria-label={`${remainingTagCount} more tags`}>+{remainingTagCount}</span>}</span></div>}
                         {formattedDueDate && <p className={styles.meta}><span className={styles.dueLabel}>{dueState?.label ?? 'Due'}</span><span>{formattedDueDate}</span></p>}
                     </div>
                     <div className={styles.cardControls}>
-                        <label className={styles.completion}><input type="checkbox" checked={task.status === 'completed'} disabled={mutation.busy} onChange={handleCompletion} aria-label={`${task.status === 'completed' ? 'Reopen' : 'Complete'} ${task.title}`} /><span>{task.status === 'completed' ? 'Completed' : 'Complete'}</span></label>
-                        <TaskActions taskId={task.id} disabled={mutation.busy} onEdit={() => { resetDraft(); setEditing(true); }} onDelete={() => setConfirmingDelete(true)} onAddChecklist={(task.checklistItems ?? []).length === 0 ? () => setChecklistOpenRequest((current) => current + 1) : undefined} />
+                        {task.capabilities?.canEdit !== false && <><label className={styles.completion}><input type="checkbox" checked={task.status === 'completed'} disabled={mutation.busy} onChange={handleCompletion} aria-label={`${task.status === 'completed' ? 'Reopen' : 'Complete'} ${task.title}`} /><span>{task.status === 'completed' ? 'Completed' : 'Complete'}</span></label>
+                        <TaskActions taskId={task.id} disabled={mutation.busy} onEdit={() => { resetDraft(); setEditing(true); }} onDelete={() => setConfirmingDelete(true)} onAddChecklist={(task.checklistItems ?? []).length === 0 ? () => setChecklistOpenRequest((current) => current + 1) : undefined} /></>}
                     </div>
                 </>
             )}
-            <Checklist hideEmpty openRequest={checklistOpenRequest} disabled={saving || deleting} taskId={task.id} items={task.checklistItems ?? []} getToken={getToken} onItemsChange={setChecklistItems} onNotify={onNotify} />
+            <Checklist hideEmpty openRequest={checklistOpenRequest} disabled={saving || deleting} readOnly={task.capabilities?.canEdit === false} taskId={task.id} items={task.checklistItems ?? []} getToken={getToken} onItemsChange={setChecklistItems} onNotify={onNotify} />
             {confirmingDelete && <div className={styles.dialogBackdrop}><section className={styles.dialog} role="alertdialog" aria-modal="true" aria-labelledby={`delete-task-${task.id}-title`} onKeyDown={(event) => {
                 if (event.key === 'Escape' && !deleting) { setConfirmingDelete(false); cardRef.current?.querySelector('[aria-haspopup="menu"]')?.focus(); }
                 if (event.key === 'Tab') {

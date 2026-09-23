@@ -25,7 +25,7 @@ async function main() {
         priority: 'high',
         orderIndex: 0,
         dueDate: new Date('2026-07-15T22:39:04.778Z'),
-        userId: user.id,
+        createdById: user.id,
       },
       {
         title: 'Implement Task Filtering',
@@ -33,7 +33,7 @@ async function main() {
         status: 'todo',
         priority: 'low',
         orderIndex: 1,
-        userId: user.id,
+        createdById: user.id,
       },
       {
         title: 'Write Unit Tests',
@@ -41,7 +41,7 @@ async function main() {
         status: 'todo',
         priority: 'low',
         orderIndex: 2,
-        userId: user.id,
+        createdById: user.id,
       },
       {
         title: 'Add Drag-and-Drop',
@@ -50,7 +50,7 @@ async function main() {
         priority: 'high',
         orderIndex: 3,
         dueDate: new Date('2026-04-01T22:16:00.000Z'),
-        userId: user.id,
+        createdById: user.id,
       },
       // --- IN PROGRESS (0, 1) ---
       {
@@ -60,7 +60,7 @@ async function main() {
         priority: 'high',
         orderIndex: 0,
         dueDate: new Date('2026-10-27T22:37:45.674Z'),
-        userId: user.id,
+        createdById: user.id,
       },
       {
         title: 'Design Database Schema',
@@ -69,7 +69,7 @@ async function main() {
         priority: 'medium',
         orderIndex: 1,
         dueDate: new Date('2026-12-24T00:40:26.813Z'),
-        userId: user.id,
+        createdById: user.id,
       },
       // --- COMPLETED (0) ---
       {
@@ -79,7 +79,7 @@ async function main() {
         priority: 'medium',
         orderIndex: 0,
         dueDate: new Date('2026-07-14T22:44:00.029Z'),
-        userId: user.id,
+        createdById: user.id,
       },
     ]
   })

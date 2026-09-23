@@ -3,7 +3,7 @@ import { Draggable } from '@hello-pangea/dnd';
 import styles from './task-list.module.css';
 import { taskViewTabs } from '../../functions/taskViews';
 
-function TaskList({ tasks, status, allTasks, setAllTasks, loading, isManualOrder, isFiltered, selectedTab, projects, tags, onCreateTag, onNotify, children }) {
+function TaskList({ tasks, status, allTasks, setAllTasks, loading, isManualOrder, isFiltered, selectedTab, projects, tags, members = [], projectMode = false, onCreateTag, onNotify, children }) {
     const statusDetails = {
         todo: { label: 'To do', className: 'todo', emptyMessage: 'No tasks yet. Create one above to get started.' },
         in_progress: { label: 'In progress', className: 'inProgress', emptyMessage: 'Move a task here when you are ready to focus.' },
@@ -22,10 +22,10 @@ function TaskList({ tasks, status, allTasks, setAllTasks, loading, isManualOrder
                 <span className={styles.count}>{tasks.length}</span>
             </div>
             {loading ? <p className={styles.loadingState}>Loading tasks...</p> : tasks.length === 0 ? <p className={styles.emptyState}>{isFiltered ? `No ${label.toLowerCase()} tasks match “${dateViewLabel}” with the current search and filters.` : emptyMessage}</p> : tasks.map((task, index) => (
-                <Draggable key={task.id} draggableId={String(task.id)} index={index} isDragDisabled={!isManualOrder}>
+                <Draggable key={task.id} draggableId={String(task.id)} index={index} isDragDisabled={!isManualOrder || (!projectMode && Boolean(task.projectId)) || task.capabilities?.canReorder === false}>
                     {(provided) => (
                         <div className={styles.draggableItem} ref={provided.innerRef} {...provided.draggableProps}>
-                            <TaskCard task={task} allTasks={allTasks} setAllTasks={setAllTasks} projects={projects} tags={tags} onCreateTag={onCreateTag} onNotify={onNotify} dragHandleProps={provided.dragHandleProps} isDragEnabled={isManualOrder} />
+                            <TaskCard task={task} allTasks={allTasks} setAllTasks={setAllTasks} projects={projects} tags={tags} members={members} projectMode={projectMode} onCreateTag={onCreateTag} onNotify={onNotify} dragHandleProps={provided.dragHandleProps} isDragEnabled={isManualOrder && (projectMode || !task.projectId) && task.capabilities?.canReorder !== false} />
                         </div>
                     )}
                 </Draggable>

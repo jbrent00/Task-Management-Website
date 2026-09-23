@@ -3,7 +3,7 @@ import styles from './project-tag-manager.module.css';
 
 const colors = ['slate', 'red', 'orange', 'yellow', 'green', 'teal', 'blue', 'purple'];
 
-function ProjectTagManager({ projects, tags, projectCounts, onCreateProject, onUpdateProject, onDeleteProject, onUpdateTag, onDeleteTag, onNotify }) {
+function ProjectTagManager({ projects, tags, projectCounts, onCreateProject, onUpdateProject, onDeleteProject, onUpdateTag, onDeleteTag, onNotify, showProjects = true }) {
     const [mode, setMode] = useState(null);
     const [createTitle, setCreateTitle] = useState('');
     const [createDescription, setCreateDescription] = useState('');
@@ -73,7 +73,7 @@ function ProjectTagManager({ projects, tags, projectCounts, onCreateProject, onU
     const startTagEdit = (tag) => { setTagName(tag.name); setTagColor(tag.color); setEditingTag(tag); setError(''); };
 
     return <div className={styles.manager}>
-        <button type="button" onClick={() => { setMode(mode === 'projects' ? null : 'projects'); setError(''); clearCreateProject(); }}>Manage projects</button>
+        {showProjects && <button type="button" onClick={() => { setMode(mode === 'projects' ? null : 'projects'); setError(''); clearCreateProject(); }}>Manage projects</button>}
         <button type="button" onClick={() => { setMode(mode === 'tags' ? null : 'tags'); setError(''); clearCreateProject(); }}>Manage tags</button>
         {mode === 'projects' && <section className={styles.panel} aria-label="Manage projects"><form onSubmit={create}><h2>Projects</h2><input value={createTitle} maxLength="100" onChange={(event) => setCreateTitle(event.target.value)} placeholder="Project name" aria-label="Project name" required /><textarea value={createDescription} maxLength="500" onChange={(event) => setCreateDescription(event.target.value)} placeholder="Description (optional)" aria-label="Project description" /><button type="submit">Create project</button><button type="button" onClick={close}>Close</button></form>{projects.map((project) => <div className={styles.row} key={project.id}><span><strong>{project.title}</strong><small>{projectCounts[project.id]?.total ?? 0} tasks · {projectCounts[project.id]?.completed ?? 0} complete</small></span><button type="button" onClick={() => startProjectEdit(project)}>Edit</button><button type="button" onClick={() => setDeleteTarget({ type: 'project', item: project })}>Delete</button></div>)}</section>}
         {mode === 'tags' && <section className={styles.panel} aria-label="Manage tags"><h2>Tags</h2>{tags.map((tag) => <div className={styles.row} key={tag.id}><span className={`${styles.tag} ${styles[`tag_${tag.color}`]}`}>{tag.name}</span><button type="button" onClick={() => startTagEdit(tag)}>Edit</button><button type="button" onClick={() => setDeleteTarget({ type: 'tag', item: tag })}>Delete</button></div>)}<button type="button" onClick={close}>Close</button></section>}

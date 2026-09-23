@@ -5,7 +5,7 @@ import { useTaskMutation } from '../../functions/taskMutationContext';
 
 const reorder = (items, from, to) => { const next = [...items]; const [item] = next.splice(from, 1); next.splice(to, 0, item); return next; };
 
-function Checklist({ taskId, items = [], getToken, onItemsChange, onNotify, draft = false, resetKey, openRequest = 0, hideEmpty = false, disabled = false, onGenerate, generating = false, generateDisabled = false }) {
+function Checklist({ taskId, items = [], getToken, onItemsChange, onNotify, draft = false, resetKey, openRequest = 0, hideEmpty = false, disabled = false, readOnly = false, onGenerate, generating = false, generateDisabled = false }) {
     const mutation = useTaskMutation();
     const [expanded, setExpanded] = useState(false);
     const [newText, setNewText] = useState('');
@@ -18,7 +18,7 @@ function Checklist({ taskId, items = [], getToken, onItemsChange, onNotify, draf
     const completed = items.filter((item) => item.completed).length;
     const percent = items.length ? Math.round((completed / items.length) * 100) : 0;
     const replace = (next) => onItemsChange(next);
-    const blocked = pending || disabled || (!draft && mutation?.busy);
+    const blocked = pending || disabled || readOnly || (!draft && mutation?.busy);
     useEffect(() => {
         if (openRequest) setExpanded(true);
     }, [openRequest]);
@@ -80,18 +80,18 @@ function Checklist({ taskId, items = [], getToken, onItemsChange, onNotify, draf
     };
 
     return <section hidden={hideEmpty && items.length === 0 && !expanded} className={styles.checklist} onPointerDown={(event) => event.stopPropagation()}>
-        <fieldset disabled={blocked} className={styles.editor}>
+        <fieldset disabled={pending || disabled || (!draft && mutation?.busy)} className={styles.editor}>
         <div className={styles.header}><button type="button" className={styles.toggle} onClick={() => setExpanded((value) => !value)} aria-expanded={expanded} aria-controls={`checklist-${taskId ?? 'draft'}`}>{expanded ? '▾' : '▸'} {items.length === 0 && !expanded ? 'Add checklist' : 'Checklist'}</button><div className={styles.headerActions}>{items.length > 0 && <span className={styles.progressText}>{completed} of {items.length} complete</span>}{onGenerate && <button type="button" className={styles.generateButton} disabled={generateDisabled} onClick={() => { setExpanded(true); onGenerate(); }}>{generating ? 'Generating…' : 'Generate checklist'}</button>}</div></div>
         {items.length > 0 && <div className={styles.progress} role="progressbar" aria-label="Checklist progress" aria-valuemin="0" aria-valuemax={items.length} aria-valuenow={completed}><span style={{ width: `${percent}%` }} /></div>}
         <div id={`checklist-${taskId ?? 'draft'}`} className={styles.content} hidden={!expanded}>
             <ul className={styles.items}>{items.map((item, index) => <li className={styles.item} key={item.id} onDragOver={(event) => event.preventDefault()} onDrop={() => { if (dragIndex.current !== null) move(dragIndex.current, index); dragIndex.current = null; }}>
-                <span className={styles.grip} draggable={!pending} onDragStart={() => { dragIndex.current = index; }} title="Drag to reorder" aria-hidden="true">⋮⋮</span>
-                <input type="checkbox" checked={item.completed} disabled={pending} onChange={() => toggle(item)} aria-label={`Mark ${item.text} complete`} />
-                {editingId === item.id ? <input className={styles.editInput} autoFocus value={editingText} maxLength="200" disabled={pending} onChange={(event) => setEditingText(event.target.value)} onBlur={() => saveEdit(item)} onKeyDown={(event) => { if (event.key === 'Enter') saveEdit(item); if (event.key === 'Escape') setEditingId(null); }} /> : <button type="button" className={`${styles.itemText} ${item.completed ? styles.completed : ''}`} onClick={() => { setEditingId(item.id); setEditingText(item.text); }}>{item.text}</button>}
-                <div className={styles.itemActions}><button type="button" disabled={pending || index === 0} onClick={() => move(index, index - 1)} aria-label={`Move ${item.text} up`}>↑</button><button type="button" disabled={pending || index === items.length - 1} onClick={() => move(index, index + 1)} aria-label={`Move ${item.text} down`}>↓</button><button type="button" disabled={pending} onClick={() => draft ? remove(item) : setConfirmingId(item.id)} aria-label={`Delete ${item.text}`}>×</button></div>
+                {!readOnly && <span className={styles.grip} draggable={!pending} onDragStart={() => { dragIndex.current = index; }} title="Drag to reorder" aria-hidden="true">⋮⋮</span>}
+                <input type="checkbox" checked={item.completed} disabled={pending || readOnly} onChange={() => toggle(item)} aria-label={`Mark ${item.text} complete`} />
+                {editingId === item.id ? <input className={styles.editInput} autoFocus value={editingText} maxLength="200" disabled={pending} onChange={(event) => setEditingText(event.target.value)} onBlur={() => saveEdit(item)} onKeyDown={(event) => { if (event.key === 'Enter') saveEdit(item); if (event.key === 'Escape') setEditingId(null); }} /> : readOnly ? <span className={`${styles.itemText} ${item.completed ? styles.completed : ''}`}>{item.text}</span> : <button type="button" className={`${styles.itemText} ${item.completed ? styles.completed : ''}`} onClick={() => { setEditingId(item.id); setEditingText(item.text); }}>{item.text}</button>}
+                {!readOnly && <div className={styles.itemActions}><button type="button" disabled={pending || index === 0} onClick={() => move(index, index - 1)} aria-label={`Move ${item.text} up`}>↑</button><button type="button" disabled={pending || index === items.length - 1} onClick={() => move(index, index + 1)} aria-label={`Move ${item.text} down`}>↓</button><button type="button" disabled={pending} onClick={() => draft ? remove(item) : setConfirmingId(item.id)} aria-label={`Delete ${item.text}`}>×</button></div>}
                 {confirmingId === item.id && <div className={styles.confirm}><span>Delete this item?</span><button type="button" disabled={pending} onClick={() => remove(item)}>Delete</button><button type="button" disabled={pending} onClick={() => setConfirmingId(null)}>Cancel</button></div>}
             </li>)}</ul>
-            <div className={styles.addRow}><input ref={inputRef} value={newText} maxLength="200" disabled={pending || items.length >= 100} placeholder={items.length ? 'Add an item' : 'Add checklist item'} onChange={(event) => setNewText(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); add(); } }} /><button type="button" disabled={pending || !newText.trim() || items.length >= 100} onClick={add}>Add</button></div>
+            {!readOnly && <div className={styles.addRow}><input ref={inputRef} value={newText} maxLength="200" disabled={pending || items.length >= 100} placeholder={items.length ? 'Add an item' : 'Add checklist item'} onChange={(event) => setNewText(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); add(); } }} /><button type="button" disabled={pending || !newText.trim() || items.length >= 100} onClick={add}>Add</button></div>}
             {items.length >= 100 && <p className={styles.limit}>Checklist limit reached (100 items).</p>}
         </div></fieldset>
     </section>;

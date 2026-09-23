@@ -61,5 +61,5 @@ test('validates assignment IDs and rejects duplicates', () => {
 });
 
 test('ownership predicates always include both task and user IDs', () => {
-    assert.deepEqual(ownedTaskWhere(42, 'user_owner'), { id: 42, userId: 'user_owner' });
+    assert.deepEqual(ownedTaskWhere(42, 'user_owner'), { id: 42, createdById: 'user_owner', projectId: null });
 });

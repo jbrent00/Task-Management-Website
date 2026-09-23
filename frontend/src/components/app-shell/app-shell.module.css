@@ -1,0 +1,8 @@
+.shell { min-height: 100vh; }
+.header { position: sticky; z-index: 30; top: 0; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; min-height: 64px; padding: 0 clamp(16px, 4vw, 56px); border-bottom: 1px solid var(--border); background: rgba(255,255,255,.94); backdrop-filter: blur(12px); }
+.brand { color: var(--text-strong); font-size: 1.05rem; font-weight: 850; text-decoration: none; }
+.header nav { display: flex; gap: 6px; }
+.header nav a { padding: 9px 13px; border-radius: 8px; color: var(--text-muted); font-size: .9rem; font-weight: 700; text-decoration: none; }
+.header nav a:hover, .header nav a.active { background: var(--primary-soft); color: var(--primary); }
+.header > :last-child { justify-self: end; }
+@media (max-width: 560px) { .header { grid-template-columns: auto 1fr auto; gap: 10px; } .brand span { display: none; } .header nav { justify-content: center; } }

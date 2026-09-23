@@ -1,84 +1,86 @@
 import type { Request, Response } from 'express';
 import { getAuth } from '@clerk/express';
 import { prisma } from '../services/prisma';
-import { cleanOptionalText, cleanRequiredText, normalize } from './validation';
+import { getProjectAccess } from '../services/authorization';
+import { cleanOptionalText, cleanRequiredText } from './validation';
 
-function currentUserId(req: Request, res: Response) {
-    const { userId } = getAuth(req);
-    if (!userId) {
-        res.status(401).json({ error: 'Unauthorized' });
-        return null;
-    }
-    return userId;
-}
+const personSelect = { id: true, fname: true, lname: true, primaryEmail: true, imageUrl: true } as const;
 
 export async function getProjects(req: Request, res: Response) {
-    const userId = currentUserId(req, res);
-    if (!userId) return;
+    const { userId } = getAuth(req); if (!userId) { res.status(401).json({ error: 'Unauthorized' }); return; }
     try {
-        res.json(await prisma.project.findMany({
-            where: { userId }, orderBy: { title: 'asc' }, select: { id: true, title: true, description: true, createdAt: true },
-        }));
-    } catch (error) {
-        console.error('Error fetching projects:', error);
-        res.status(500).json({ error: 'Failed to fetch projects' });
-    }
+        const memberships = await prisma.projectMembership.findMany({
+            where: { userId },
+            include: { project: { include: {
+                tasks: { select: { status: true } },
+                memberships: { include: { user: { select: personSelect } }, orderBy: { joinedAt: 'asc' } },
+            } } },
+            orderBy: { project: { title: 'asc' } },
+        });
+        res.json(memberships.map(({ role, project }) => ({
+            id: project.id, title: project.title, description: project.description, createdAt: project.createdAt, updatedAt: project.updatedAt,
+            archivedAt: project.archivedAt, role, memberCount: project.memberships.length,
+            members: project.memberships.map((item) => ({ ...item.user, role: item.role, userId: item.userId })),
+            taskCount: project.tasks.length, completedTaskCount: project.tasks.filter((task) => task.status === 'completed').length,
+            capabilities: { canEdit: role === 'owner', canManageMembers: role === 'owner', canCreateTasks: role !== 'viewer' && !project.archivedAt },
+        })));
+    } catch (error) { console.error(error); res.status(500).json({ error: 'Failed to fetch projects' }); }
+}
+
+export async function getProject(req: Request, res: Response) {
+    const { userId } = getAuth(req); const id = Number(req.params.id);
+    if (!userId) { res.status(401).json({ error: 'Unauthorized' }); return; }
+    const access = await getProjectAccess(id, userId); if (!access) { res.status(404).json({ error: 'Project not found' }); return; }
+    const project = await prisma.project.findUnique({ where: { id }, include: {
+        memberships: { include: { user: { select: personSelect } }, orderBy: { joinedAt: 'asc' } },
+        tags: { orderBy: { name: 'asc' } },
+        ...(access.role === 'owner' ? { invitations: { where: { status: 'pending', expiresAt: { gt: new Date() } }, orderBy: { createdAt: 'desc' as const } } } : {}),
+    } });
+    res.json({ ...project, role: access.role, capabilities: {
+        canEditProject: access.role === 'owner' && !project?.archivedAt,
+        canManageMembers: access.role === 'owner' && !project?.archivedAt,
+        canEditTasks: access.role !== 'viewer' && !project?.archivedAt,
+        canRestore: access.role === 'owner' && Boolean(project?.archivedAt),
+        canDelete: access.role === 'owner',
+    } });
 }
 
 export async function createProject(req: Request, res: Response) {
-    const userId = currentUserId(req, res);
-    if (!userId) return;
-    const title = cleanRequiredText(req.body.title, 100);
-    const description = cleanOptionalText(req.body.description, 500);
-    if (!title || description === undefined) {
-        res.status(400).json({ error: 'Project title is required (up to 100 characters) and description must be at most 500 characters' });
-        return;
-    }
+    const { userId } = getAuth(req); if (!userId) { res.status(401).json({ error: 'Unauthorized' }); return; }
+    const title = cleanRequiredText(req.body.title, 100); const description = cleanOptionalText(req.body.description, 500);
+    if (!title || description === undefined) { res.status(400).json({ error: 'Project title is required and description must be at most 500 characters' }); return; }
     try {
-        const project = await prisma.project.create({ data: { userId, title, normalizedTitle: normalize(title), description } });
-        res.status(201).json(project);
-    } catch (error: unknown) {
-        if (typeof error === 'object' && error && 'code' in error && error.code === 'P2002') {
-            res.status(409).json({ error: 'You already have a project with that name' });
-            return;
-        }
-        console.error('Error creating project:', error);
-        res.status(500).json({ error: 'Failed to create project' });
-    }
+        const project = await prisma.project.create({ data: { title, description, memberships: { create: { userId, role: 'owner' } } }, include: { memberships: { include: { user: { select: personSelect } } } } });
+        res.status(201).json({ ...project, role: 'owner', memberCount: 1, taskCount: 0, completedTaskCount: 0, members: project.memberships.map((item) => ({ ...item.user, role: item.role, userId: item.userId })), capabilities: { canEdit: true, canManageMembers: true, canCreateTasks: true } });
+    } catch (error) { console.error(error); res.status(500).json({ error: 'Failed to create project' }); }
 }
 
 export async function updateProject(req: Request, res: Response) {
-    const userId = currentUserId(req, res);
-    const id = Number(req.params.id);
-    if (!userId) return;
-    const title = cleanRequiredText(req.body.title, 100);
-    const description = cleanOptionalText(req.body.description, 500);
-    if (!Number.isInteger(id) || !title || description === undefined) {
-        res.status(400).json({ error: 'Invalid project details' });
-        return;
-    }
-    try {
-        const result = await prisma.project.updateMany({ where: { id, userId }, data: { title, normalizedTitle: normalize(title), description } });
-        if (!result.count) { res.status(404).json({ error: 'Project not found' }); return; }
-        res.json(await prisma.project.findUniqueOrThrow({ where: { id } }));
-    } catch (error: unknown) {
-        if (typeof error === 'object' && error && 'code' in error && error.code === 'P2002') { res.status(409).json({ error: 'You already have a project with that name' }); return; }
-        console.error('Error updating project:', error);
-        res.status(500).json({ error: 'Failed to update project' });
-    }
+    const { userId } = getAuth(req); const id = Number(req.params.id);
+    if (!userId) { res.status(401).json({ error: 'Unauthorized' }); return; }
+    const access = await getProjectAccess(id, userId); if (!access) { res.status(404).json({ error: 'Project not found' }); return; }
+    if (access.role !== 'owner') { res.status(403).json({ error: 'Only the owner can edit project settings' }); return; }
+    if (access.project.archivedAt) { res.status(403).json({ error: 'Restore the project before editing it' }); return; }
+    const title = cleanRequiredText(req.body.title, 100); const description = cleanOptionalText(req.body.description, 500);
+    if (!title || description === undefined) { res.status(400).json({ error: 'Invalid project details' }); return; }
+    res.json(await prisma.project.update({ where: { id }, data: { title, description } }));
 }
 
+async function setArchived(req: Request, res: Response, archived: boolean) {
+    const { userId } = getAuth(req); const id = Number(req.params.id);
+    if (!userId) { res.status(401).json({ error: 'Unauthorized' }); return; }
+    const access = await getProjectAccess(id, userId); if (!access) { res.status(404).json({ error: 'Project not found' }); return; }
+    if (access.role !== 'owner') { res.status(403).json({ error: 'Only the owner can change archive state' }); return; }
+    res.json(await prisma.project.update({ where: { id }, data: { archivedAt: archived ? new Date() : null } }));
+}
+export const archiveProject = (req: Request, res: Response) => setArchived(req, res, true);
+export const restoreProject = (req: Request, res: Response) => setArchived(req, res, false);
+
 export async function deleteProject(req: Request, res: Response) {
-    const userId = currentUserId(req, res);
-    const id = Number(req.params.id);
-    if (!userId) return;
-    if (!Number.isInteger(id)) { res.status(400).json({ error: 'Invalid project ID' }); return; }
-    try {
-        const result = await prisma.project.deleteMany({ where: { id, userId } });
-        if (!result.count) { res.status(404).json({ error: 'Project not found' }); return; }
-        res.status(204).send();
-    } catch (error) {
-        console.error('Error deleting project:', error);
-        res.status(500).json({ error: 'Failed to delete project' });
-    }
+    const { userId } = getAuth(req); const id = Number(req.params.id);
+    if (!userId) { res.status(401).json({ error: 'Unauthorized' }); return; }
+    const access = await getProjectAccess(id, userId); if (!access) { res.status(404).json({ error: 'Project not found' }); return; }
+    if (access.role !== 'owner') { res.status(403).json({ error: 'Only the owner can delete the project' }); return; }
+    if (req.body.confirmTitle !== access.project.title) { res.status(400).json({ error: 'Enter the exact project title to confirm deletion' }); return; }
+    await prisma.project.delete({ where: { id } }); res.status(204).end();
 }

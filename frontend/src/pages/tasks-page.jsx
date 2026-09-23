@@ -6,10 +6,10 @@ import styles from './tasks-page.module.css';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { TaskMutationContext } from '../functions/taskMutationContext';
 import { getTasks } from '../api/getTasks';
-import { UserButton, useAuth } from '@clerk/react';
+import { useAuth } from '@clerk/react';
 import { DragDropContext } from '@hello-pangea/dnd';
 import { updateTasks } from '../api/updateTasks';
-import { createProject, deleteProject, getProjects, updateProject } from '../api/projects';
+import { getProjects } from '../api/projects';
 import { createTag, deleteTag, getTags, updateTag } from '../api/tags';
 import { defaultTaskView, getActiveSort, getTaskTabCounts, getVisibleTasksByStatus, hasActiveTaskFilters, isValidTaskView, taskStatuses } from '../functions/taskViews';
 
@@ -112,7 +112,7 @@ function TasksPage() {
                 const token = await getToken();
                 const [loadedTasks, loadedProjects, loadedTags] = await Promise.all([getTasks(token), getProjects(token), getTags(token)]);
                 setTasks(loadedTasks);
-                setProjects(loadedProjects);
+                setProjects(loadedProjects.filter((project) => !project.archivedAt));
                 setTags(loadedTags);
                 setLoadError('');
             } catch (error) {
@@ -140,9 +140,6 @@ function TasksPage() {
         try { return await callback(await getToken()); }
         finally { mutation.end(); }
     };
-    const handleCreateProject = async (title, description) => { const project = await withToken((token) => createProject(token, title, description)); setProjects((current) => [...current, project].sort((a, b) => a.title.localeCompare(b.title))); return project; };
-    const handleUpdateProject = async (id, title, description) => { const project = await withToken((token) => updateProject(token, id, title, description)); setProjects((current) => current.map((item) => item.id === id ? project : item)); setTasks((current) => current.map((task) => task.projectId === id ? { ...task, project: { id, title: project.title } } : task)); };
-    const handleDeleteProject = async (id) => { await withToken((token) => deleteProject(token, id)); setProjects((current) => current.filter((project) => project.id !== id)); setTasks((current) => current.map((task) => task.projectId === id ? { ...task, projectId: null, project: null } : task)); };
     const handleCreateTag = async (name, color) => { const tag = await withToken((token) => createTag(token, name, color)); setTags((current) => [...current, tag].sort((a, b) => a.name.localeCompare(b.name))); return tag; };
     const handleUpdateTag = async (id, name, color) => { const tag = await withToken((token) => updateTag(token, id, name, color)); setTags((current) => current.map((item) => item.id === id ? tag : item)); setTasks((current) => current.map((task) => ({ ...task, tags: (task.tags ?? []).map((item) => item.id === id ? tag : item) }))); };
     const handleDeleteTag = async (id) => { await withToken((token) => deleteTag(token, id)); setTags((current) => current.filter((tag) => tag.id !== id)); setTasks((current) => current.map((task) => ({ ...task, tags: (task.tags ?? []).filter((tag) => tag.id !== id) }))); };
@@ -154,15 +151,18 @@ function TasksPage() {
 
         const sourceStatus = source.droppableId;
         const destinationStatus = destination.droppableId;
-        const sourceVisibleTasks = [...tasksByStatus[sourceStatus]];
-        const destinationVisibleTasks = sourceStatus === destinationStatus ? sourceVisibleTasks : [...tasksByStatus[destinationStatus]];
-        const [movedTask] = sourceVisibleTasks.splice(source.index, 1);
-        if (!movedTask) return;
+        const movedTask = tasksByStatus[sourceStatus][source.index];
+        if (!movedTask || movedTask.projectId) return;
+        const sourceVisibleTasks = tasksByStatus[sourceStatus].filter((task) => !task.projectId);
+        const destinationVisibleTasks = sourceStatus === destinationStatus ? sourceVisibleTasks : tasksByStatus[destinationStatus].filter((task) => !task.projectId);
+        const sourcePersonalIndex = sourceVisibleTasks.findIndex((task) => task.id === movedTask.id);
+        sourceVisibleTasks.splice(sourcePersonalIndex, 1);
         if (!mutation.begin()) return;
-        destinationVisibleTasks.splice(destination.index, 0, movedTask);
+        const destinationPersonalIndex = tasksByStatus[destinationStatus].slice(0, destination.index).filter((task) => !task.projectId).length;
+        destinationVisibleTasks.splice(destinationPersonalIndex, 0, movedTask);
 
-        const allSourceTasks = tasks.filter((task) => task.status === sourceStatus).sort((first, second) => first.orderIndex - second.orderIndex);
-        const allDestinationTasks = sourceStatus === destinationStatus ? allSourceTasks : tasks.filter((task) => task.status === destinationStatus).sort((first, second) => first.orderIndex - second.orderIndex);
+        const allSourceTasks = tasks.filter((task) => task.status === sourceStatus && !task.projectId).sort((first, second) => first.orderIndex - second.orderIndex);
+        const allDestinationTasks = sourceStatus === destinationStatus ? allSourceTasks : tasks.filter((task) => task.status === destinationStatus && !task.projectId).sort((first, second) => first.orderIndex - second.orderIndex);
         const reorderedByStatus = sourceStatus === destinationStatus
             ? { [sourceStatus]: mergeVisibleOrder(allSourceTasks, tasksByStatus[sourceStatus], destinationVisibleTasks) }
             : {
@@ -203,13 +203,12 @@ function TasksPage() {
                 </div>
                 <div className={styles.headerActions}>
                     <button ref={creationTrigger} className={styles.createButton} type="button" aria-expanded={creationExpanded} aria-controls="create-task-content" onClick={() => { setCreationExpanded((value) => !value); if (creationExpanded) creationTrigger.current?.focus(); }}>{creationExpanded ? 'Hide form' : 'Create task'}</button>
-                    <div className={styles.userButton}><UserButton /></div>
                 </div>
             </div>
             {notice && <div className={`${styles.notice} ${styles[notice.tone]}`} role={notice.tone === 'error' ? 'alert' : 'status'} aria-live="polite"><span>{notice.message}</span><button type="button" onClick={() => setNotice(null)} aria-label="Dismiss notification">×</button></div>}
             <div className={styles.createTask} hidden={!creationExpanded}><CreateTaskForm expanded={creationExpanded} onCreated={() => { setCreationExpanded(false); window.requestAnimationFrame(() => creationTrigger.current?.focus()); }} tasks={tasks} setTasks={setTasks} projects={projects} tags={tags} onCreateTag={handleCreateTag} onNotify={setNotice} /></div>
             <TaskViewTabs selectedTab={view.selectedTab} counts={tabCounts} onSelect={(selectedTab) => setView((currentView) => ({ ...currentView, selectedTab }))} />
-            <TaskViewControls view={view} searchQuery={searchQuery} onSearchChange={setSearchQuery} onViewChange={setView} onClearFilters={handleClearFilters} projects={projects} tags={tags} projectCounts={projectCounts} onCreateProject={handleCreateProject} onUpdateProject={handleUpdateProject} onDeleteProject={handleDeleteProject} onUpdateTag={handleUpdateTag} onDeleteTag={handleDeleteTag} onNotify={setNotice} />
+            <TaskViewControls view={view} searchQuery={searchQuery} onSearchChange={setSearchQuery} onViewChange={setView} onClearFilters={handleClearFilters} projects={projects} tags={tags} projectCounts={projectCounts} onUpdateTag={handleUpdateTag} onDeleteTag={handleDeleteTag} onNotify={setNotice} />
             {loadError && <p className={styles.loadError} role="alert">{loadError}</p>}
             {narrow && <nav className={styles.statusSelectors} aria-label="Task status">{taskStatuses.map((status) => <button type="button" key={status} aria-pressed={selectedStatus === status} onClick={() => setSelectedStatus(status)}>{({ todo: 'To do', in_progress: 'In progress', completed: 'Completed' })[status]} <span>{tasksByStatus[status].length}</span></button>)}</nav>}
             <div className={styles.taskBoards}>

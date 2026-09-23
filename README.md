@@ -1,8 +1,8 @@
 # Task Management Website
 
-A full-stack task workspace for organizing personal work across a three-column board. Tasks can be planned by status, priority, due date, project, and colored tags, then searched, filtered, sorted, edited, and reordered without leaving the board.
+A full-stack task workspace for organizing personal and collaborative work across three-column boards. Tasks can be planned by status, priority, due date, project, assignee, and colored tags, then searched, filtered, sorted, edited, and reordered.
 
-The application uses Clerk for authentication and keeps every user's tasks, projects, tags, and saved view preferences separate.
+The application uses Clerk for authentication. Personal tasks and tags stay private, while project owners can invite verified Clerk users into shared project workspaces with owner, editor, or viewer permissions.
 
 ## Features
 
@@ -15,7 +15,10 @@ The application uses Clerk for authentication and keeps every user's tasks, proj
 - Search across task titles and descriptions
 - Filters for status, priority, due-date state, project, and tags
 - Manual, priority, due-date, title, creation-date, and completion-date sorting
-- Project creation, editing, deletion, and task-count summaries
+- Dedicated active/archived project overview and project workspaces
+- In-app project invitations matched to verified Clerk email addresses
+- Owner, editor, and viewer permissions with ownership transfer
+- Single task assignees and shared project tags
 - Tag creation, editing, deletion, and a curated color picker
 - Per-user view preferences persisted in local storage
 - AI-assisted description and checklist drafting through an authenticated backend endpoint
@@ -77,7 +80,7 @@ Create a Clerk application and copy its publishable and secret keys. The fronten
 
 The application also stores each Clerk user in PostgreSQL. In the Clerk dashboard, create a webhook that:
 
-- subscribes to the `user.created` event;
+- subscribes to the `user.created` and `user.updated` events so verified invitation emails stay synchronized;
 - sends events to `https://YOUR_PUBLIC_BACKEND_URL/api/webhooks`;
 - uses the signing secret you will place in `CLERK_WEBHOOK_SIGNING_SECRET`.
 
@@ -117,7 +120,7 @@ npm run dev
 
 The backend runs at `http://localhost:3000`. Confirm it is available at `http://localhost:3000/api/health`.
 
-> The current backend development command does not watch files. Restart it after changing backend code.
+> The backend development command watches TypeScript files and automatically restarts the Express process after changes.
 
 ### 4. Configure and start the frontend
 
@@ -184,7 +187,7 @@ Run each command from its package directory.
 
 | Command | Purpose |
 | --- | --- |
-| `npm run dev` | Start the Express API with `tsx` |
+| `npm run dev` | Start the Express API with `tsx` watch mode |
 | `npm test` | Run controller validation tests |
 | `npm run typecheck` | Type-check the backend without emitting files |
 | `npm run generate` | Regenerate the Prisma client |
@@ -205,12 +208,17 @@ All task, project, and tag routes require a valid Clerk session token. Data acce
 | `PUT`, `DELETE` | `/tasks/:id` | Update or delete one task |
 | `POST` | `/tasks/ai/generate` | Generate a draft description or five checklist items |
 | `PATCH` | `/tasks/bulk-update` | Persist reordered or status-changed tasks |
-| `GET`, `POST` | `/projects` | List or create projects |
-| `PUT`, `DELETE` | `/projects/:id` | Update or delete one project |
+| `GET`, `POST` | `/projects` | List accessible projects or create a private project |
+| `GET`, `PATCH`, `DELETE` | `/projects/:id` | Read, update, or permanently delete a project |
+| `POST` | `/projects/:id/archive`, `/projects/:id/restore` | Change project archive state |
+| `GET`, `POST` | `/projects/:id/tasks` | List or create project tasks |
+| `POST`, `DELETE` | `/projects/:id/invitations` | Create or revoke in-app invitations |
+| `PATCH`, `DELETE` | `/projects/:id/members/:userId` | Change a role or remove/leave membership |
+| `GET`, `POST` | `/project-invitations` | List and accept/decline the current user's invitations |
 | `GET`, `POST` | `/tags` | List or create tags |
 | `PUT`, `DELETE` | `/tags/:id` | Update or delete one tag |
 
-Deleting a project keeps its tasks and removes their project assignment. Deleting a tag removes its task associations. Deleting a user cascades to that user's tasks, projects, tags, and task-tag relationships.
+Deleting a project permanently deletes its project tasks, shared tags, memberships, and invitations after exact-title confirmation. Removing a member preserves project tasks and clears their assignments. Deleting a personal tag removes its personal-task associations.
 
 ## Validation before submitting changes
 

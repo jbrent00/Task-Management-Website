@@ -2,8 +2,10 @@ export const tagColors = ['slate', 'red', 'orange', 'yellow', 'green', 'teal', '
 export type TagColor = (typeof tagColors)[number];
 export const taskPriorities = ['low', 'medium', 'high'] as const;
 export const taskStatuses = ['todo', 'in_progress', 'completed'] as const;
+export const projectRoles = ['owner', 'editor', 'viewer'] as const;
 export type TaskPriority = (typeof taskPriorities)[number];
 export type TaskStatus = (typeof taskStatuses)[number];
+export type ProjectRole = (typeof projectRoles)[number];
 
 export function cleanRequiredText(value: unknown, maxLength: number) {
     if (typeof value !== 'string') return null;
@@ -17,6 +19,8 @@ export function cleanOptionalText(value: unknown, maxLength: number) {
 }
 
 export const normalize = (value: string) => value.toLocaleLowerCase();
+export const isEmail = (value: unknown): value is string => typeof value === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim()) && value.length <= 320;
+export const isProjectRole = (value: unknown): value is ProjectRole => typeof value === 'string' && projectRoles.includes(value as ProjectRole);
 
 export function isIntegerOrNull(value: unknown): value is number | null {
     return value === null || Number.isInteger(value);
@@ -61,5 +65,5 @@ export function isTaskAssignmentInput(projectId: unknown, tagIds: unknown): proj
 }
 
 export function ownedTaskWhere(id: number, userId: string) {
-    return { id, userId };
+    return { id, createdById: userId, projectId: null };
 }
