@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { canBeAssigned, canManageProject, canWriteProject, invitationIsActionable } from './projectPolicy';
+import { canBeAssigned, canChangeAssignment, canCreateProjectTask, canEditProjectTask, canManageProject, canWriteProject, invitationIsActionable } from './projectPolicy';
 
 test('enforces the fixed project role matrix and archive lock', () => {
     assert.equal(canManageProject('owner', null), true);
@@ -14,6 +14,36 @@ test('only owners and editors can be task assignees', () => {
     assert.equal(canBeAssigned('owner'), true);
     assert.equal(canBeAssigned('editor'), true);
     assert.equal(canBeAssigned('viewer'), false);
+});
+
+test('applies each configurable editor task policy without limiting owners', () => {
+    const open = { archivedAt: null, editorsCanCreateTasks: true, editorsCanAssignOthers: true, editorsCanEditAllTasks: true, editorsCanSelfAssign: true };
+    const restricted = { ...open, editorsCanCreateTasks: false, editorsCanAssignOthers: false, editorsCanEditAllTasks: false, editorsCanSelfAssign: false };
+    const ownerTask = { createdById: 'owner', assigneeId: null };
+    const editorTask = { createdById: 'editor', assigneeId: null };
+    const assignedTask = { createdById: 'owner', assigneeId: 'editor' };
+
+    assert.equal(canCreateProjectTask('editor', open), true);
+    assert.equal(canCreateProjectTask('editor', restricted), false);
+    assert.equal(canCreateProjectTask('owner', restricted), true);
+    assert.equal(canEditProjectTask('editor', open, ownerTask, 'editor'), true);
+    assert.equal(canEditProjectTask('editor', restricted, ownerTask, 'editor'), false);
+    assert.equal(canEditProjectTask('editor', restricted, editorTask, 'editor'), true);
+    assert.equal(canEditProjectTask('editor', restricted, assignedTask, 'editor'), true);
+    assert.equal(canChangeAssignment('editor', open, 'editor', null, 'member'), true);
+    assert.equal(canChangeAssignment('editor', { ...open, editorsCanAssignOthers: false }, 'editor', null, 'member'), false);
+    assert.equal(canChangeAssignment('editor', { ...open, editorsCanAssignOthers: false }, 'editor', null, 'editor'), true);
+    assert.equal(canChangeAssignment('editor', restricted, 'editor', null, 'editor'), false);
+    assert.equal(canChangeAssignment('owner', restricted, 'owner', null, 'member'), true);
+});
+
+test('archive and viewer rules override collaboration settings', () => {
+    const archived = { archivedAt: new Date(), editorsCanCreateTasks: true, editorsCanAssignOthers: true, editorsCanEditAllTasks: true, editorsCanSelfAssign: true };
+    const task = { createdById: 'viewer', assigneeId: null };
+    assert.equal(canCreateProjectTask('editor', archived), false);
+    assert.equal(canEditProjectTask('owner', archived, task, 'owner'), false);
+    assert.equal(canEditProjectTask('viewer', { ...archived, archivedAt: null }, task, 'viewer'), false);
+    assert.equal(canChangeAssignment('viewer', { ...archived, archivedAt: null }, 'viewer', null, 'viewer'), false);
 });
 
 test('accepts only pending, unexpired invitations for a verified matching email', () => {

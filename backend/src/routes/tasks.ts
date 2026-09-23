@@ -6,6 +6,7 @@ import updateTask from "../controllers/updateTask";
 import bulkUpdateTasks from "../controllers/bulkUpdateTasks";
 import checklistItems from "../controllers/checklistItems";
 import aiGeneration from "../controllers/aiGeneration";
+import { joinTask, leaveTask } from '../controllers/taskParticipation';
 
 const router = Router();
 
@@ -14,6 +15,8 @@ router.get("/", getAllTasks);
 router.post("/", createTask);
 router.patch("/bulk-update", bulkUpdateTasks);
 router.post("/ai/generate", aiGeneration);
+router.post("/:id/join", joinTask);
+router.post("/:id/leave", leaveTask);
 router.post("/:taskId/checklist-items", checklistItems.create);
 router.patch("/:taskId/checklist-items/:itemId", checklistItems.update);
 router.delete("/:taskId/checklist-items/:itemId", checklistItems.remove);

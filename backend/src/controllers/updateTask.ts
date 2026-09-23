@@ -3,7 +3,8 @@ import type { Request, Response } from 'express';
 import { getAuth } from '@clerk/express';
 import { getTaskAccess } from '../services/authorization';
 import { validatePersonalTags, validateProjectAssignments } from './taskAssignments';
-import { serializeTask, taskInclude } from './taskResponse';
+import { getProjectTaskCapabilities, serializeTask, taskInclude } from './taskResponse';
+import { canChangeAssignment } from '../services/projectPolicy';
 import { cleanOptionalText, cleanRequiredText, isTaskPriority, isTaskStatus, parseOptionalDate } from './validation';
 
 export default async function updateTask(req: Request, res: Response) {
@@ -24,19 +25,34 @@ export default async function updateTask(req: Request, res: Response) {
         ? await validateProjectAssignments(access.task.projectId, assigneeId, tagIds)
         : assigneeId === null && await validatePersonalTags(userId, tagIds);
     if (!validAssignments) { res.status(400).json({ error: 'Assignee or tags are invalid' }); return; }
+    if (access.task.projectId && access.role && access.task.project && assigneeId !== access.task.assigneeId
+        && !canChangeAssignment(access.role, access.task.project, userId, access.task.assigneeId, assigneeId)) {
+        res.status(403).json({ error: 'You cannot change this task assignment' }); return;
+    }
     try {
-        const task = await prisma.task.update({
-            where: { id: taskId },
-            data: {
-                title, description, priority, status, dueDate, assigneeId,
-                ...(access.task.status !== status ? { completedAt: status === 'completed' ? new Date() : null } : {}),
-                ...(access.task.projectId
-                    ? { projectTaskTags: { deleteMany: {}, create: (tagIds as number[]).map((tagId) => ({ tagId })) } }
-                    : { taskTags: { deleteMany: {}, create: (tagIds as number[]).map((tagId) => ({ tagId })) } }),
-            },
-            include: taskInclude,
+        const task = await prisma.$transaction(async (tx) => {
+            const updated = await tx.task.update({
+                where: { id: taskId },
+                data: {
+                    title, description, priority, status, dueDate, assigneeId,
+                    ...(access.task.status !== status ? { completedAt: status === 'completed' ? new Date() : null } : {}),
+                    ...(access.task.projectId
+                        ? { projectTaskTags: { deleteMany: {}, create: (tagIds as number[]).map((tagId) => ({ tagId })) } }
+                        : { taskTags: { deleteMany: {}, create: (tagIds as number[]).map((tagId) => ({ tagId })) } }),
+                },
+                include: taskInclude,
+            });
+            if (access.task.projectId && access.task.project && assigneeId !== access.task.assigneeId) {
+                const metadata = { projectTitle: access.task.project.title, taskTitle: updated.title };
+                if (access.task.assigneeId && access.task.assigneeId !== userId) await tx.notification.create({ data: { userId: access.task.assigneeId, actorId: userId, projectId: access.task.projectId, taskId, type: 'task_unassigned', metadata } });
+                if (assigneeId && assigneeId !== userId) await tx.notification.create({ data: { userId: assigneeId, actorId: userId, projectId: access.task.projectId, taskId, type: 'task_assigned', metadata } });
+            }
+            return updated;
         });
-        res.json(serializeTask(task));
+        const capabilities = access.task.projectId && access.role && access.task.project
+            ? getProjectTaskCapabilities(access.role, access.task.project, task, userId)
+            : true;
+        res.json(serializeTask(task, capabilities));
     } catch (error) {
         console.error('Error updating task:', error);
         res.status(500).json({ error: 'Failed to update task' });

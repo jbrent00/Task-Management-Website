@@ -4,5 +4,5 @@
 .header nav { display: flex; gap: 6px; }
 .header nav a { padding: 9px 13px; border-radius: 8px; color: var(--text-muted); font-size: .9rem; font-weight: 700; text-decoration: none; }
 .header nav a:hover, .header nav a.active { background: var(--primary-soft); color: var(--primary); }
-.header > :last-child { justify-self: end; }
+.accountActions { display: flex; align-items: center; justify-self: end; gap: 10px; }
 @media (max-width: 560px) { .header { grid-template-columns: auto 1fr auto; gap: 10px; } .brand span { display: none; } .header nav { justify-content: center; } }
