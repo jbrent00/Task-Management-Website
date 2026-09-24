@@ -2,14 +2,16 @@ import TaskBoard from '../components/task-board/task-board';
 import CreateTaskForm from '../components/create-task-form/create-task-form';
 import TaskViewControls from '../components/task-view-controls/task-view-controls';
 import TaskViewTabs from '../components/task-view-tabs/task-view-tabs';
+import TaskDetailModal from '../components/task-detail-modal/task-detail-modal';
 import styles from './tasks-page.module.css';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { TaskMutationContext } from '../functions/taskMutationContext';
 import { getTasks } from '../api/getTasks';
 import { useAuth } from '@clerk/react';
 import { DragDropContext } from '@hello-pangea/dnd';
 import { updateTasks } from '../api/updateTasks';
-import { getProjects } from '../api/projects';
+import { getProject, getProjects } from '../api/projects';
 import { createTag, deleteTag, getTags, updateTag } from '../api/tags';
 import { defaultTaskView, getActiveSort, getTaskTabCounts, getVisibleTasksByStatus, hasActiveTaskFilters, isValidTaskView, taskStatuses } from '../functions/taskViews';
 
@@ -25,6 +27,7 @@ function mergeVisibleOrder(allTasks, previousVisibleTasks, reorderedVisibleTasks
 
 function TasksPage() {
     const { getToken, isSignedIn, isLoaded, userId } = useAuth();
+    const [searchParams, setSearchParams] = useSearchParams();
     const [loading, setLoading] = useState(true);
     const [tasks, setTasks] = useState([]);
     const [projects, setProjects] = useState([]);
@@ -37,10 +40,15 @@ function TasksPage() {
     const [notice, setNotice] = useState(null);
     const [creationExpanded, setCreationExpanded] = useState(false);
     const creationTrigger = useRef(null);
+    const closingTaskId = useRef(null);
     const [selectedStatus, setSelectedStatus] = useState('todo');
     const [narrow, setNarrow] = useState(() => window.matchMedia('(max-width: 960px)').matches);
     const mutationLock = useRef(false);
     const [mutationBusy, setMutationBusy] = useState(false);
+    const [selectedProject, setSelectedProject] = useState(null);
+    const [projectLoadState, setProjectLoadState] = useState('idle');
+    const [projectLoadError, setProjectLoadError] = useState('');
+    const [projectLoadRequest, setProjectLoadRequest] = useState(0);
     const mutation = {
         busy: mutationBusy,
         begin: () => {
@@ -135,6 +143,60 @@ function TasksPage() {
         counts[project.id] = { total: projectTasks.length, completed: projectTasks.filter((task) => task.status === 'completed').length };
         return counts;
     }, {}), [projects, tasks]);
+    const requestedTaskId = searchParams.get('task');
+    const selectedTaskId = requestedTaskId && /^\d+$/.test(requestedTaskId) ? Number(requestedTaskId) : null;
+    const selectedTask = selectedTaskId === null ? null : tasks.find((task) => task.id === selectedTaskId) ?? null;
+
+    const openTask = (taskId) => setSearchParams((current) => {
+        const next = new URLSearchParams(current);
+        next.set('task', String(taskId));
+        return next;
+    });
+    const closeTask = () => {
+        const closingId = selectedTaskId;
+        closingTaskId.current = closingId;
+        setSearchParams((current) => {
+            const next = new URLSearchParams(current);
+            next.delete('task');
+            return next;
+        }, { replace: true });
+        window.requestAnimationFrame(() => document.querySelector(`#task-card-${closingId} [aria-haspopup="menu"]`)?.focus());
+    };
+
+    useEffect(() => {
+        if (requestedTaskId === null) { closingTaskId.current = null; return; }
+        if (closingTaskId.current !== null && closingTaskId.current === selectedTaskId) return;
+        if (loading || loadError || requestedTaskId === null || selectedTask) return;
+        setSearchParams((current) => {
+            const next = new URLSearchParams(current);
+            next.delete('task');
+            return next;
+        }, { replace: true });
+        setNotice({ tone: 'error', message: 'That task is unavailable or you no longer have access to it.' });
+    }, [loadError, loading, requestedTaskId, selectedTask, selectedTaskId, setSearchParams]);
+
+    useEffect(() => {
+        let cancelled = false;
+        if (!selectedTask?.projectId) {
+            setSelectedProject(null);
+            setProjectLoadState('idle');
+            setProjectLoadError('');
+            return undefined;
+        }
+        setSelectedProject(null);
+        setProjectLoadState('loading');
+        setProjectLoadError('');
+        const loadProject = async () => {
+            try {
+                const project = await getProject(await getToken(), selectedTask.projectId);
+                if (!cancelled) { setSelectedProject(project); setProjectLoadState('ready'); }
+            } catch (error) {
+                if (!cancelled) { setProjectLoadState('error'); setProjectLoadError(error.message); }
+            }
+        };
+        loadProject();
+        return () => { cancelled = true; };
+    }, [getToken, projectLoadRequest, selectedTask?.id, selectedTask?.projectId]);
     const withToken = async (callback) => {
         if (!mutation.begin()) throw new Error('Another workspace change is still saving. Please try again.');
         try { return await callback(await getToken()); }
@@ -214,11 +276,12 @@ function TasksPage() {
             <div className={styles.taskBoards}>
                 <DragDropContext onDragEnd={handleDragEnd}>
                     {taskStatuses.map((status) => <div key={status} hidden={narrow && selectedStatus !== status}>
-                        <TaskBoard status={status} tasks={tasksByStatus[status]} allTasks={tasks} setAllTasks={setTasks} loading={loading} isManualOrder={isManualOrder && !mutationBusy} isFiltered={isFiltered} selectedTab={view.selectedTab} projects={projects} tags={tags} onCreateTag={handleCreateTag} onNotify={setNotice} />
+                        <TaskBoard status={status} tasks={tasksByStatus[status]} allTasks={tasks} setAllTasks={setTasks} loading={loading} isManualOrder={isManualOrder && !mutationBusy} isFiltered={isFiltered} selectedTab={view.selectedTab} projects={projects} tags={tags} inlineChecklist onCreateTag={handleCreateTag} onNotify={setNotice} onOpenDetails={openTask} />
                         {narrow && !loading && tasksByStatus[status].length === 0 && taskStatuses.filter((other) => other !== status && tasksByStatus[other].length > 0).map((other) => <button className={styles.switchStatus} type="button" key={other} onClick={() => setSelectedStatus(other)}>Show {({ todo: 'To do', in_progress: 'In progress', completed: 'Completed' })[other]} tasks ({tasksByStatus[other].length})</button>)}
                     </div>)}
                 </DragDropContext>
             </div>
+            {selectedTask && <TaskDetailModal key={selectedTask.id} task={selectedTask} project={selectedTask.projectId && selectedProject?.id === selectedTask.projectId ? selectedProject : null} personalTags={tags} onCreatePersonalTag={handleCreateTag} projectLoading={Boolean(selectedTask.projectId) && selectedProject?.id !== selectedTask.projectId && projectLoadState !== 'error'} projectError={projectLoadState === 'error' ? projectLoadError : ''} onRetryProject={() => setProjectLoadRequest((request) => request + 1)} onClose={closeTask} onUpdated={(updated) => setTasks((current) => current.map((task) => task.id === updated.id ? updated : task))} onDeleted={(taskId) => { setTasks((current) => current.filter((task) => task.id !== taskId)); closeTask(); }} onNotify={setNotice} />}
         </div></TaskMutationContext.Provider>
     );
 }

@@ -79,7 +79,7 @@ export default function ProjectPage() {
         {tab === 'activity' && <section className={styles.panel}><div className={styles.panelHeading}><div><h2>Project activity</h2><p>Key task, discussion, membership, and settings changes.</p></div></div><ActivityTimeline projectId={id} /></section>}
         {tab === 'members' && <MembersPanel project={project} currentUserId={userId} getToken={getToken} onChanged={load} onError={setError} onDeleted={() => navigate('/projects')} />}
         {tab === 'settings' && <SettingsPanel project={project} getToken={getToken} onChanged={load} onError={setError} onNotify={setNotice} onDeleted={() => navigate('/projects')} />}
-        {selectedTask && <TaskDetailModal task={selectedTask} project={project} onClose={closeTask} onUpdated={(updated) => setTasks((current) => current.map((item) => item.id === updated.id ? updated : item))} onDeleted={(taskId) => { setTasks((current) => current.filter((item) => item.id !== taskId)); closeTask(); }} onNotify={notify} />}
+        {selectedTask && <TaskDetailModal key={selectedTask.id} task={selectedTask} project={project} onClose={closeTask} onUpdated={(updated) => setTasks((current) => current.map((item) => item.id === updated.id ? updated : item))} onDeleted={(taskId) => { setTasks((current) => current.filter((item) => item.id !== taskId)); closeTask(); }} onNotify={notify} />}
     </div></TaskMutationContext.Provider>;
 }
 

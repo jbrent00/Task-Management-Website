@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import styles from './task-card.module.css';
 
-export default function TaskActions({ taskId, disabled, onOpenDetails, onEdit, onDelete, onAddChecklist, onParticipation, participationLabel }) {
+export default function TaskActions({ taskId, disabled, onOpenDetails, onAddChecklist, onParticipation, participationLabel }) {
     const [open, setOpen] = useState(false);
     const root = useRef(null);
     const trigger = useRef(null);
@@ -31,9 +31,7 @@ export default function TaskActions({ taskId, disabled, onOpenDetails, onEdit, o
         {open && <div ref={menu} id={`task-actions-${taskId}`} className={styles.menu} role="menu" aria-label="Task actions" onKeyDown={navigate}>
             {onOpenDetails && <button role="menuitem" type="button" onClick={() => choose(onOpenDetails)}>Open details</button>}
             {onParticipation && <button role="menuitem" type="button" onClick={() => choose(onParticipation)}>{participationLabel}</button>}
-            {onEdit && <button role="menuitem" type="button" onClick={() => choose(onEdit)}>Edit</button>}
             {onAddChecklist && <button role="menuitem" type="button" onClick={() => choose(onAddChecklist)}>Add checklist</button>}
-            {onDelete && <button role="menuitem" type="button" onClick={() => choose(onDelete)}>Delete</button>}
         </div>}
     </div>;
 }

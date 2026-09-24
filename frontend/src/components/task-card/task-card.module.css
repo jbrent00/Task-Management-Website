@@ -2,7 +2,7 @@
 .card:hover { box-shadow: var(--shadow-md); }
 .overdue { border-color: #fca5a5; }
 .dueSoon { border-color: #fcd34d; }
-.topRow, .meta, .actions { display: flex; align-items: center; }
+.topRow, .meta { display: flex; align-items: center; }
 .dragSurface { border-radius: 8px; }
 .dragEnabled { cursor: grab; user-select: none; }
 .dragEnabled:active { cursor: grabbing; }
@@ -47,22 +47,6 @@
 .tagMore { background: var(--surface-muted); color: var(--text-muted); }
 .overdue .dueLabel { color: var(--danger); }
 .dueSoon .dueLabel { color: var(--warning); }
-.actions { justify-content: flex-end; gap: 8px; margin-top: 16px; }
-.button, .saveButton, .cancelButton { min-height: 34px; padding: 0 11px; border-radius: 7px; font-size: 0.8rem; font-weight: 700; }
-.button, .cancelButton { border: 1px solid var(--border-strong); background: var(--surface); color: var(--text); }
-.deleteButton { border-color: transparent; background: var(--danger-soft); color: var(--danger); }
-.saveButton { border: 1px solid var(--primary); background: var(--primary); color: #fff; }
-.editForm { display: grid; gap: 12px; }
-.field { display: flex; flex-direction: column; gap: 6px; }
-.field label { color: var(--text-muted); font-size: 0.78rem; font-weight: 700; }
-.field input, .field textarea, .field select { width: 100%; border: 1px solid var(--border-strong); border-radius: 8px; background: var(--surface); color: var(--text); }
-.field input, .field select { min-height: 38px; padding: 0 10px; }
-.field textarea { min-height: 82px; padding: 9px 10px; resize: vertical; }
-.editGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-@media (max-width: 420px) { .editGrid { grid-template-columns: 1fr; } }
+.button { min-height: 34px; padding: 0 11px; border: 1px solid var(--border-strong); border-radius: 7px; background: var(--surface); color: var(--text); font-size: 0.8rem; font-weight: 700; }
 .assignees { display: inline-flex; min-width: 0; align-items: baseline; gap: 5px; color: var(--text); font-weight: 650; }.assignees b { color: var(--text-muted); font-size: .7rem; white-space: nowrap; }
-.dialogBackdrop { position: fixed; z-index: 30; inset: 0; display: grid; place-items: center; padding: 20px; background: rgb(15 23 42 / .42); }
-.dialog { display: grid; width: min(100%, 420px); gap: 12px; padding: 18px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); box-shadow: var(--shadow-md); }
-.dialog h2, .dialog p { margin: 0; }
-.dialogActions { display: flex; justify-content: flex-end; gap: 8px; }
 .participation { min-height: 32px; padding: 0 10px; border: 1px solid var(--primary); border-radius: 7px; background: var(--primary-soft); color: var(--primary); font-weight: 750; }
