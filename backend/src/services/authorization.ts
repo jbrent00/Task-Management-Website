@@ -15,6 +15,7 @@ export async function getTaskAccess(taskId: number, userId: string) {
     const task = await prisma.task.findUnique({
         where: { id: taskId },
         include: {
+            assignments: { select: { userId: true } },
             project: {
                 include: { memberships: { where: { userId }, select: { role: true } } },
             },

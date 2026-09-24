@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { canBeAssigned, canChangeAssignment, canCreateProjectTask, canEditProjectTask, canManageProject, canWriteProject, invitationIsActionable } from './projectPolicy';
+import { canBeAssigned, canChangeAssignments, canCreateProjectTask, canEditProjectTask, canManageProject, canWriteProject, invitationIsActionable } from './projectPolicy';
 
 test('enforces the fixed project role matrix and archive lock', () => {
     assert.equal(canManageProject('owner', null), true);
@@ -19,9 +19,9 @@ test('only owners and editors can be task assignees', () => {
 test('applies each configurable editor task policy without limiting owners', () => {
     const open = { archivedAt: null, editorsCanCreateTasks: true, editorsCanAssignOthers: true, editorsCanEditAllTasks: true, editorsCanJoinTasks: true, editorsCanLeaveTasks: true };
     const restricted = { ...open, editorsCanCreateTasks: false, editorsCanAssignOthers: false, editorsCanEditAllTasks: false, editorsCanJoinTasks: false, editorsCanLeaveTasks: false };
-    const ownerTask = { createdById: 'owner', assigneeId: null };
-    const editorTask = { createdById: 'editor', assigneeId: null };
-    const assignedTask = { createdById: 'owner', assigneeId: 'editor' };
+    const ownerTask = { createdById: 'owner', assignments: [] };
+    const editorTask = { createdById: 'editor', assignments: [] };
+    const assignedTask = { createdById: 'owner', assignments: [{ userId: 'editor' }, { userId: 'member' }] };
 
     assert.equal(canCreateProjectTask('editor', open), true);
     assert.equal(canCreateProjectTask('editor', restricted), false);
@@ -30,14 +30,14 @@ test('applies each configurable editor task policy without limiting owners', () 
     assert.equal(canEditProjectTask('editor', restricted, ownerTask, 'editor'), false);
     assert.equal(canEditProjectTask('editor', restricted, editorTask, 'editor'), true);
     assert.equal(canEditProjectTask('editor', restricted, assignedTask, 'editor'), true);
-    assert.equal(canChangeAssignment('editor', open, 'editor', null, 'member'), true);
-    assert.equal(canChangeAssignment('editor', { ...open, editorsCanAssignOthers: false }, 'editor', null, 'member'), false);
-    assert.equal(canChangeAssignment('editor', { ...open, editorsCanAssignOthers: false }, 'editor', null, 'editor'), true);
-    assert.equal(canChangeAssignment('editor', { ...open, editorsCanAssignOthers: false, editorsCanJoinTasks: false }, 'editor', null, 'editor'), false);
-    assert.equal(canChangeAssignment('editor', { ...open, editorsCanAssignOthers: false, editorsCanLeaveTasks: false }, 'editor', 'editor', null), false);
-    assert.equal(canChangeAssignment('editor', { ...open, editorsCanAssignOthers: false }, 'editor', 'editor', null), true);
-    assert.equal(canChangeAssignment('editor', restricted, 'editor', null, 'editor'), false);
-    assert.equal(canChangeAssignment('owner', restricted, 'owner', null, 'member'), true);
+    assert.equal(canChangeAssignments('editor', open, 'editor', [], ['member']), true);
+    assert.equal(canChangeAssignments('editor', { ...open, editorsCanAssignOthers: false }, 'editor', [], ['member']), false);
+    assert.equal(canChangeAssignments('editor', { ...open, editorsCanAssignOthers: false }, 'editor', [], ['editor']), true);
+    assert.equal(canChangeAssignments('editor', { ...open, editorsCanAssignOthers: false, editorsCanJoinTasks: false }, 'editor', [], ['editor']), false);
+    assert.equal(canChangeAssignments('editor', { ...open, editorsCanAssignOthers: false, editorsCanLeaveTasks: false }, 'editor', ['editor'], []), false);
+    assert.equal(canChangeAssignments('editor', { ...open, editorsCanAssignOthers: false }, 'editor', ['editor'], []), true);
+    assert.equal(canChangeAssignments('editor', restricted, 'editor', [], ['editor']), false);
+    assert.equal(canChangeAssignments('owner', restricted, 'owner', [], ['member']), true);
 });
 
 test('requires every policy implicated by an assignment transition', () => {
@@ -65,7 +65,7 @@ test('requires every policy implicated by an assignment transition', () => {
                     const enabled = [assignOthers, join, leave];
                     const expected = assignmentCase.required.every((required, index) => !required || enabled[index]);
                     assert.equal(
-                        canChangeAssignment('editor', policy(assignOthers, join, leave), 'editor', assignmentCase.current, assignmentCase.next),
+                        canChangeAssignments('editor', policy(assignOthers, join, leave), 'editor', assignmentCase.current ? [assignmentCase.current] : [], assignmentCase.next ? [assignmentCase.next] : []),
                         expected,
                         `${assignmentCase.name}: assignOthers=${assignOthers}, join=${join}, leave=${leave}`,
                     );
@@ -74,17 +74,17 @@ test('requires every policy implicated by an assignment transition', () => {
         }
     }
 
-    assert.equal(canChangeAssignment('editor', policy(false, false, false), 'editor', 'editor', 'editor'), true);
-    assert.equal(canChangeAssignment('editor', policy(false, false, false), 'editor', 'member', 'member'), true);
+    assert.equal(canChangeAssignments('editor', policy(false, false, false), 'editor', ['editor'], ['editor']), true);
+    assert.equal(canChangeAssignments('editor', policy(false, false, false), 'editor', ['member'], ['member']), true);
 });
 
 test('archive and viewer rules override collaboration settings', () => {
     const archived = { archivedAt: new Date(), editorsCanCreateTasks: true, editorsCanAssignOthers: true, editorsCanEditAllTasks: true, editorsCanJoinTasks: true, editorsCanLeaveTasks: true };
-    const task = { createdById: 'viewer', assigneeId: null };
+    const task = { createdById: 'viewer', assignments: [] };
     assert.equal(canCreateProjectTask('editor', archived), false);
     assert.equal(canEditProjectTask('owner', archived, task, 'owner'), false);
     assert.equal(canEditProjectTask('viewer', { ...archived, archivedAt: null }, task, 'viewer'), false);
-    assert.equal(canChangeAssignment('viewer', { ...archived, archivedAt: null }, 'viewer', null, 'viewer'), false);
+    assert.equal(canChangeAssignments('viewer', { ...archived, archivedAt: null }, 'viewer', [], ['viewer']), false);
 });
 
 test('accepts only pending, unexpired invitations for a verified matching email', () => {

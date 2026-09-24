@@ -24,6 +24,7 @@ model Project {
   tasks                    Task[]
   tags                     ProjectTag[]
   notifications            Notification[]
+  activities               ProjectActivity[]
 }
 
 model ProjectMembership {
@@ -93,17 +94,28 @@ model Task {
   orderIndex      Int              @default(0)
   projectId       Int?
   createdById     String
-  assigneeId      String?
   project         Project?         @relation(fields: [projectId], references: [id], onDelete: Cascade)
   createdBy       User             @relation("TasksCreated", fields: [createdById], references: [id], onDelete: Cascade)
-  assignee        User?            @relation("TasksAssigned", fields: [assigneeId], references: [id], onDelete: SetNull)
+  assignments     TaskAssignment[]
   taskTags        TaskTag[]
   projectTaskTags ProjectTaskTag[]
   checklistItems  ChecklistItem[]
+  comments        TaskComment[]
+  activities      ProjectActivity[]
   notifications   Notification[]
 
   @@index([createdById, projectId])
-  @@index([assigneeId, projectId])
+}
+
+model TaskAssignment {
+  taskId     Int
+  userId     String
+  assignedAt DateTime @default(now())
+  task       Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([taskId, userId])
+  @@index([userId, taskId])
 }
 
 model ChecklistItem {
@@ -147,10 +159,60 @@ model User {
   emails            UserEmail[]
   tags              Tag[]
   tasksCreated      Task[]              @relation("TasksCreated")
-  tasksAssigned     Task[]              @relation("TasksAssigned")
+  taskAssignments   TaskAssignment[]
+  commentsAuthored  TaskComment[]        @relation("CommentAuthor")
+  commentsDeleted   TaskComment[]        @relation("CommentDeletedBy")
+  commentMentions   CommentMention[]
+  activities        ProjectActivity[]    @relation("ActivityActor")
   aiGenerationLimit AiGenerationLimit?
   notifications     Notification[]        @relation("NotificationRecipient")
   notificationActs  Notification[]        @relation("NotificationActor")
+}
+
+model TaskComment {
+  id          Int              @id @default(autoincrement())
+  taskId      Int
+  authorId    String
+  body        String
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  editedAt    DateTime?
+  deletedAt   DateTime?
+  deletedById String?
+  task        Task             @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  author      User             @relation("CommentAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  deletedBy   User?            @relation("CommentDeletedBy", fields: [deletedById], references: [id], onDelete: SetNull)
+  mentions    CommentMention[]
+
+  @@index([taskId, createdAt, id])
+}
+
+model CommentMention {
+  commentId Int
+  userId    String
+  start     Int
+  end       Int
+  comment   TaskComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([commentId, start])
+  @@index([userId, commentId])
+}
+
+model ProjectActivity {
+  id        Int                 @id @default(autoincrement())
+  projectId Int
+  taskId    Int?
+  actorId   String?
+  type      ProjectActivityType
+  metadata  Json
+  createdAt DateTime            @default(now())
+  project   Project             @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  task      Task?               @relation(fields: [taskId], references: [id], onDelete: SetNull)
+  actor     User?               @relation("ActivityActor", fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([projectId, createdAt, id])
+  @@index([taskId, createdAt, id])
 }
 
 model Notification {
@@ -209,9 +271,27 @@ enum InvitationStatus {
 enum NotificationType {
   task_assigned
   task_unassigned
+  task_commented
+  comment_mentioned
   role_changed
   project_removed
   ownership_transferred
+}
+
+enum ProjectActivityType {
+  task_created
+  task_status_changed
+  task_assignees_changed
+  comment_created
+  comment_edited
+  comment_deleted
+  member_joined
+  member_removed
+  member_role_changed
+  ownership_transferred
+  project_settings_updated
+  project_archived
+  project_restored
 }
 
 enum TaskPriority {

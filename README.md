@@ -18,10 +18,13 @@ The application uses Clerk for authentication. Personal tasks and tags stay priv
 - Dedicated active/archived project overview and project workspaces
 - In-app project invitations matched to verified Clerk email addresses
 - Owner, editor, and viewer permissions with ownership transfer
-- Single task assignees and shared project tags
+- Multiple task assignees with permission-aware join and leave workflows
+- Task discussions with structured member mentions, edit/delete markers, and in-app notifications
+- Project and task activity timelines for key collaboration events
 - Tag creation, editing, deletion, and a curated color picker
 - Per-user view preferences persisted in local storage
 - AI-assisted description and checklist drafting through an authenticated backend endpoint
+- AI-assisted drafting in both personal and project task creation
 - Optimistic drag-and-drop updates with rollback and feedback when a request fails
 - Responsive layouts and keyboard-accessible task reordering
 
@@ -180,6 +183,7 @@ Run each command from its package directory.
 | --- | --- |
 | `npm run dev` | Start the Vite development server |
 | `npm run lint` | Run ESLint across the frontend |
+| `npm test` | Run Vitest component and frontend policy tests |
 | `npm run build` | Validate and create the production bundle |
 | `npm run preview` | Preview the production bundle locally |
 
@@ -212,6 +216,9 @@ All task, project, and tag routes require a valid Clerk session token. Data acce
 | `GET`, `PATCH`, `DELETE` | `/projects/:id` | Read, update, or permanently delete a project |
 | `POST` | `/projects/:id/archive`, `/projects/:id/restore` | Change project archive state |
 | `GET`, `POST` | `/projects/:id/tasks` | List or create project tasks |
+| `GET` | `/projects/:id/activity` | Read the paginated project or task activity timeline |
+| `GET`, `POST` | `/tasks/:id/comments` | Read or add task comments and structured mentions |
+| `PATCH`, `DELETE` | `/tasks/:id/comments/:commentId` | Edit or soft-delete a task comment |
 | `POST`, `DELETE` | `/projects/:id/invitations` | Create or revoke in-app invitations |
 | `PATCH`, `DELETE` | `/projects/:id/members/:userId` | Change a role or remove/leave membership |
 | `GET`, `POST` | `/project-invitations` | List and accept/decline the current user's invitations |

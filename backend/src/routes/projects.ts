@@ -5,6 +5,7 @@ import { createInvitation, revokeInvitation } from '../controllers/projectInvita
 import { createProjectTask, getProjectTasks } from '../controllers/projectTasks';
 import { createProjectTag, deleteProjectTag, updateProjectTag } from '../controllers/projectTags';
 import { asyncRoute } from './asyncRoute';
+import { getProjectActivity } from '../controllers/projectActivity';
 
 const router = Router();
 router.get('/', asyncRoute(getProjects));
@@ -16,6 +17,7 @@ router.post('/:id/restore', asyncRoute(restoreProject));
 router.delete('/:id', asyncRoute(deleteProject));
 router.get('/:projectId/tasks', asyncRoute(getProjectTasks));
 router.post('/:projectId/tasks', asyncRoute(createProjectTask));
+router.get('/:projectId/activity', asyncRoute(getProjectActivity));
 router.post('/:projectId/tags', asyncRoute(createProjectTag));
 router.patch('/:projectId/tags/:tagId', asyncRoute(updateProjectTag));
 router.delete('/:projectId/tags/:tagId', asyncRoute(deleteProjectTag));

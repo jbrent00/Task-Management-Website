@@ -4,8 +4,10 @@ import { prisma } from '../services/prisma';
 import { getProjectAccess } from '../services/authorization';
 import { validateProjectAssignments } from './taskAssignments';
 import { getProjectTaskCapabilities, serializeTask, taskInclude } from './taskResponse';
-import { canChangeAssignment, canCreateProjectTask } from '../services/projectPolicy';
+import { canChangeAssignments, canCreateProjectTask } from '../services/projectPolicy';
 import { cleanOptionalText, cleanRequiredText, isChecklistItemsInput, isNonNegativeInteger, isTaskPriority, parseOptionalDate } from './validation';
+import { recordActivity } from '../services/activity';
+import { syncTaskAssignments } from './taskAssignmentChanges';
 
 export async function getProjectTasks(req: Request, res: Response) {
     const { userId } = getAuth(req); const projectId = Number(req.params.projectId);
@@ -20,20 +22,21 @@ export async function createProjectTask(req: Request, res: Response) {
     if (!userId) { res.status(401).json({ error: 'Unauthorized' }); return; }
     const access = await getProjectAccess(projectId, userId); if (!access) { res.status(404).json({ error: 'Project not found' }); return; }
     if (!canCreateProjectTask(access.role, access.project)) { res.status(403).json({ error: 'You cannot create tasks in this project' }); return; }
-    const { priority, orderIndex, tagIds = [], checklistItems = [], assigneeId = null } = req.body;
+    const { priority, orderIndex, tagIds = [], checklistItems = [], assigneeIds = [] } = req.body;
     const title = cleanRequiredText(req.body.title, 100); const description = cleanOptionalText(req.body.description, 500); const dueDate = parseOptionalDate(req.body.dueDate);
-    if (!title || description === undefined || !isTaskPriority(priority) || dueDate === undefined || !isNonNegativeInteger(orderIndex) || !isChecklistItemsInput(checklistItems) || !await validateProjectAssignments(projectId, assigneeId, tagIds)) {
+    if (!title || description === undefined || !isTaskPriority(priority) || dueDate === undefined || !isNonNegativeInteger(orderIndex) || !isChecklistItemsInput(checklistItems) || !await validateProjectAssignments(projectId, assigneeIds, tagIds)) {
         res.status(400).json({ error: 'Invalid task details, assignee, or tags' }); return;
     }
-    if (!canChangeAssignment(access.role, access.project, userId, null, assigneeId)) { res.status(403).json({ error: 'You cannot assign this task to that member' }); return; }
+    if (!canChangeAssignments(access.role, access.project, userId, [], assigneeIds)) { res.status(403).json({ error: 'You cannot assign this task to one or more selected members' }); return; }
     const task = await prisma.$transaction(async (tx) => {
         const created = await tx.task.create({ data: {
-            projectId, createdById: userId, assigneeId, title, description, priority, status: 'todo', dueDate, orderIndex,
+            projectId, createdById: userId, title, description, priority, status: 'todo', dueDate, orderIndex,
             projectTaskTags: { create: (tagIds as number[]).map((tagId) => ({ tagId })) },
             checklistItems: { create: checklistItems.map((item: { text: string }, index: number) => ({ text: item.text.trim(), orderIndex: index })) },
-        }, include: taskInclude });
-        if (assigneeId && assigneeId !== userId) await tx.notification.create({ data: { userId: assigneeId, actorId: userId, projectId, taskId: created.id, type: 'task_assigned', metadata: { projectTitle: access.project.title, taskTitle: created.title } } });
-        return created;
+        } });
+        await recordActivity(tx, { projectId, taskId: created.id, actorId: userId, type: 'task_created', metadata: { taskTitle: created.title } });
+        await syncTaskAssignments(tx, { taskId: created.id, projectId, projectTitle: access.project.title, taskTitle: created.title, actorId: userId, currentIds: [], nextIds: assigneeIds });
+        return tx.task.findUniqueOrThrow({ where: { id: created.id }, include: taskInclude });
     });
     res.status(201).json(serializeTask(task, getProjectTaskCapabilities(access.role, access.project, task, userId)));
 }

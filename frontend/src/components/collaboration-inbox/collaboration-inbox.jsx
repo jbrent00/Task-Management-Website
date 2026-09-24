@@ -20,6 +20,8 @@ const notificationCopy = (notification) => {
     const copies = {
         task_assigned: `${actor} assigned you “${data.taskTitle ?? 'a task'}” in ${data.projectTitle ?? 'a project'}.`,
         task_unassigned: `${actor} unassigned you from “${data.taskTitle ?? 'a task'}” in ${data.projectTitle ?? 'a project'}.`,
+        task_commented: `${actor} commented on “${data.taskTitle ?? 'a task'}” in ${data.projectTitle ?? 'a project'}.`,
+        comment_mentioned: `${actor} mentioned you on “${data.taskTitle ?? 'a task'}” in ${data.projectTitle ?? 'a project'}.`,
         role_changed: `${actor} changed your role in ${data.projectTitle ?? 'a project'} to ${data.role ?? 'a new role'}.`,
         project_removed: `${actor} removed you from ${data.projectTitle ?? 'a project'}.`,
         ownership_transferred: `${actor} transferred ownership of ${data.projectTitle ?? 'a project'} to you.`,
@@ -72,7 +74,7 @@ export default function CollaborationInbox() {
                 <div className={styles.actions}><button type="button" disabled={busyId === `invitation-${item.id}`} onClick={() => respond(item.invitation, false)}>Decline</button><button className={styles.primary} type="button" disabled={busyId === `invitation-${item.id}`} onClick={() => respond(item.invitation, true)}>Accept and open</button></div>
             </article> : <article className={`${styles.item} ${!item.notification.readAt ? styles.unread : ''}`} key={`notification-${item.id}`}>
                 <div><span className={styles.kind}>{item.notification.type.replaceAll('_', ' ')}</span><p>{notificationCopy(item.notification)}</p><small>{relativeTime(item.createdAt)}</small></div>
-                <div className={styles.actions}>{!item.notification.readAt && <button type="button" onClick={() => markRead({ ids: [item.id] })}>Mark read</button>}{item.notification.projectId && item.notification.type !== 'project_removed' && <Link to={`/projects/${item.notification.projectId}`} onClick={() => { if (!item.notification.readAt) markRead({ ids: [item.id] }); setOpen(false); }}>Open</Link>}</div>
+                <div className={styles.actions}>{!item.notification.readAt && <button type="button" onClick={() => markRead({ ids: [item.id] })}>Mark read</button>}{item.notification.projectId && item.notification.type !== 'project_removed' && <Link to={`/projects/${item.notification.projectId}${item.notification.taskId ? `?task=${item.notification.taskId}` : ''}`} onClick={() => { if (!item.notification.readAt) markRead({ ids: [item.id] }); setOpen(false); }}>Open</Link>}</div>
             </article>)}</div>
         </section>}
     </div>;
