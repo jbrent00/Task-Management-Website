@@ -14,6 +14,8 @@ import { joinTask, leaveTask } from './taskParticipation';
 import { getNotifications, markNotificationsRead } from './notifications';
 import deleteTask from './deleteTask';
 import bulkUpdateTasks from './bulkUpdateTasks';
+import { createTaskComment, deleteTaskComment, getTaskComments, updateTaskComment } from './taskComments';
+import { getProjectActivity } from './projectActivity';
 
 type Controller = (req: Request, res: Response) => void | Promise<void>;
 type Invocation = { userId: string; params?: Record<string, string>; body?: Record<string, unknown>; query?: Record<string, string> };
@@ -52,7 +54,7 @@ async function createProject(title: string, memberships: Array<{ userId: string;
 async function createTask(projectId: number, assigneeId: string | null = null) {
     return prisma.task.create({ data: {
         title: `${runId} task`, description: null, status: 'todo', priority: 'low', orderIndex: 0,
-        projectId, createdById: users.owner, assigneeId,
+        projectId, createdById: users.owner, ...(assigneeId ? { assignments: { create: { userId: assigneeId } } } : {}),
     } });
 }
 
@@ -102,7 +104,7 @@ test('owner, editor, and viewer permissions match representative operations', as
     for (const userId of [users.owner, users.editor, users.viewer]) {
         assert.equal((await invoke(getProjectTasks, { userId, params: { projectId: String(project.id) } })).status, 200);
     }
-    const taskBody = { title: 'Updated task', description: null, priority: 'low', status: 'todo', dueDate: null, tagIds: [], assigneeId: users.editor };
+    const taskBody = { title: 'Updated task', description: null, priority: 'low', status: 'todo', dueDate: null, tagIds: [], assigneeIds: [users.editor] };
     assert.equal((await invoke(updateTask, { userId: users.owner, params: { id: String(task.id) }, body: taskBody })).status, 200);
     assert.equal((await invoke(updateTask, { userId: users.editor, params: { id: String(task.id) }, body: taskBody })).status, 200);
     assert.equal((await invoke(updateTask, { userId: users.viewer, params: { id: String(task.id) }, body: taskBody })).status, 403);
@@ -152,7 +154,7 @@ test('member removal clears project task assignments', async () => {
 
     assert.equal(response.status, 204);
     assert.equal(await prisma.projectMembership.findUnique({ where: { projectId_userId: { projectId: project.id, userId: users.member } } }), null);
-    assert.equal((await prisma.task.findUniqueOrThrow({ where: { id: task.id } })).assigneeId, null);
+    assert.equal(await prisma.taskAssignment.count({ where: { taskId: task.id } }), 0);
 });
 
 test('project policy defaults preserve the existing open editor workflow', async () => {
@@ -174,13 +176,13 @@ test('restricted editor policies are enforced for creation, editing, and assignm
     } });
     projectIds.push(project.id);
     const ownerTask = await createTask(project.id);
-    const body = { title: 'Blocked edit', description: null, priority: 'low', status: 'todo', dueDate: null, tagIds: [], assigneeId: null };
+    const body = { title: 'Blocked edit', description: null, priority: 'low', status: 'todo', dueDate: null, tagIds: [], assigneeIds: [] };
     assert.equal((await invoke(updateTask, { userId: users.editor, params: { id: String(ownerTask.id) }, body })).status, 403);
-    assert.equal((await invoke(createProjectTask, { userId: users.editor, params: { projectId: String(project.id) }, body: { title: 'No', description: null, priority: 'low', dueDate: null, orderIndex: 0, assigneeId: null, tagIds: [], checklistItems: [] } })).status, 403);
+    assert.equal((await invoke(createProjectTask, { userId: users.editor, params: { projectId: String(project.id) }, body: { title: 'No', description: null, priority: 'low', dueDate: null, orderIndex: 0, assigneeIds: [], tagIds: [], checklistItems: [] } })).status, 403);
 
     const editorTask = await prisma.task.create({ data: { title: 'Editor task', status: 'todo', priority: 'low', orderIndex: 0, projectId: project.id, createdById: users.editor } });
     assert.equal((await invoke(updateTask, { userId: users.editor, params: { id: String(editorTask.id) }, body: { ...body, title: 'Allowed edit' } })).status, 200);
-    const assignOther = await invoke(updateTask, { userId: users.editor, params: { id: String(editorTask.id) }, body: { ...body, title: 'Assign other', assigneeId: users.member } });
+    const assignOther = await invoke(updateTask, { userId: users.editor, params: { id: String(editorTask.id) }, body: { ...body, title: 'Assign other', assigneeIds: [users.member] } });
     assert.equal(assignOther.status, 403);
 });
 
@@ -236,7 +238,7 @@ test('edit-all and participation policies govern edit, delete, reorder, join, an
     const taskBody = { description: null, priority: 'low', status: 'todo', dueDate: null, tagIds: [] };
 
     assert.equal((await invoke(updateTask, {
-        userId: users.editor, params: { id: String(ownerTask.id) }, body: { ...taskBody, title: 'Blocked', assigneeId: null },
+        userId: users.editor, params: { id: String(ownerTask.id) }, body: { ...taskBody, title: 'Blocked', assigneeIds: [] },
     })).status, 403);
     assert.equal((await invoke(deleteTask, { userId: users.editor, params: { id: String(ownerTask.id) } })).status, 403);
     assert.equal((await invoke(bulkUpdateTasks, {
@@ -246,10 +248,10 @@ test('edit-all and participation policies govern edit, delete, reorder, join, an
     assert.equal((await invoke(leaveTask, { userId: users.editor, params: { id: String(assignedTask.id) } })).status, 403);
 
     assert.equal((await invoke(updateTask, {
-        userId: users.editor, params: { id: String(editorTask.id) }, body: { ...taskBody, title: 'Editor-owned edit', assigneeId: null },
+        userId: users.editor, params: { id: String(editorTask.id) }, body: { ...taskBody, title: 'Editor-owned edit', assigneeIds: [] },
     })).status, 200);
     assert.equal((await invoke(updateTask, {
-        userId: users.editor, params: { id: String(assignedTask.id) }, body: { ...taskBody, title: 'Assigned edit', assigneeId: users.editor },
+        userId: users.editor, params: { id: String(assignedTask.id) }, body: { ...taskBody, title: 'Assigned edit', assigneeIds: [users.editor] },
     })).status, 200);
     assert.equal((await invoke(bulkUpdateTasks, {
         userId: users.editor, body: { tasks: [{ id: editorTask.id, orderIndex: 3, status: 'in_progress' }] },
@@ -258,7 +260,7 @@ test('edit-all and participation policies govern edit, delete, reorder, join, an
     assert.equal((await invoke(createProjectTask, {
         userId: users.owner, params: { projectId: String(project.id) }, body: {
             title: 'Owner override', description: null, priority: 'low', dueDate: null,
-            orderIndex: 4, assigneeId: users.editor, tagIds: [], checklistItems: [],
+            orderIndex: 4, assigneeIds: [users.editor], tagIds: [], checklistItems: [],
         },
     })).status, 201);
 });
@@ -299,43 +301,43 @@ test('assign-others cannot bypass join or leave policies', async () => {
 
     assert.equal((await invoke(createProjectTask, {
         userId: users.editor, params: { projectId: String(project.id) }, body: {
-            ...taskBody, orderIndex: 3, assigneeId: users.editor, checklistItems: [],
+            ...taskBody, orderIndex: 3, assigneeIds: [users.editor], checklistItems: [],
         },
     })).status, 403);
     assert.equal((await invoke(createProjectTask, {
         userId: users.editor, params: { projectId: String(project.id) }, body: {
-            ...taskBody, orderIndex: 3, assigneeId: users.member, checklistItems: [],
+            ...taskBody, orderIndex: 3, assigneeIds: [users.member], checklistItems: [],
         },
     })).status, 201);
     assert.equal((await invoke(updateTask, {
-        userId: users.editor, params: { id: String(unassigned.id) }, body: { ...taskBody, assigneeId: users.editor },
+        userId: users.editor, params: { id: String(unassigned.id) }, body: { ...taskBody, assigneeIds: [users.editor] },
     })).status, 403);
     assert.equal((await invoke(updateTask, {
-        userId: users.editor, params: { id: String(assignedToMember.id) }, body: { ...taskBody, assigneeId: users.editor },
+        userId: users.editor, params: { id: String(assignedToMember.id) }, body: { ...taskBody, assigneeIds: [users.editor] },
     })).status, 403);
     assert.equal((await invoke(updateTask, {
-        userId: users.editor, params: { id: String(assignedToEditor.id) }, body: { ...taskBody, assigneeId: null },
+        userId: users.editor, params: { id: String(assignedToEditor.id) }, body: { ...taskBody, assigneeIds: [] },
     })).status, 403);
     assert.equal((await invoke(updateTask, {
-        userId: users.editor, params: { id: String(assignedToEditor.id) }, body: { ...taskBody, assigneeId: users.member },
+        userId: users.editor, params: { id: String(assignedToEditor.id) }, body: { ...taskBody, assigneeIds: [users.member] },
     })).status, 403);
 
     await prisma.project.update({ where: { id: project.id }, data: {
         editorsCanAssignOthers: false, editorsCanJoinTasks: true, editorsCanLeaveTasks: true,
     } });
     assert.equal((await invoke(updateTask, {
-        userId: users.editor, params: { id: String(unassigned.id) }, body: { ...taskBody, assigneeId: users.editor },
+        userId: users.editor, params: { id: String(unassigned.id) }, body: { ...taskBody, assigneeIds: [users.editor] },
     })).status, 200);
     assert.equal((await invoke(updateTask, {
-        userId: users.editor, params: { id: String(assignedToMember.id) }, body: { ...taskBody, assigneeId: users.editor },
+        userId: users.editor, params: { id: String(assignedToMember.id) }, body: { ...taskBody, assigneeIds: [users.editor] },
     })).status, 403);
     assert.equal((await invoke(updateTask, {
-        userId: users.editor, params: { id: String(assignedToEditor.id) }, body: { ...taskBody, assigneeId: null },
+        userId: users.editor, params: { id: String(assignedToEditor.id) }, body: { ...taskBody, assigneeIds: [] },
     })).status, 200);
 
     const ownerOverride = await createTask(project.id, users.editor);
     assert.equal((await invoke(updateTask, {
-        userId: users.owner, params: { id: String(ownerOverride.id) }, body: { ...taskBody, assigneeId: users.member },
+        userId: users.owner, params: { id: String(ownerOverride.id) }, body: { ...taskBody, assigneeIds: [users.member] },
     })).status, 200);
 });
 
@@ -347,9 +349,9 @@ test('concurrent joins allow exactly one claim and leave releases the task', asy
     const request = { userId: users.editor, params: { id: String(task.id) } };
     const joins = await Promise.all([invoke(joinTask, request), invoke(joinTask, request)]);
     assert.deepEqual(joins.map((response) => response.status).sort(), [200, 409]);
-    assert.equal((await prisma.task.findUniqueOrThrow({ where: { id: task.id } })).assigneeId, users.editor);
+    assert.equal(await prisma.taskAssignment.count({ where: { taskId: task.id, userId: users.editor } }), 1);
     assert.equal((await invoke(leaveTask, request)).status, 200);
-    assert.equal((await prisma.task.findUniqueOrThrow({ where: { id: task.id } })).assigneeId, null);
+    assert.equal(await prisma.taskAssignment.count({ where: { taskId: task.id } }), 0);
 });
 
 test('assignment and membership changes create private, readable notifications', async () => {
@@ -357,7 +359,7 @@ test('assignment and membership changes create private, readable notifications',
         { userId: users.owner, role: 'owner' }, { userId: users.editor, role: 'editor' }, { userId: users.member, role: 'viewer' },
     ]);
     const task = await createTask(project.id);
-    const taskBody = { title: task.title, description: null, priority: 'low', status: 'todo', dueDate: null, tagIds: [], assigneeId: users.editor };
+    const taskBody = { title: task.title, description: null, priority: 'low', status: 'todo', dueDate: null, tagIds: [], assigneeIds: [users.editor] };
     assert.equal((await invoke(updateTask, { userId: users.owner, params: { id: String(task.id) }, body: taskBody })).status, 200);
     assert.equal((await invoke(updateMember, { userId: users.owner, params: { projectId: String(project.id), userId: users.member }, body: { role: 'editor' } })).status, 200);
 
@@ -371,6 +373,51 @@ test('assignment and membership changes create private, readable notifications',
     assert.equal((await prisma.notification.findUniqueOrThrow({ where: { id: assignment.id } })).readAt, null);
     assert.equal((await invoke(markNotificationsRead, { userId: users.editor, body: { ids: [assignment.id] } })).status, 200);
     assert.ok((await prisma.notification.findUniqueOrThrow({ where: { id: assignment.id } })).readAt);
+});
+
+test('comments validate mentions, notify assignees, soft-delete, and record activity', async () => {
+    const project = await createProject('comments and activity', [
+        { userId: users.owner, role: 'owner' }, { userId: users.editor, role: 'editor' },
+        { userId: users.viewer, role: 'viewer' }, { userId: users.member, role: 'viewer' },
+    ]);
+    const task = await createTask(project.id, users.editor);
+    const ownerMention = `@${emails.owner}`;
+    const body = `Hello ${ownerMention}`;
+    const created = await invoke(createTaskComment, {
+        userId: users.viewer, params: { taskId: String(task.id) },
+        body: { body, mentions: [{ userId: users.owner, start: body.indexOf(ownerMention), end: body.length }] },
+    });
+    assert.equal(created.status, 201);
+    const commentId = (created.body as { id: number }).id;
+    const tasksAfterComment = await invoke(getProjectTasks, { userId: users.owner, params: { projectId: String(project.id) } });
+    assert.equal((tasksAfterComment.body as Array<{ id: number; commentCount: number }>).find((item) => item.id === task.id)?.commentCount, 1);
+    assert.equal(await prisma.notification.count({ where: { taskId: task.id, userId: { in: [users.owner, users.editor] }, type: { in: ['comment_mentioned', 'task_commented'] } } }), 2);
+
+    const invalid = await invoke(createTaskComment, {
+        userId: users.viewer, params: { taskId: String(task.id) }, body: { body, mentions: [{ userId: users.owner, start: 0, end: body.length }] },
+    });
+    assert.equal(invalid.status, 400);
+
+    const memberMention = `@${emails.member}`; const editedBody = `${body} ${memberMention}`;
+    assert.equal((await invoke(updateTaskComment, {
+        userId: users.viewer, params: { taskId: String(task.id), commentId: String(commentId) },
+        body: { body: editedBody, mentions: [
+            { userId: users.owner, start: body.indexOf(ownerMention), end: body.length },
+            { userId: users.member, start: editedBody.indexOf(memberMention), end: editedBody.length },
+        ] },
+    })).status, 200);
+    assert.equal(await prisma.notification.count({ where: { taskId: task.id, userId: users.member, type: 'comment_mentioned' } }), 1);
+
+    assert.equal((await invoke(deleteTaskComment, { userId: users.owner, params: { taskId: String(task.id), commentId: String(commentId) } })).status, 204);
+    const tasksAfterDeletion = await invoke(getProjectTasks, { userId: users.owner, params: { projectId: String(project.id) } });
+    assert.equal((tasksAfterDeletion.body as Array<{ id: number; commentCount: number }>).find((item) => item.id === task.id)?.commentCount, 0);
+    const comments = await invoke(getTaskComments, { userId: users.editor, params: { taskId: String(task.id) } });
+    const returned = (comments.body as { items: Array<{ body: string | null; mentions: unknown[]; deletedAt: string | Date | null }> }).items[0]!;
+    assert.equal(returned.body, null); assert.deepEqual(returned.mentions, []); assert.ok(returned.deletedAt);
+
+    const activity = await invoke(getProjectActivity, { userId: users.owner, params: { projectId: String(project.id) }, query: { category: 'comments' } });
+    assert.equal(activity.status, 200);
+    assert.deepEqual((activity.body as { items: Array<{ type: string }> }).items.map((item) => item.type), ['comment_deleted', 'comment_edited', 'comment_created']);
 });
 
 test('archived projects reject mutations and stay out of active project and task results', async () => {
@@ -445,6 +492,17 @@ test('collaborative-projects migration preserves legacy owners, tasks, and tags'
         assert.equal(migratedTask.rows[0]?.projectId, projectId);
         const migratedTag = await client.query(`SELECT project_tag."name" FROM "ProjectTaskTag" task_tag JOIN "ProjectTag" project_tag ON project_tag."id" = task_tag."tagId" WHERE task_tag."taskId" = $1`, [taskResult.rows[0]!.id]);
         assert.equal(migratedTag.rows[0]?.name, 'Legacy tag');
+
+        const collaborationFoundation = await readFile(new URL('../../prisma/migrations/20260923120000_add_collaboration_foundation/migration.sql', import.meta.url), 'utf8');
+        await client.query(collaborationFoundation);
+        const splitPolicies = await readFile(new URL('../../prisma/migrations/20260923180000_split_join_leave_policies/migration.sql', import.meta.url), 'utf8');
+        await client.query(splitPolicies);
+        const multiAssigneeMigration = await readFile(new URL('../../prisma/migrations/20260924120000_add_multi_assignee_comments_activity/migration.sql', import.meta.url), 'utf8');
+        await client.query(multiAssigneeMigration);
+        const migratedAssignment = await client.query(`SELECT "userId" FROM "TaskAssignment" WHERE "taskId" = $1`, [taskResult.rows[0]!.id]);
+        assert.equal(migratedAssignment.rows[0]?.userId, owner);
+        const legacyColumn = await client.query(`SELECT 1 FROM information_schema.columns WHERE table_schema = $1 AND table_name = 'Task' AND column_name = 'assigneeId'`, [schema]);
+        assert.equal(legacyColumn.rowCount, 0);
     } finally {
         await client.query('SET search_path TO public');
         await client.query(`DROP SCHEMA IF EXISTS "${schema}" CASCADE`);

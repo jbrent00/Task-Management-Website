@@ -4,6 +4,7 @@ import { prisma } from '../services/prisma';
 import { getProjectAccess } from '../services/authorization';
 import { cleanOptionalText, cleanRequiredText } from './validation';
 import { canCreateProjectTask } from '../services/projectPolicy';
+import { recordActivity } from '../services/activity';
 
 const personSelect = { id: true, fname: true, lname: true, primaryEmail: true, imageUrl: true } as const;
 
@@ -13,7 +14,8 @@ export async function getProjects(req: Request, res: Response) {
         const memberships = await prisma.projectMembership.findMany({
             where: { userId },
             include: { project: { include: {
-                tasks: { select: { status: true, updatedAt: true, dueDate: true, assigneeId: true } },
+                tasks: { select: { status: true, updatedAt: true, dueDate: true, assignments: { select: { userId: true } } } },
+                activities: { select: { createdAt: true }, orderBy: { createdAt: 'desc' }, take: 1 },
                 memberships: { include: { user: { select: personSelect } }, orderBy: { joinedAt: 'asc' } },
             } } },
             orderBy: { project: { title: 'asc' } },
@@ -25,8 +27,8 @@ export async function getProjects(req: Request, res: Response) {
             members: project.memberships.map((item) => ({ ...item.user, role: item.role, userId: item.userId })),
             taskCount: project.tasks.length, completedTaskCount: project.tasks.filter((task) => task.status === 'completed').length,
             overdueTaskCount: project.tasks.filter((task) => task.status !== 'completed' && task.dueDate && task.dueDate < now).length,
-            unassignedTaskCount: project.tasks.filter((task) => task.status !== 'completed' && !task.assigneeId).length,
-            lastActivityAt: new Date(Math.max(project.updatedAt.getTime(), ...project.tasks.map((task) => task.updatedAt.getTime()), ...project.memberships.map((item) => item.joinedAt.getTime()))),
+            unassignedTaskCount: project.tasks.filter((task) => task.status !== 'completed' && task.assignments.length === 0).length,
+            lastActivityAt: new Date(Math.max(project.updatedAt.getTime(), ...project.tasks.map((task) => task.updatedAt.getTime()), ...project.memberships.map((item) => item.joinedAt.getTime()), ...project.activities.map((item) => item.createdAt.getTime()))),
             capabilities: { canEdit: role === 'owner', canManageMembers: role === 'owner', canCreateTasks: canCreateProjectTask(role, project) },
         })));
     } catch (error) { console.error(error); res.status(500).json({ error: 'Failed to fetch projects' }); }
@@ -72,7 +74,17 @@ export async function updateProject(req: Request, res: Response) {
     const policyKeys = ['editorsCanCreateTasks', 'editorsCanAssignOthers', 'editorsCanEditAllTasks', 'editorsCanJoinTasks', 'editorsCanLeaveTasks'] as const;
     if (policyKeys.some((key) => key in req.body && typeof req.body[key] !== 'boolean')) { res.status(400).json({ error: 'Invalid collaboration settings' }); return; }
     const policies = Object.fromEntries(policyKeys.filter((key) => key in req.body).map((key) => [key, req.body[key]]));
-    res.json(await prisma.project.update({ where: { id }, data: { title, description, ...policies } }));
+    const changedFields = [
+        ...(title !== access.project.title ? ['title'] : []),
+        ...(description !== access.project.description ? ['description'] : []),
+        ...policyKeys.filter((key) => key in policies && policies[key] !== access.project[key]),
+    ];
+    const updated = await prisma.$transaction(async (tx) => {
+        const result = await tx.project.update({ where: { id }, data: { title, description, ...policies } });
+        if (changedFields.length) await recordActivity(tx, { projectId: id, actorId: userId, type: 'project_settings_updated', metadata: { changedFields } });
+        return result;
+    });
+    res.json(updated);
 }
 
 async function setArchived(req: Request, res: Response, archived: boolean) {
@@ -80,7 +92,12 @@ async function setArchived(req: Request, res: Response, archived: boolean) {
     if (!userId) { res.status(401).json({ error: 'Unauthorized' }); return; }
     const access = await getProjectAccess(id, userId); if (!access) { res.status(404).json({ error: 'Project not found' }); return; }
     if (access.role !== 'owner') { res.status(403).json({ error: 'Only the owner can change archive state' }); return; }
-    res.json(await prisma.project.update({ where: { id }, data: { archivedAt: archived ? new Date() : null } }));
+    const updated = await prisma.$transaction(async (tx) => {
+        const result = await tx.project.update({ where: { id }, data: { archivedAt: archived ? new Date() : null } });
+        await recordActivity(tx, { projectId: id, actorId: userId, type: archived ? 'project_archived' : 'project_restored', metadata: { projectTitle: result.title } });
+        return result;
+    });
+    res.json(updated);
 }
 export const archiveProject = (req: Request, res: Response) => setArchived(req, res, true);
 export const restoreProject = (req: Request, res: Response) => setArchived(req, res, false);

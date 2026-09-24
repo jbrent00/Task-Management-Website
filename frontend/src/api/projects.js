@@ -20,3 +20,4 @@ export const transferProjectOwnership = (token, id, userId) => request(token, `/
 export const createProjectTag = (token, id, name, color) => request(token, `/${id}/tags`, { method: 'POST', body: JSON.stringify({ name, color }) });
 export const updateProjectTag = (token, id, tagId, name, color) => request(token, `/${id}/tags/${tagId}`, { method: 'PATCH', body: JSON.stringify({ name, color }) });
 export const deleteProjectTag = (token, id, tagId) => request(token, `/${id}/tags/${tagId}`, { method: 'DELETE' });
+export const getProjectActivity = (token, id, { cursor = null, category = 'all', taskId = null } = {}) => request(token, `/${id}/activity?limit=30&category=${encodeURIComponent(category)}${cursor ? `&cursor=${cursor}` : ''}${taskId ? `&taskId=${taskId}` : ''}`);

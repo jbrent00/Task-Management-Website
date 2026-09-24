@@ -3,7 +3,7 @@ import { Draggable } from '@hello-pangea/dnd';
 import styles from './task-list.module.css';
 import { taskViewTabs } from '../../functions/taskViews';
 
-function TaskList({ tasks, status, allTasks, setAllTasks, loading, isManualOrder, isFiltered, selectedTab, projects, tags, members = [], projectMode = false, onCreateTag, onNotify, children }) {
+function TaskList({ tasks, status, allTasks, setAllTasks, loading, isManualOrder, isFiltered, selectedTab, projects, tags, members = [], projectMode = false, onCreateTag, onNotify, onOpenDetails, children }) {
     const statusDetails = {
         todo: { label: 'To do', className: 'todo', emptyMessage: 'No tasks yet. Create one above to get started.' },
         in_progress: { label: 'In progress', className: 'inProgress', emptyMessage: 'Move a task here when you are ready to focus.' },
@@ -25,7 +25,7 @@ function TaskList({ tasks, status, allTasks, setAllTasks, loading, isManualOrder
                 <Draggable key={task.id} draggableId={String(task.id)} index={index} isDragDisabled={!isManualOrder || (!projectMode && Boolean(task.projectId)) || task.capabilities?.canReorder === false}>
                     {(provided) => (
                         <div className={styles.draggableItem} ref={provided.innerRef} {...provided.draggableProps}>
-                            <TaskCard task={task} allTasks={allTasks} setAllTasks={setAllTasks} projects={projects} tags={tags} members={members} projectMode={projectMode} onCreateTag={onCreateTag} onNotify={onNotify} dragHandleProps={provided.dragHandleProps} isDragEnabled={isManualOrder && (projectMode || !task.projectId) && task.capabilities?.canReorder !== false} />
+                            <TaskCard task={task} allTasks={allTasks} setAllTasks={setAllTasks} projects={projects} tags={tags} members={members} projectMode={projectMode} onCreateTag={onCreateTag} onNotify={onNotify} onOpenDetails={onOpenDetails} dragHandleProps={provided.dragHandleProps} isDragEnabled={isManualOrder && (projectMode || !task.projectId) && task.capabilities?.canReorder !== false} />
                         </div>
                     )}
                 </Draggable>

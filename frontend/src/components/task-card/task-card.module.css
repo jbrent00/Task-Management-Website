@@ -20,6 +20,8 @@
 .meta { gap: 6px; margin-top: 8px; color: var(--text-muted); font-size: 0.78rem; flex-wrap: wrap; overflow-wrap: anywhere; }
 .title { overflow-wrap: anywhere; }
 .cardControls { display: flex; justify-content: flex-end; align-items: center; gap: 8px; margin-top: 6px; }
+.commentCount { display: inline-flex; align-items: center; gap: 4px; margin-right: auto; color: var(--text-muted); font-size: .76rem; font-weight: 700; }
+.commentCount svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-linejoin: round; stroke-width: 1.8; }
 .completion { position: relative; display: inline-flex; gap: 8px; align-items: center; min-height: 32px; color: var(--text-muted); font-size: .78rem; cursor: pointer; }
 .completion::before { content: ''; position: absolute; inset: -5px 0; }
 .completion input { width: 18px; height: 18px; accent-color: var(--primary); }
@@ -58,6 +60,7 @@
 .field textarea { min-height: 82px; padding: 9px 10px; resize: vertical; }
 .editGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 @media (max-width: 420px) { .editGrid { grid-template-columns: 1fr; } }
+.assignees { display: inline-flex; min-width: 0; align-items: baseline; gap: 5px; color: var(--text); font-weight: 650; }.assignees b { color: var(--text-muted); font-size: .7rem; white-space: nowrap; }
 .dialogBackdrop { position: fixed; z-index: 30; inset: 0; display: grid; place-items: center; padding: 20px; background: rgb(15 23 42 / .42); }
 .dialog { display: grid; width: min(100%, 420px); gap: 12px; padding: 18px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); box-shadow: var(--shadow-md); }
 .dialog h2, .dialog p { margin: 0; }

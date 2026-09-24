@@ -15,7 +15,7 @@ export type ProjectTaskPolicy = {
     editorsCanLeaveTasks: boolean;
 };
 
-export type ProjectTaskIdentity = { createdById: string; assigneeId: string | null };
+export type ProjectTaskIdentity = { createdById: string; assignments?: Array<{ userId: string }> };
 
 export function canCreateProjectTask(role: ProjectRole, project: ProjectTaskPolicy) {
     return !project.archivedAt && (role === 'owner' || (role === 'editor' && project.editorsCanCreateTasks));
@@ -24,20 +24,20 @@ export function canCreateProjectTask(role: ProjectRole, project: ProjectTaskPoli
 export function canEditProjectTask(role: ProjectRole, project: ProjectTaskPolicy, task: ProjectTaskIdentity, userId: string) {
     if (project.archivedAt || role === 'viewer') return false;
     if (role === 'owner' || project.editorsCanEditAllTasks) return true;
-    return task.assigneeId === userId || (task.assigneeId === null && task.createdById === userId);
+    const assigneeIds = new Set((task.assignments ?? []).map((assignment) => assignment.userId));
+    return assigneeIds.has(userId) || (assigneeIds.size === 0 && task.createdById === userId);
 }
 
-export function canChangeAssignment(role: ProjectRole, project: ProjectTaskPolicy, userId: string, currentAssigneeId: string | null, nextAssigneeId: string | null) {
+export function canChangeAssignments(role: ProjectRole, project: ProjectTaskPolicy, userId: string, currentAssigneeIds: Iterable<string>, nextAssigneeIds: Iterable<string>) {
     if (project.archivedAt || role === 'viewer') return false;
     if (role === 'owner') return true;
-    if (currentAssigneeId === nextAssigneeId) return true;
-
-    // Model an assignment change by its independent effects. These checks map
-    // directly to additions/removals when tasks support multiple assignees.
-    const actorAdded = currentAssigneeId !== userId && nextAssigneeId === userId;
-    const actorRemoved = currentAssigneeId === userId && nextAssigneeId !== userId;
-    const otherAssigneeChanged = (currentAssigneeId !== null && currentAssigneeId !== userId)
-        || (nextAssigneeId !== null && nextAssigneeId !== userId);
+    const current = new Set(currentAssigneeIds);
+    const next = new Set(nextAssigneeIds);
+    const added = [...next].filter((id) => !current.has(id));
+    const removed = [...current].filter((id) => !next.has(id));
+    const actorAdded = added.includes(userId);
+    const actorRemoved = removed.includes(userId);
+    const otherAssigneeChanged = [...added, ...removed].some((id) => id !== userId);
 
     return (!actorAdded || project.editorsCanJoinTasks)
         && (!actorRemoved || project.editorsCanLeaveTasks)

@@ -1,0 +1,14 @@
+.root { position: relative; display: grid; gap: 6px; min-width: 0; }
+.label { color: var(--text-muted); font-size: .78rem; font-weight: 700; }
+.trigger { display: flex; min-height: 40px; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 10px; border: 1px solid var(--border-strong); border-radius: 8px; background: white; color: var(--text); text-align: left; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chips > span { display: inline-flex; align-items: center; gap: 5px; padding: 4px 7px; border-radius: 999px; background: var(--primary-soft); color: var(--primary); font-size: .74rem; font-weight: 700; }
+.chips button { padding: 0; border: 0; background: none; color: inherit; }
+.popover { position: absolute; z-index: 80; top: calc(100% + 6px); left: 0; display: grid; width: min(360px, calc(100vw - 40px)); gap: 9px; padding: 12px; border: 1px solid var(--border); border-radius: 11px; background: white; box-shadow: var(--shadow-md); }
+.popover > input { min-height: 38px; padding: 7px 9px; border: 1px solid var(--border-strong); border-radius: 8px; }
+.options { display: grid; max-height: 240px; overflow: auto; }
+.options label { display: grid; grid-template-columns: auto 32px 1fr; align-items: center; gap: 9px; padding: 8px 4px; border-bottom: 1px solid var(--border); cursor: pointer; }
+.options img, .avatar { display: grid; width: 30px; height: 30px; place-items: center; border-radius: 50%; background: var(--primary-soft); color: var(--primary); font-weight: 800; object-fit: cover; }
+.options small { display: block; margin-top: 2px; color: var(--text-muted); font-size: .7rem; }
+.options p { padding: 18px 4px; color: var(--text-muted); }
+.done { min-height: 36px; border: 1px solid var(--primary); border-radius: 7px; background: var(--primary); color: white; font-weight: 750; }

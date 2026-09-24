@@ -3,6 +3,7 @@ import { getAuth } from '@clerk/express';
 import { prisma } from '../services/prisma';
 import { getTaskAccess } from '../services/authorization';
 import { isNonNegativeInteger, isTaskStatus, type TaskStatus } from './validation';
+import { recordActivity } from '../services/activity';
 
 type TaskUpdate = { id: number; orderIndex: number; status: TaskStatus };
 function isTaskUpdate(value: unknown): value is TaskUpdate {
@@ -23,10 +24,18 @@ export default async function bulkUpdateTasks(req: Request, res: Response) {
     const statusById = new Map(accesses.map((access) => [access!.task.id, access!.task.status]));
     try {
         const completedAt = new Date();
-        await prisma.$transaction(tasks.map((task) => prisma.task.update({ where: { id: task.id }, data: {
-            orderIndex: task.orderIndex, status: task.status,
-            ...(statusById.get(task.id) !== task.status ? { completedAt: task.status === 'completed' ? completedAt : null } : {}),
-        } })));
+        await prisma.$transaction(async (tx) => {
+            for (const [index, task] of tasks.entries()) {
+                const access = accesses[index]!;
+                await tx.task.update({ where: { id: task.id }, data: {
+                    orderIndex: task.orderIndex, status: task.status,
+                    ...(statusById.get(task.id) !== task.status ? { completedAt: task.status === 'completed' ? completedAt : null } : {}),
+                } });
+                if (access.task.projectId && statusById.get(task.id) !== task.status) {
+                    await recordActivity(tx, { projectId: access.task.projectId, taskId: task.id, actorId: userId, type: 'task_status_changed', metadata: { taskTitle: access.task.title, from: statusById.get(task.id), to: task.status } });
+                }
+            }
+        });
         res.json({ message: 'Tasks updated successfully' });
     } catch (error) { console.error(error); res.status(500).json({ error: 'Failed to bulk update tasks' }); }
 }

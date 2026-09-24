@@ -10,7 +10,7 @@ export default async function getAllTasks(req: Request, res: Response) {
         const tasks = await prisma.task.findMany({
             where: { OR: [
                 { projectId: null, createdById: userId },
-                { assigneeId: userId, project: { archivedAt: null, memberships: { some: { userId } } } },
+                { assignments: { some: { userId } }, project: { archivedAt: null, memberships: { some: { userId } } } },
             ] },
             include: taskInclude,
         });

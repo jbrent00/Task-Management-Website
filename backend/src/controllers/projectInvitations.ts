@@ -6,6 +6,7 @@ import { getProjectAccess } from '../services/authorization';
 import { getVerifiedEmails } from '../services/userProfile';
 import { isEmail, isProjectRole, normalize } from './validation';
 import { INVITATION_TTL_MS, invitationIsActionable } from '../services/projectPolicy';
+import { recordActivity } from '../services/activity';
 
 const expiresAt = () => new Date(Date.now() + INVITATION_TTL_MS);
 
@@ -80,6 +81,8 @@ async function respond(req: Request, res: Response, status: 'accepted' | 'declin
             if (!claimed.count) return null;
             if (status === 'accepted') {
                 await tx.projectMembership.upsert({ where: { projectId_userId: { projectId: invitation.projectId, userId } }, update: {}, create: { projectId: invitation.projectId, userId, role: invitation.role } });
+                const person = await tx.user.findUnique({ where: { id: userId }, select: { fname: true, lname: true, primaryEmail: true } });
+                await recordActivity(tx, { projectId: invitation.projectId, actorId: userId, type: 'member_joined', metadata: { memberId: userId, memberName: person ? [person.fname, person.lname].filter(Boolean).join(' ') || person.primaryEmail || 'Member' : 'Member', role: invitation.role } });
             }
             return invitation;
         });
