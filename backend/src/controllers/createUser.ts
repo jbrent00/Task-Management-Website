@@ -10,9 +10,7 @@ async function createUser(req: Request, res: Response) {
       return res.status(200).send('Event ignored');
     }
 
-    const newUser = await syncUserProfile(evt.data);
-
-     console.log('Created new user:', newUser); // REMOVE LATER ON
+    await syncUserProfile(evt.data);
 
     return res.status(200).send('Webhook received');
   } catch (err: unknown) {

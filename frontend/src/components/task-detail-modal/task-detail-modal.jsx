@@ -9,6 +9,7 @@ import TaskAssignmentFields from '../task-assignment-fields/task-assignment-fiel
 import Checklist from '../checklist/checklist';
 import TaskComments from '../task-comments/task-comments';
 import ActivityTimeline from '../activity-timeline/activity-timeline';
+import ConfirmDialog from '../confirm-dialog/confirm-dialog';
 import styles from './task-detail-modal.module.css';
 
 const sortedIds = (items) => [...items].sort((first, second) => String(first).localeCompare(String(second)));
@@ -53,6 +54,7 @@ export default function TaskDetailModal({
     const [saving, setSaving] = useState(false);
     const [tab, setTab] = useState('details');
     const [error, setError] = useState('');
+    const [confirmation, setConfirmation] = useState(null);
     const isProjectTask = Boolean(task.projectId);
     const canEdit = task.capabilities?.canEdit !== false;
     const canDelete = Boolean(task.capabilities?.canDelete);
@@ -82,7 +84,10 @@ export default function TaskDetailModal({
     }, [isDirty]);
 
     const requestClose = () => {
-        if (isDirty && !window.confirm('Discard your unsaved task changes?')) return;
+        if (isDirty) {
+            setConfirmation('discard');
+            return;
+        }
         onClose();
     };
 
@@ -125,7 +130,6 @@ export default function TaskDetailModal({
     };
 
     const remove = async () => {
-        if (!window.confirm(`Delete “${task.title}”? This cannot be undone.`)) return;
         setSaving(true);
         setError('');
         try {
@@ -135,6 +139,7 @@ export default function TaskDetailModal({
         } catch (deleteError) {
             setError(deleteError.message);
             setSaving(false);
+            setConfirmation(null);
         }
     };
 
@@ -168,11 +173,13 @@ export default function TaskDetailModal({
                     {!isProjectTask && canEdit && <TaskAssignmentFields tags={personalTags} projectId={null} tagIds={tagIds} onProjectChange={() => {}} onTagIdsChange={setTagIds} onCreateTag={onCreatePersonalTag} showProject={false} />}
                     {!isProjectTask && !canEdit && <fieldset className={styles.tags}><legend>Tags</legend>{personalTags.map((tag) => <label key={tag.id}><input type="checkbox" checked={tagIds.includes(tag.id)} disabled />{tag.name}</label>)}</fieldset>}
                     <Checklist disabled={saving} readOnly={!canEdit} taskId={task.id} items={task.checklistItems ?? []} getToken={getToken} onItemsChange={setChecklistItems} onNotify={onNotify} />
-                    {(canEdit || canDelete) && <div className={styles.actions}>{canDelete && <button type="button" className={styles.delete} disabled={saving} onClick={remove}>Delete task</button>}{canEdit && <button className={styles.primary} disabled={saving || !title.trim() || !isDirty}>{saving ? 'Saving…' : 'Save changes'}</button>}</div>}
+                    {(canEdit || canDelete) && <div className={styles.actions}>{canDelete && <button type="button" className={styles.delete} disabled={saving} onClick={() => setConfirmation('delete')}>Delete task</button>}{canEdit && <button className={styles.primary} disabled={saving || !title.trim() || !isDirty}>{saving ? 'Saving…' : 'Save changes'}</button>}</div>}
                 </form>}
                 {project && tab === 'discussion' && <TaskComments task={task} project={project} onChanged={(delta) => delta && onUpdated({ ...task, commentCount: Math.max(0, (task.commentCount ?? 0) + delta) })} />}
                 {project && tab === 'activity' && <ActivityTimeline projectId={project.id} taskId={task.id} />}
             </div>
         </section>
+        {confirmation === 'discard' && <ConfirmDialog title="Discard unsaved changes?" confirmLabel="Discard changes" tone="warning" onCancel={() => setConfirmation(null)} onConfirm={onClose}>Your edits to “{task.title}” will be lost.</ConfirmDialog>}
+        {confirmation === 'delete' && <ConfirmDialog title="Delete task?" confirmLabel="Delete task" busyLabel="Deleting…" busy={saving} onCancel={() => setConfirmation(null)} onConfirm={remove}>Delete “{task.title}”? This cannot be undone.</ConfirmDialog>}
     </div>;
 }

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { useAuth } from '@clerk/react';
 import { createTaskComment, deleteTaskComment, getTaskComments, updateTaskComment } from '../../api/projectTasks';
+import ConfirmDialog from '../confirm-dialog/confirm-dialog';
 import styles from './task-comments.module.css';
 
 const nameOf = (person) => [person?.fname, person?.lname].filter(Boolean).join(' ') || person?.primaryEmail || 'Member';
@@ -62,23 +63,37 @@ function CommentComposer({ members, initialBody = '', initialMentions = [], subm
 }
 
 export default function TaskComments({ task, project, onChanged }) {
-    const { getToken, userId } = useAuth(); const [items, setItems] = useState([]); const [cursor, setCursor] = useState(null); const [loading, setLoading] = useState(true); const [error, setError] = useState(''); const [editingId, setEditingId] = useState(null);
+    const { getToken, userId } = useAuth(); const [items, setItems] = useState([]); const [cursor, setCursor] = useState(null); const [loading, setLoading] = useState(true); const [error, setError] = useState(''); const [editingId, setEditingId] = useState(null); const [deleteTarget, setDeleteTarget] = useState(null); const [deleting, setDeleting] = useState(false);
     const load = useCallback(async (older = false) => {
         setLoading(true); try { const page = await getTaskComments(await getToken(), task.id, older ? cursor : null); setItems((current) => older ? [...page.items, ...current] : page.items); setCursor(page.nextCursor); setError(''); } catch (loadError) { setError(loadError.message); } finally { setLoading(false); }
     }, [getToken, task.id, cursor]);
     useEffect(() => { load(false); }, [task.id]); // eslint-disable-line react-hooks/exhaustive-deps
     const create = async (input) => { try { const comment = await createTaskComment(await getToken(), task.id, input); setItems((current) => [...current, comment]); setError(''); onChanged?.(1); window.dispatchEvent(new Event('collaboration:refresh')); } catch (saveError) { setError(saveError.message); throw saveError; } };
     const update = async (comment, input) => { try { const updated = await updateTaskComment(await getToken(), task.id, comment.id, input); setItems((current) => current.map((item) => item.id === comment.id ? updated : item)); setEditingId(null); onChanged?.(0); } catch (saveError) { setError(saveError.message); throw saveError; } };
-    const remove = async (comment) => { if (!window.confirm('Delete this comment? A deleted-comment marker will remain.')) return; try { await deleteTaskComment(await getToken(), task.id, comment.id); setItems((current) => current.map((item) => item.id === comment.id ? { ...item, body: null, mentions: [], deletedAt: new Date().toISOString(), deletedById: userId } : item)); onChanged?.(-1); } catch (deleteError) { setError(deleteError.message); } };
+    const remove = async () => {
+        const comment = deleteTarget;
+        if (!comment || deleting) return;
+        setDeleting(true);
+        try {
+            await deleteTaskComment(await getToken(), task.id, comment.id);
+            setItems((current) => current.map((item) => item.id === comment.id ? { ...item, body: null, mentions: [], deletedAt: new Date().toISOString(), deletedById: userId } : item));
+            setDeleteTarget(null);
+            onChanged?.(-1);
+        } catch (deleteError) {
+            setError(deleteError.message);
+            setDeleteTarget(null);
+        } finally { setDeleting(false); }
+    };
     return <section className={styles.comments}>
         <div className={styles.heading}><h3>Discussion</h3><span>{items.length} loaded</span></div>
         {cursor && <button className={styles.older} disabled={loading} onClick={() => load(true)}>Load older comments</button>}
         {error && <p className={styles.error} role="alert">{error}</p>}
         <div className={styles.list}>{items.map((comment) => <article key={comment.id} className={styles.comment}>
-            <div className={styles.commentHead}><div>{comment.author.imageUrl ? <img src={comment.author.imageUrl} alt="" /> : <span>{nameOf(comment.author).slice(0, 1).toUpperCase()}</span>}<p><strong>{nameOf(comment.author)}</strong><small>{new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(comment.createdAt))}{comment.editedAt ? ' · edited' : ''}</small></p></div>{!comment.deletedAt && !project.archivedAt && (comment.authorId === userId || project.role === 'owner') && <div className={styles.commentActions}>{comment.authorId === userId && <button onClick={() => setEditingId(comment.id)}>Edit</button>}<button onClick={() => remove(comment)}>Delete</button></div>}</div>
+            <div className={styles.commentHead}><div>{comment.author.imageUrl ? <img src={comment.author.imageUrl} alt="" /> : <span>{nameOf(comment.author).slice(0, 1).toUpperCase()}</span>}<p><strong>{nameOf(comment.author)}</strong><small>{new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(comment.createdAt))}{comment.editedAt ? ' · edited' : ''}</small></p></div>{!comment.deletedAt && !project.archivedAt && (comment.authorId === userId || project.role === 'owner') && <div className={styles.commentActions}>{comment.authorId === userId && <button onClick={() => setEditingId(comment.id)}>Edit</button>}<button onClick={() => setDeleteTarget(comment)}>Delete</button></div>}</div>
             {comment.deletedAt ? <p className={styles.deleted}>This comment was deleted.</p> : editingId === comment.id ? <CommentComposer members={project.memberships} initialBody={comment.body} initialMentions={comment.mentions} submitLabel="Save comment" onSubmit={(input) => update(comment, input)} onCancel={() => setEditingId(null)} /> : <p className={styles.body}><MentionedText body={comment.body} mentions={comment.mentions} /></p>}
         </article>)}</div>
         {!loading && items.length === 0 && <p className={styles.empty}>No comments yet. Start the conversation.</p>}
         {!project.archivedAt && <CommentComposer members={project.memberships} submitLabel="Comment" onSubmit={create} />}
+        {deleteTarget && <ConfirmDialog title="Delete comment?" confirmLabel="Delete comment" busyLabel="Deleting…" busy={deleting} onCancel={() => setDeleteTarget(null)} onConfirm={remove}>A deleted-comment marker will remain in the discussion.</ConfirmDialog>}
     </section>;
 }

@@ -30,11 +30,9 @@ export const updateTask = async (token, taskId, title, description, status, prio
             throw new Error(`Failed to update task: ${response.status}`);
         }
 
-        const data = await response.json();
-        console.log('Task updated successfully', data); // REMOVE LATER
-        return data;
+        return response.json();
     } catch (error) {
         console.error('Error updating task', error);
-        throw error; // re-throw so caller can handle the error if needed
+        throw error;
     }
 };

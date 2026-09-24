@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 
 vi.mock('@clerk/react', () => ({ useAuth: () => ({ getToken: async () => 'token', userId: 'viewer' }) }));
 vi.mock('../../api/updateTask', () => ({ updateTask: vi.fn() }));
@@ -9,6 +9,7 @@ vi.mock('../activity-timeline/activity-timeline', () => ({ default: () => <div>A
 
 import TaskDetailModal from './task-detail-modal';
 import { updateTask } from '../../api/updateTask';
+import { deleteTask } from '../../api/deleteTask';
 
 const task = { id: 4, title: 'Review launch', description: '', status: 'todo', priority: 'medium', dueDate: null, projectId: 1, tags: [], assignees: [], checklistItems: [], capabilities: { canEdit: false } };
 const project = { id: 1, role: 'viewer', archivedAt: null, tags: [], memberships: [{ userId: 'viewer', role: 'viewer', user: { fname: 'Vera', lname: 'Viewer' } }] };
@@ -45,7 +46,6 @@ test('shows a details-only personal task modal and keeps it open after saving', 
 test('confirms before closing dirty task fields and protects page unload', () => {
     const personalTask = { ...task, id: 6, projectId: null, capabilities: { canEdit: true, canDelete: true } };
     const onClose = vi.fn();
-    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
     render(<TaskDetailModal task={personalTask} personalTags={[]} onCreatePersonalTag={vi.fn()} onClose={onClose} onUpdated={() => {}} onDeleted={() => {}} onNotify={() => {}} />);
 
     fireEvent.change(screen.getByLabelText('Description'), { target: { value: 'Unsaved notes' } });
@@ -53,13 +53,30 @@ test('confirms before closing dirty task fields and protects page unload', () =>
     window.dispatchEvent(unload);
     expect(unload.defaultPrevented).toBe(true);
     fireEvent.click(screen.getByRole('button', { name: 'Close task details' }));
-    expect(confirm).toHaveBeenCalledWith('Discard your unsaved task changes?');
+    expect(screen.getByRole('alertdialog', { name: 'Discard unsaved changes?' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
     expect(onClose).not.toHaveBeenCalled();
 
-    confirm.mockReturnValue(true);
-    fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' });
+    fireEvent.keyDown(screen.getByRole('dialog', { name: personalTask.title }), { key: 'Escape' });
+    fireEvent.click(screen.getByRole('button', { name: 'Discard changes' }));
     expect(onClose).toHaveBeenCalledOnce();
-    confirm.mockRestore();
+});
+
+test('deletes only after the in-app confirmation is accepted', async () => {
+    const personalTask = { ...task, id: 7, projectId: null, capabilities: { canEdit: true, canDelete: true } };
+    const onDeleted = vi.fn();
+    deleteTask.mockResolvedValueOnce(undefined);
+    render(<TaskDetailModal task={personalTask} personalTags={[]} onCreatePersonalTag={vi.fn()} onClose={() => {}} onUpdated={() => {}} onDeleted={onDeleted} onNotify={() => {}} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Delete task' }));
+    expect(deleteTask).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(deleteTask).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Delete task' }));
+    fireEvent.click(within(screen.getByRole('alertdialog', { name: 'Delete task?' })).getByRole('button', { name: 'Delete task' }));
+    await waitFor(() => expect(deleteTask).toHaveBeenCalledWith('token', personalTask.id));
+    expect(onDeleted).toHaveBeenCalledWith(personalTask.id);
 });
 
 test('shows a retryable project loading error without exposing incomplete fields', () => {

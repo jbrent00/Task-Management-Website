@@ -11,7 +11,7 @@ const filterOptions = {
 };
 const filterLabels = { priorityFilters: 'Priority', statusFilters: 'Status', dueFilters: 'Due' };
 
-function TaskViewControls({ view, searchQuery, onSearchChange, onViewChange, onClearFilters, projects, tags, projectCounts, onUpdateTag, onDeleteTag, onNotify }) {
+function TaskViewControls({ view, searchQuery, onSearchChange, onViewChange, onClearFilters, projects, tags, onUpdateTag, onDeleteTag, onNotify }) {
     const [filtersExpanded, setFiltersExpanded] = useState(false);
     const activeSort = getActiveSort(view);
     const toggleFilter = (filterName, value) => {
@@ -34,7 +34,7 @@ function TaskViewControls({ view, searchQuery, onSearchChange, onViewChange, onC
             </div>
             <button className={styles.filterToggle} type="button" onClick={() => setFiltersExpanded((value) => !value)} aria-expanded={filtersExpanded} aria-controls="task-filter-content">{filtersExpanded ? '▾ Hide filters' : '▸ Filters'}</button>
             <div id="task-filter-content" className={styles.filterContent} hidden={!filtersExpanded}>
-            <div className={styles.projectRow}><label className={styles.sortField} htmlFor="project-filter"><span>Project</span><select id="project-filter" value={view.projectId ?? 'all'} onChange={(event) => onViewChange({ ...view, projectId: event.target.value === 'all' ? null : event.target.value === noProjectFilter ? noProjectFilter : Number(event.target.value) })}><option value="all">All tasks</option><option value={noProjectFilter}>No project</option>{projects.map((project) => <option key={project.id} value={project.id}>{project.title}</option>)}</select></label><ProjectTagManager showProjects={false} projects={projects} tags={tags} projectCounts={projectCounts} onUpdateTag={onUpdateTag} onDeleteTag={onDeleteTag} onNotify={onNotify} /></div>
+            <div className={styles.projectRow}><label className={styles.sortField} htmlFor="project-filter"><span>Project</span><select id="project-filter" value={view.projectId ?? 'all'} onChange={(event) => onViewChange({ ...view, projectId: event.target.value === 'all' ? null : event.target.value === noProjectFilter ? noProjectFilter : Number(event.target.value) })}><option value="all">All tasks</option><option value={noProjectFilter}>No project</option>{projects.map((project) => <option key={project.id} value={project.id}>{project.title}</option>)}</select></label><ProjectTagManager tags={tags} onUpdateTag={onUpdateTag} onDeleteTag={onDeleteTag} onNotify={onNotify} /></div>
             <fieldset className={styles.filterGroup}><legend>Tags (match any)</legend>{tags.map((tag) => <label className={styles.checkLabel} key={tag.id}><input type="checkbox" checked={view.tagIds.includes(tag.id)} onChange={() => onViewChange({ ...view, tagIds: view.tagIds.includes(tag.id) ? view.tagIds.filter((id) => id !== tag.id) : [...view.tagIds, tag.id] })} />{tag.name}</label>)}</fieldset>
             <div className={styles.filters}>
                 {Object.entries(filterOptions).map(([filterName, options]) => <fieldset className={styles.filterGroup} key={filterName}><legend>{filterLabels[filterName]}</legend>{options.map(([value, label]) => <label className={styles.checkLabel} key={value}><input type="checkbox" checked={view[filterName].includes(value)} onChange={() => toggleFilter(filterName, value)} />{label}</label>)}</fieldset>)}
