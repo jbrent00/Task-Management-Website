@@ -14,6 +14,7 @@ import { updateTasks } from '../api/updateTasks';
 import { getProject, getProjects } from '../api/projects';
 import { createTag, deleteTag, getTags, updateTag } from '../api/tags';
 import { defaultTaskView, getActiveSort, getTaskTabCounts, getVisibleTasksByStatus, hasActiveTaskFilters, isValidTaskView, taskStatuses } from '../functions/taskViews';
+import { XIcon } from '@phosphor-icons/react/dist/csr/X';
 
 const getStorageKey = (userId) => `task-manager:view:${userId}`;
 
@@ -155,7 +156,7 @@ function TasksPage() {
             next.delete('task');
             return next;
         }, { replace: true });
-        window.requestAnimationFrame(() => document.querySelector(`#task-card-${closingId} [aria-haspopup="menu"]`)?.focus());
+        window.requestAnimationFrame(() => document.querySelector(`#task-card-${closingId} [aria-label^="Edit "]`)?.focus());
     };
 
     useEffect(() => {
@@ -254,7 +255,6 @@ function TasksPage() {
         <TaskMutationContext.Provider value={mutation}><div className={styles.tasksPage}>
             <div className={styles.header}>
                 <div>
-                    <p className={styles.eyebrow}>Task workspace</p>
                     <h1 className={styles.title}>My tasks</h1>
                     <p className={styles.taskTotal}><strong>{totalVisibleTasks}</strong>{isFiltered ? ` of ${tasks.length}` : ''} {totalVisibleTasks === 1 ? 'task' : 'tasks'} in your workspace</p>
                 </div>
@@ -262,7 +262,7 @@ function TasksPage() {
                     <button ref={creationTrigger} className={styles.createButton} type="button" aria-expanded={creationExpanded} aria-controls="create-task-content" onClick={() => { setCreationExpanded((value) => !value); if (creationExpanded) creationTrigger.current?.focus(); }}>{creationExpanded ? 'Hide form' : 'Create task'}</button>
                 </div>
             </div>
-            {notice && <div className={`${styles.notice} ${styles[notice.tone]}`} role={notice.tone === 'error' ? 'alert' : 'status'} aria-live="polite"><span>{notice.message}</span><button type="button" onClick={() => setNotice(null)} aria-label="Dismiss notification">×</button></div>}
+            {notice && <div className={`${styles.notice} ${styles[notice.tone]}`} role={notice.tone === 'error' ? 'alert' : 'status'} aria-live="polite"><span>{notice.message}</span><button type="button" onClick={() => setNotice(null)} aria-label="Dismiss notification"><XIcon size={18} /></button></div>}
             <div className={styles.createTask} hidden={!creationExpanded}><CreateTaskForm expanded={creationExpanded} onCreated={() => { setCreationExpanded(false); window.requestAnimationFrame(() => creationTrigger.current?.focus()); }} tasks={tasks} setTasks={setTasks} projects={projects} tags={tags} onCreateTag={handleCreateTag} onNotify={setNotice} /></div>
             <TaskViewTabs selectedTab={view.selectedTab} counts={tabCounts} onSelect={(selectedTab) => setView((currentView) => ({ ...currentView, selectedTab }))} />
             <TaskViewControls view={view} searchQuery={searchQuery} onSearchChange={setSearchQuery} onViewChange={setView} onClearFilters={handleClearFilters} projects={projects} tags={tags} onUpdateTag={handleUpdateTag} onDeleteTag={handleDeleteTag} onNotify={setNotice} />
@@ -271,7 +271,7 @@ function TasksPage() {
             <div className={styles.taskBoards}>
                 <DragDropContext onDragEnd={handleDragEnd}>
                     {taskStatuses.map((status) => <div key={status} hidden={narrow && selectedStatus !== status}>
-                        <TaskBoard status={status} tasks={tasksByStatus[status]} setAllTasks={setTasks} loading={loading} isManualOrder={isManualOrder && !mutationBusy} isFiltered={isFiltered} selectedTab={view.selectedTab} inlineChecklist onNotify={setNotice} onOpenDetails={openTask} />
+                        <TaskBoard status={status} tasks={tasksByStatus[status]} setAllTasks={setTasks} loading={loading} isManualOrder={isManualOrder && !mutationBusy} isFiltered={isFiltered} selectedTab={view.selectedTab} onNotify={setNotice} onOpenDetails={openTask} />
                         {narrow && !loading && tasksByStatus[status].length === 0 && taskStatuses.filter((other) => other !== status && tasksByStatus[other].length > 0).map((other) => <button className={styles.switchStatus} type="button" key={other} onClick={() => setSelectedStatus(other)}>Show {({ todo: 'To do', in_progress: 'In progress', completed: 'Completed' })[other]} tasks ({tasksByStatus[other].length})</button>)}
                     </div>)}
                 </DragDropContext>

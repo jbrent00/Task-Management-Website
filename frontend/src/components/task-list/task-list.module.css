@@ -1,11 +1,14 @@
-.taskList { flex: 1; min-height: 340px; padding: 16px; border: 1px solid var(--border); border-radius: 16px; background: var(--surface-muted); }
-.heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-bottom: 14px; }
+.taskList { width: 100%; min-width: 0; min-height: 420px; height: 100%; padding: 9px; overflow: hidden; border: 1px solid color-mix(in srgb, var(--border) 72%, transparent); border-radius: 12px; background: color-mix(in srgb, var(--surface-muted) 62%, var(--page-bg)); }
+.heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 3px 4px 10px; }
 .headingContent { display: flex; align-items: center; gap: 9px; }
-.statusMarker { width: 9px; height: 9px; border-radius: 50%; background: var(--primary); }
+.statusMarker { width: 8px; height: 8px; border-radius: 50%; background: var(--text-subtle); }
 .inProgress .statusMarker { background: var(--warning); }
 .completed .statusMarker { background: var(--success); }
-.heading h2 { color: var(--text-strong); font-size: 0.98rem; }
-.count { min-width: 26px; padding: 3px 8px; border-radius: 999px; background: #e9edf5; color: var(--text-muted); font-size: 0.78rem; font-weight: 700; text-align: center; }
-.emptyState, .loadingState { display: grid; min-height: 210px; place-items: center; padding: 24px; color: var(--text-muted); font-size: 0.9rem; text-align: center; }
-.emptyState { border: 1px dashed var(--border-strong); border-radius: 12px; }
-.draggableItem { position: relative; }
+.heading h2 { color: var(--text); font-size: .85rem; font-weight: 650; }
+.count { min-width: 23px; padding: 2px 6px; border-radius: 999px; background: var(--surface); color: var(--text-muted); font-family: 'Geist Mono Variable', monospace; font-size: .68rem; font-weight: 600; text-align: center; }
+.emptyState, .loadingState { display: grid; min-height: 218px; place-items: center; padding: 24px; color: var(--text-muted); font-size: .875rem; line-height: 1.5; text-align: center; }
+.emptyState { border: 1px dashed var(--border-strong); border-radius: var(--radius-nested); background: color-mix(in srgb, var(--surface) 60%, transparent); }
+.loadingState { border-radius: var(--radius-nested); background: linear-gradient(100deg, var(--surface-muted) 20%, var(--surface) 40%, var(--surface-muted) 60%); background-size: 200% 100%; animation: loading-sweep 1.4s ease-in-out infinite; }
+.draggableItem { position: relative; min-width: 0; }
+@keyframes loading-sweep { to { background-position: -200% 0; } }
+@media (prefers-reduced-motion: reduce) { .loadingState { animation: none; } }

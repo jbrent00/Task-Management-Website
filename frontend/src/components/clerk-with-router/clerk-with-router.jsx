@@ -1,9 +1,12 @@
 import { ClerkProvider } from '@clerk/react'
 import { useNavigate } from 'react-router-dom'
 import App from '../../App.jsx'
+import { useTheme } from '../theme-provider/theme-context.js'
+import { getClerkAppearance } from './clerk-appearance.js'
 
 function ClerkWithRouter() {
   const navigate = useNavigate()
+  const { resolvedTheme } = useTheme()
 
   return (
     <ClerkProvider
@@ -14,6 +17,7 @@ function ClerkWithRouter() {
       signUpUrl="/sign-up"
       signInFallbackRedirectUrl="/tasks"
       signUpFallbackRedirectUrl="/tasks"
+      appearance={getClerkAppearance(resolvedTheme)}
     >
       <App />
     </ClerkProvider>

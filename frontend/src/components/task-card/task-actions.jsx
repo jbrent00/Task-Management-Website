@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import styles from './task-card.module.css';
+import { DotsThreeIcon } from '@phosphor-icons/react/dist/csr/DotsThree';
 
-export default function TaskActions({ taskId, disabled, onOpenDetails, onAddChecklist, onParticipation, participationLabel }) {
+export default function TaskActions({ taskId, disabled, onOpenDetails, onParticipation, participationLabel }) {
     const [open, setOpen] = useState(false);
     const root = useRef(null);
     const trigger = useRef(null);
@@ -27,11 +28,10 @@ export default function TaskActions({ taskId, disabled, onOpenDetails, onAddChec
         }
     };
     return <div className={styles.menuRoot} ref={root}>
-        <button ref={trigger} type="button" className={styles.button} disabled={disabled} aria-label="Task actions" aria-haspopup="menu" aria-expanded={open} aria-controls={`task-actions-${taskId}`} onClick={() => setOpen((value) => !value)} onKeyDown={(event) => { if (event.key === 'ArrowDown' || event.key === 'ArrowUp') { event.preventDefault(); setOpen(true); } if (event.key === 'Escape') close(true); }}><span className={styles.menuTriggerFace} aria-hidden="true">⋯</span></button>
+        <button ref={trigger} type="button" className={styles.button} disabled={disabled} aria-label="Task actions" aria-haspopup="menu" aria-expanded={open} aria-controls={`task-actions-${taskId}`} onClick={() => setOpen((value) => !value)} onKeyDown={(event) => { if (event.key === 'ArrowDown' || event.key === 'ArrowUp') { event.preventDefault(); setOpen(true); } if (event.key === 'Escape') close(true); }}><span className={styles.menuTriggerFace} aria-hidden="true"><DotsThreeIcon size={20} weight="bold" /></span></button>
         {open && <div ref={menu} id={`task-actions-${taskId}`} className={styles.menu} role="menu" aria-label="Task actions" onKeyDown={navigate}>
             {onOpenDetails && <button role="menuitem" type="button" onClick={() => choose(onOpenDetails)}>Open details</button>}
             {onParticipation && <button role="menuitem" type="button" onClick={() => choose(onParticipation)}>{participationLabel}</button>}
-            {onAddChecklist && <button role="menuitem" type="button" onClick={() => choose(onAddChecklist)}>Add checklist</button>}
         </div>}
     </div>;
 }

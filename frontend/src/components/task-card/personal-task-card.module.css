@@ -1,0 +1,1 @@
+.metadata { display: flex; min-width: 0; min-height: 32px; align-items: center; flex-wrap: wrap; gap: 5px 8px; margin: 7px 34px 0 calc(-1 * var(--completion-indent, 0px)); color: var(--text-muted); font-size: .72rem; }

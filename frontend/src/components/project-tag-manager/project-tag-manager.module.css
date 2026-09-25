@@ -1,12 +1,12 @@
 .manager { display: flex; flex-wrap: wrap; gap: 8px; }
 .manager > button, .panel button { min-height: 34px; padding: 0 10px; border: 1px solid var(--border-strong); border-radius: 7px; background: var(--surface); color: var(--text); font-size: .8rem; font-weight: 700; }
-.panel { width: 100%; display: grid; gap: 9px; padding: 12px; border: 1px solid var(--border); border-radius: 9px; background: #f8fafc; }
+.panel { width: 100%; display: grid; gap: 9px; padding: 12px; border: 1px solid var(--border); border-radius: var(--radius-control); background: var(--surface-muted); }
 .panel h2 { font-size: .95rem; }
 .row { display: flex; align-items: center; gap: 8px; }.row span:first-child { flex: 1; }
-.tag { padding: 3px 7px; border-radius: 999px; font-size: .78rem; font-weight: 700; }.tag_slate { background: #e2e8f0; color: #334155; }.tag_red { background: #fee2e2; color: #b91c1c; }.tag_orange { background: #ffedd5; color: #c2410c; }.tag_yellow { background: #fef9c3; color: #a16207; }.tag_green { background: #dcfce7; color: #15803d; }.tag_teal { background: #ccfbf1; color: #0f766e; }.tag_blue { background: #dbeafe; color: #1d4ed8; }.tag_purple { background: #f3e8ff; color: #7e22ce; }
+.tag { padding: 3px 7px; border-radius: 999px; font-size: .78rem; font-weight: 700; }.tag_slate { background: var(--surface-muted); color: var(--text-muted); }.tag_red { background: var(--danger-soft); color: var(--danger); }.tag_orange { background: var(--accent-soft); color: var(--accent); }.tag_yellow { background: var(--warning-soft); color: var(--warning); }.tag_green, .tag_teal { background: var(--success-soft); color: var(--success); }.tag_blue, .tag_purple { background: color-mix(in srgb, var(--accent-soft) 55%, var(--surface-muted)); color: var(--text); }
 .error { color: var(--danger); font-size: .82rem; }
-.dialogBackdrop { position: fixed; z-index: 20; inset: 0; display: grid; place-items: center; padding: 20px; background: rgb(15 23 42 / .42); }
-.dialog { display: grid; width: min(100%, 430px); gap: 12px; padding: 18px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); box-shadow: var(--shadow-md); }
+.dialogBackdrop { position: fixed; z-index: 200; inset: 0; display: grid; place-items: center; padding: 20px; background: color-mix(in srgb, var(--text) 38%, transparent); }
+.dialog { display: grid; width: min(100%, 430px); gap: 12px; padding: 18px; border: 1px solid var(--border); border-radius: var(--radius-panel); background: var(--surface-elevated); box-shadow: var(--shadow-elevated); }
 .dialog h2 { margin: 0; }
 .dialog label { display: grid; gap: 6px; color: var(--text-muted); font-size: .8rem; font-weight: 700; }
 .dialog input, .dialog select { min-height: 38px; padding: 7px 9px; border: 1px solid var(--border-strong); border-radius: 7px; background: var(--surface); color: var(--text); }

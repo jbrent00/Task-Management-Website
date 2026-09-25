@@ -6,10 +6,12 @@ import TaskAssignmentFields from '../task-assignment-fields/task-assignment-fiel
 import { getLocalDateTimeMinimum } from '../../functions/toLocalDateTime';
 import Checklist from '../checklist/checklist';
 import ConfirmDialog from '../confirm-dialog/confirm-dialog';
+import TaskSelectField from '../task-form-controls/task-select-field';
+import TaskDateField from '../task-form-controls/task-date-field';
 import { useTaskMutation } from '../../functions/taskMutationContext';
 import { AiGenerationError, generateTaskDraft } from '../../api/aiGeneration';
 
-function CreateTaskForm ({tasks, setTasks, projects, tags, onCreateTag, onNotify, expanded, onCreated}) {
+function CreateTaskForm ({tasks, setTasks, tags, onCreateTag, onNotify, expanded, onCreated}) {
     const { getToken } = useAuth();
     const mutation = useTaskMutation();
 
@@ -22,14 +24,11 @@ function CreateTaskForm ({tasks, setTasks, projects, tags, onCreateTag, onNotify
     const [submitting, setSubmitting] = useState(false);
     const [checklistItems, setChecklistItems] = useState([]);
     const [checklistResetKey, setChecklistResetKey] = useState(0);
-    const [detailsExpanded, setDetailsExpanded] = useState(false);
     const [generating, setGenerating] = useState(null);
     const [aiMessage, setAiMessage] = useState(null);
     const [confirmationKind, setConfirmationKind] = useState(null);
     const titleRef = useRef(null);
     useEffect(() => { if (expanded) titleRef.current?.focus(); }, [expanded]);
-    const hasAdditionalDetails = priority !== 'low' || Boolean(dueDate) || projectId !== null || tagIds.length > 0;
-    const detailSummary = [priority !== 'low' && `${priority[0].toUpperCase()}${priority.slice(1)} priority`, dueDate && 'Due date', projectId !== null && projects.find((project) => project.id === projectId)?.title, tagIds.length > 0 && `${tagIds.length} tag${tagIds.length === 1 ? '' : 's'}`].filter(Boolean).join(' · ');
     const validAiTitle = Boolean(title.trim()) && title.length <= 100;
 
     const describeAiError = (error) => {
@@ -70,7 +69,6 @@ function CreateTaskForm ({tasks, setTasks, projects, tags, onCreateTag, onNotify
     e.preventDefault();
     if (submitting || !title.trim() || title.length > 100 || description.length > 500) return;
     if (!mutation.begin()) return;
-    const submittedDueDate = new FormData(e.currentTarget).get('dueDate');
     setSubmitting(true);
     try {
         const token = await getToken();
@@ -80,7 +78,7 @@ function CreateTaskForm ({tasks, setTasks, projects, tags, onCreateTag, onNotify
             ? Math.max(...todoTasks.map(task => task.orderIndex)) + 1
             : 0;
 
-        const newTask = await createTask(token, title, description, priority, submittedDueDate || null, orderIndex, projectId, tagIds, checklistItems);
+        const newTask = await createTask(token, title, description, priority, dueDate || null, orderIndex, projectId, tagIds, checklistItems);
         setTasks((prevTasks) => [...prevTasks, newTask]);
         setTitle('');
         setDescription('');
@@ -90,7 +88,6 @@ function CreateTaskForm ({tasks, setTasks, projects, tags, onCreateTag, onNotify
         setTagIds([]);
         setChecklistItems([]);
         setChecklistResetKey((current) => current + 1);
-        setDetailsExpanded(false);
         setAiMessage(null);
         setConfirmationKind(null);
         onCreated();
@@ -107,38 +104,24 @@ function CreateTaskForm ({tasks, setTasks, projects, tags, onCreateTag, onNotify
     return (
         <form onSubmit={handleSubmit} className={styles.createTask}>
             <div id="create-task-content" className={styles.formContent} hidden={!expanded}>
-            <div className={styles.field}>
-                <label htmlFor="title">Title</label>
-                <input ref={titleRef} type="text" id="title" name="title" value={title} maxLength={100} required disabled={Boolean(generating)} onChange={(e) => setTitle(e.target.value)} />
+            <header className={styles.formHeader}><div><span className={styles.eyebrow}>My tasks / New task</span><h2>New task</h2><p>Give the work a clear name, then add the details you need.</p></div></header>
+            <div className={`${styles.field} ${styles.titleField}`}>
+                <label htmlFor="title">Task name</label>
+                <input ref={titleRef} type="text" id="title" name="title" value={title} maxLength={100} required disabled={Boolean(generating)} placeholder="What needs to be done?" onChange={(e) => setTitle(e.target.value)} />
             </div>
-            <div className={styles.field}>
+            <div className={`${styles.field} ${styles.descriptionField}`}>
                 <div className={styles.fieldHeader}><label htmlFor="description">Description (optional) <span className={styles.characterCount}>{description.length}/500</span></label><button type="button" className={styles.generateButton} disabled={!validAiTitle || Boolean(generating)} onClick={() => requestGeneration('description')}>{generating === 'description' ? 'Generating…' : 'Generate description'}</button></div>
-                <textarea id="description" name="description" value={description} maxLength={500} disabled={Boolean(generating)} onChange={(e) => setDescription(e.target.value)} />
+                <textarea id="description" name="description" value={description} maxLength={500} disabled={Boolean(generating)} placeholder="Add the context that will help you finish the task." onChange={(e) => setDescription(e.target.value)} />
             </div>
-            <section className={styles.additionalDetails}>
-                <button className={styles.sectionToggle} type="button" onClick={() => setDetailsExpanded((value) => !value)} aria-expanded={detailsExpanded} aria-controls="additional-task-details">{detailsExpanded ? '▾' : '▸'} Additional details {hasAdditionalDetails && !detailsExpanded && <span>{detailSummary}</span>}</button>
-                <div id="additional-task-details" className={styles.additionalDetailsContent} hidden={!detailsExpanded}>
             <div className={styles.details}>
-                <div className={styles.field}>
-                    <label htmlFor="priority">Priority</label>
-                    <select id="priority" name="priority" value={priority} onChange={(e) => setPriority(e.target.value)}>
-                        <option value="low">Low</option>
-                        <option value="medium">Medium</option>
-                        <option value="high">High</option>
-                    </select>
-                </div>
-                <div className={styles.field}>
-                    <label htmlFor="dueDate">Due date <span>(optional)</span></label>
-                    <input type="datetime-local" id="dueDate" name="dueDate" value={dueDate}
-                        min={getLocalDateTimeMinimum()} onInput={(e) => setDueDate(e.currentTarget.value)} />
-                </div>
+                <div className={`${styles.field} ${styles.statusField}`}><span className={styles.staticLabel}>Status</span><span className={styles.staticValue}>To do</span></div>
+                <TaskSelectField label="Priority" value={priority} onChange={setPriority} options={[{ value: 'low', label: 'Low' }, { value: 'medium', label: 'Medium' }, { value: 'high', label: 'High' }]} />
+                <TaskDateField label="Due date" value={dueDate} onChange={setDueDate} min={getLocalDateTimeMinimum()} />
             </div>
-            <div className={styles.assignments}><TaskAssignmentFields tags={tags} projectId={null} tagIds={tagIds} onProjectChange={() => {}} onTagIdsChange={setTagIds} onCreateTag={onCreateTag} showProject={false} /></div>
-                </div>
-            </section>
-            <Checklist items={checklistItems} draft resetKey={checklistResetKey} disabled={Boolean(generating)} onGenerate={() => requestGeneration('checklist')} generating={generating === 'checklist'} generateDisabled={!validAiTitle || Boolean(generating)} onItemsChange={setChecklistItems} onNotify={onNotify} />
+            <div className={styles.tagSection}><TaskAssignmentFields tags={tags} projectId={null} tagIds={tagIds} onProjectChange={() => {}} onTagIdsChange={setTagIds} onCreateTag={onCreateTag} showProject={false} /></div>
+            <div className={styles.checklistField}><Checklist items={checklistItems} draft defaultExpanded resetKey={checklistResetKey} disabled={Boolean(generating)} onGenerate={() => requestGeneration('checklist')} generating={generating === 'checklist'} generateDisabled={!validAiTitle || Boolean(generating)} onItemsChange={setChecklistItems} onNotify={onNotify} /></div>
             {aiMessage && <p className={`${styles.aiMessage} ${styles[aiMessage.tone]}`} role={aiMessage.tone === 'error' ? 'alert' : 'status'} aria-live="polite">{aiMessage.text}</p>}
-            <button className={styles.submitButton} disabled={mutation.busy || !title.trim() || Boolean(generating)} type="submit">{submitting ? 'Creating…' : 'Create task'}</button>
+            <footer className={styles.formFooter}><button className={styles.submitButton} disabled={mutation.busy || !title.trim() || Boolean(generating)} type="submit">{submitting ? 'Creating…' : 'Create task'}</button></footer>
             {confirmationKind && <ConfirmDialog title={`Replace existing ${confirmationKind}?`} confirmLabel="Replace and generate" tone="warning" onCancel={() => setConfirmationKind(null)} onConfirm={() => runGeneration(confirmationKind)}>Generating new content will replace the {confirmationKind} currently in this form.</ConfirmDialog>}
             </div>
         </form>

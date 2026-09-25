@@ -4,6 +4,7 @@ import { useAuth } from '@clerk/react';
 import { acceptInvitation, declineInvitation } from '../../api/projectInvitations';
 import { getNotifications, markNotificationsRead } from '../../api/notifications';
 import styles from './collaboration-inbox.module.css';
+import { BellIcon } from '@phosphor-icons/react/dist/csr/Bell';
 
 const personName = (person) => [person?.fname, person?.lname].filter(Boolean).join(' ') || person?.primaryEmail || 'A teammate';
 const relativeTime = (value) => {
@@ -65,7 +66,7 @@ export default function CollaborationInbox() {
     };
     const markRead = async (input) => { await markNotificationsRead(await getToken(), input); await refresh(); };
     return <div className={styles.root} ref={root}>
-        <button ref={trigger} className={styles.trigger} type="button" aria-label={`Collaboration inbox${data.totalBadgeCount ? `, ${data.totalBadgeCount} items` : ''}`} aria-haspopup="dialog" aria-expanded={open} aria-controls="collaboration-inbox" onClick={() => setOpen((value) => !value)}><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" /></svg>{data.totalBadgeCount > 0 && <b>{data.totalBadgeCount > 99 ? '99+' : data.totalBadgeCount}</b>}</button>
+        <button ref={trigger} className={styles.trigger} type="button" aria-label={`Collaboration inbox${data.totalBadgeCount ? `, ${data.totalBadgeCount} items` : ''}`} aria-haspopup="dialog" aria-expanded={open} aria-controls="collaboration-inbox" onClick={() => setOpen((value) => !value)}><BellIcon aria-hidden="true" size={20} />{data.totalBadgeCount > 0 && <b>{data.totalBadgeCount > 99 ? '99+' : data.totalBadgeCount}</b>}</button>
         {open && <section ref={panel} id="collaboration-inbox" className={styles.panel} role="dialog" aria-modal="false" aria-label="Collaboration inbox">
             <div className={styles.heading}><div><strong>Collaboration inbox</strong><small>{data.pendingActionCount} awaiting action · {data.unreadCount} unread</small></div>{data.unreadCount > 0 && <button type="button" onClick={() => markRead({ all: true })}>Mark all read</button>}</div>
             {error && <p className={styles.error} role="alert">{error}</p>}

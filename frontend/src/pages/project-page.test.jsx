@@ -54,6 +54,7 @@ test('confirms shared-tag deletion before mutating', async () => {
     const onChanged = vi.fn();
     render(<ProjectTags project={project} getToken={async () => 'token'} onChanged={onChanged} onError={() => {}} />);
 
+    fireEvent.click(screen.getByRole('button', { name: /Shared tags/i }));
     fireEvent.click(screen.getByRole('button', { name: 'Delete Urgent' }));
     expect(projectApi.deleteProjectTag).not.toHaveBeenCalled();
     fireEvent.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Delete tag' }));
@@ -95,4 +96,20 @@ test('requires the project name and a final confirmation before permanent deleti
     fireEvent.click(within(screen.getByRole('alertdialog', { name: 'Permanently delete project?' })).getByRole('button', { name: 'Delete project' }));
     await waitFor(() => expect(projectApi.deleteProject).toHaveBeenCalledWith('token', 2, 'Launch'));
     expect(onDeleted).toHaveBeenCalledOnce();
+});
+
+test('keeps member administration owner-only', () => {
+    render(<MembersPanel project={{ ...project, role: 'editor' }} currentUserId="editor" getToken={async () => 'token'} onChanged={async () => {}} onError={() => {}} />);
+
+    expect(screen.queryByRole('button', { name: 'Add in-app invitation' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Make owner' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Leave' })).toBeInTheDocument();
+});
+
+test('shows read-only settings to editors and viewers', () => {
+    render(<SettingsPanel project={{ ...project, role: 'viewer' }} getToken={async () => 'token'} onChanged={async () => {}} onError={() => {}} onNotify={() => {}} onDeleted={() => {}} />);
+
+    expect(screen.getByRole('heading', { name: 'Project settings' })).toBeInTheDocument();
+    expect(screen.getByText('Only the project owner can change settings.')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Save settings' })).not.toBeInTheDocument();
 });

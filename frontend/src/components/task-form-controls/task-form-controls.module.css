@@ -1,0 +1,50 @@
+.field { display: grid; min-width: 0; gap: 7px; }
+.visuallyHidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
+.compact .trigger { min-height: 42px; }
+.label { color: var(--text); font-size: .8rem; font-weight: 650; }
+.anchor { position: relative; min-width: 0; }
+.trigger { display: flex; width: 100%; min-height: 44px; align-items: center; justify-content: space-between; gap: 12px; padding: 9px 12px; border: 1px solid var(--border-strong); border-radius: var(--radius-control); background: color-mix(in srgb, var(--surface-muted) 48%, var(--surface-elevated)); color: var(--text); text-align: left; font-size: .85rem; font-weight: 550; transition: border-color 180ms var(--ease-out), background-color 180ms var(--ease-out), box-shadow 180ms var(--ease-out); }
+.trigger:hover:not(:disabled) { border-color: var(--accent); background: color-mix(in srgb, var(--accent-soft) 22%, var(--surface-elevated)); }
+.trigger:focus-visible, .trigger[aria-expanded='true'] { border-color: var(--accent); background: var(--surface-elevated); outline: 0; box-shadow: 0 0 0 1px var(--surface-elevated), 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent); }
+.trigger:disabled { border-color: var(--border); background: var(--disabled-bg); color: var(--disabled-text); cursor: not-allowed; }
+.trigger svg { flex: none; color: var(--text-muted); }
+.trigger span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.placeholder { color: var(--text-muted); font-weight: 450; }
+.options, .calendar { position: absolute; z-index: 20; top: calc(100% + 7px); right: 0; width: 100%; min-width: 190px; padding: 5px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-elevated); box-shadow: 0 12px 32px color-mix(in srgb, var(--text) 13%, transparent), var(--shadow-small); animation: appear 160ms var(--ease-out) both; }
+.options { display: grid; max-height: 280px; gap: 2px; overflow-y: auto; scrollbar-color: var(--border-strong) transparent; scrollbar-width: thin; }
+.options button { display: flex; width: 100%; min-height: 38px; align-items: center; padding: 7px 10px; border: 0; border-radius: 7px; background: transparent; color: var(--text); text-align: left; font-size: .84rem; }
+.options button:hover, .options button:focus-visible { background: var(--surface-muted); outline: 0; }
+.options button[aria-selected='true'] { background: var(--accent-soft); color: var(--accent); font-weight: 700; }
+.options button[aria-selected='true']::after { content: '✓'; margin-left: auto; font-size: .85rem; }
+.calendar { width: min(318px, calc(100vw - 32px)); padding: 14px; }
+.calendarHeader, .calendarHeader > div, .calendarFooter, .calendarFooter > div { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.calendarHeader { margin-bottom: 12px; }
+.calendarHeader strong { font-size: .9rem; letter-spacing: -.015em; }
+.calendarHeader button, .calendarFooter button { display: grid; min-width: 32px; min-height: 32px; place-items: center; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text-muted); }
+.calendarHeader button:hover, .calendarFooter button:hover { border-color: var(--accent); color: var(--accent); }
+.calendarHeader button:focus-visible, .calendarFooter button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.calendarGrid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px; }
+.weekday { padding: 5px 0 7px; color: var(--text-subtle); text-align: center; font-size: .7rem; font-weight: 700; }
+.calendarGrid button { aspect-ratio: 1; border: 1px solid transparent; border-radius: 8px; background: transparent; color: var(--text); font-size: .8rem; }
+.calendarGrid button:hover:not(:disabled), .calendarGrid button:focus-visible { border-color: var(--border-strong); background: var(--surface-muted); outline: 0; }
+.calendarGrid button[aria-pressed='true'] { border-color: var(--accent); background: var(--accent); color: var(--accent-ink); font-weight: 700; }
+.calendarGrid button.today:not([aria-pressed='true']) { border-color: var(--accent); color: var(--accent); font-weight: 700; }
+.calendarGrid button.outsideMonth { color: var(--text-subtle); }
+.calendarGrid button:disabled { opacity: .3; cursor: not-allowed; }
+.calendarFooter { align-items: flex-end; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); }
+.timeField { position: relative; display: grid; gap: 4px; }
+.timeField > span { color: var(--text-muted); font-size: .72rem; font-weight: 650; }
+.calendarFooter .timeTrigger { display: flex; min-width: 106px; align-items: center; gap: 5px; padding: 0 9px; border-color: var(--border-strong); background: color-mix(in srgb, var(--surface-muted) 48%, var(--surface-elevated)); color: var(--text); font-size: .8rem; font-variant-numeric: tabular-nums; }
+.timeTrigger small { color: var(--text-muted); font-size: .68rem; font-weight: 700; }
+.calendarFooter .timeTrigger:hover, .calendarFooter .timeTrigger[aria-expanded='true'] { border-color: var(--accent); background: var(--accent-soft); color: var(--text); }
+.timePanel { position: absolute; z-index: 5; bottom: calc(100% + 8px); left: 0; display: grid; width: 230px; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; padding: 7px; border: 1px solid var(--border); border-radius: 11px; background: var(--surface-elevated); box-shadow: 0 12px 32px color-mix(in srgb, var(--text) 13%, transparent), var(--shadow-small); animation: appear 160ms var(--ease-out) both; }
+.timePanel > div { display: grid; max-height: 184px; align-content: start; gap: 2px; overflow-y: auto; scrollbar-color: var(--border-strong) transparent; scrollbar-width: thin; }
+.timePanel span { position: sticky; top: 0; padding: 5px 4px 7px; background: var(--surface-elevated); color: var(--text-muted); font-size: .68rem; font-weight: 700; }
+.calendarFooter .timePanel button { display: block; width: 100%; min-height: 31px; padding: 4px 6px; border: 0; border-radius: 7px; background: transparent; color: var(--text); text-align: center; font-size: .76rem; }
+.calendarFooter .timePanel button:hover, .calendarFooter .timePanel button:focus-visible { background: var(--surface-muted); outline: 0; }
+.calendarFooter .timePanel button[aria-pressed='true'] { background: var(--accent-soft); color: var(--accent); font-weight: 750; }
+.calendarFooter button { padding: 0 9px; font-size: .76rem; font-weight: 650; }
+.calendarFooter .done { border-color: var(--accent); background: var(--accent); color: var(--accent-ink); }
+.calendarFooter .done:hover { background: var(--accent-hover); color: var(--accent-ink); }
+@keyframes appear { from { opacity: 0; transform: translateY(-4px) scale(.985); } to { opacity: 1; transform: translateY(0) scale(1); } }
+@media (prefers-reduced-motion: reduce) { .options, .calendar, .timePanel { animation: none; } }

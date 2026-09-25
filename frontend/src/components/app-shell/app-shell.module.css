@@ -1,8 +1,32 @@
-.shell { min-height: 100vh; }
-.header { position: sticky; z-index: 30; top: 0; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; min-height: 64px; padding: 0 clamp(16px, 4vw, 56px); border-bottom: 1px solid var(--border); background: rgba(255,255,255,.94); backdrop-filter: blur(12px); }
-.brand { color: var(--text-strong); font-size: 1.05rem; font-weight: 850; text-decoration: none; }
-.header nav { display: flex; gap: 6px; }
-.header nav a { padding: 9px 13px; border-radius: 8px; color: var(--text-muted); font-size: .9rem; font-weight: 700; text-decoration: none; }
-.header nav a:hover, .header nav a.active { background: var(--primary-soft); color: var(--primary); }
-.accountActions { display: flex; align-items: center; justify-self: end; gap: 10px; }
-@media (max-width: 560px) { .header { grid-template-columns: auto 1fr auto; gap: 10px; } .brand span { display: none; } .header nav { justify-content: center; } }
+.shell { --sidebar-width: 232px; width: 100%; min-width: 0; min-height: 100dvh; padding-left: var(--sidebar-width); overflow-x: clip; background: var(--page-bg); transition: padding-left 260ms var(--ease-out); }
+.shell.collapsed { --sidebar-width: 72px; }
+.sidebar { position: fixed; z-index: var(--layer-sidebar); inset: 0 auto 0 0; display: flex; width: var(--sidebar-width); flex-direction: column; padding: 12px 10px 16px; border-right: 1px solid var(--border); background: var(--surface); transition: width 260ms var(--ease-out); }
+.sidebarBrand { min-height: 52px; padding: 0 6px; overflow: hidden; }
+.primaryNav { display: grid; gap: 4px; margin-top: 18px; }
+.primaryNav a, .bottomNav a { display: flex; min-height: 44px; align-items: center; gap: 12px; border-radius: var(--radius-control); color: var(--text-muted); font-size: .9rem; font-weight: 600; text-decoration: none; }
+.primaryNav a { padding: 0 10px; white-space: nowrap; overflow: hidden; }
+.primaryNav a:hover, .primaryNav a.active, .bottomNav a.active { background: var(--accent-soft); color: var(--accent); }
+.primaryNav svg { flex: none; }
+.sidebarFooter { display: grid; gap: 6px; margin-top: auto; }
+.desktopAccount { display: grid; min-height: 48px; grid-template-columns: 40px 40px 1fr; align-items: center; gap: 6px; padding: 4px; color: var(--text-muted); font-size: .875rem; font-weight: 600; }
+.userButton { display: grid; min-width: 40px; min-height: 40px; place-items: center; }
+.collapseButton { position: absolute; right: -17px; bottom: 22px; width: 34px; min-width: 34px; height: 34px; border-radius: 50%; box-shadow: var(--shadow-small); }
+.collapsed .sidebarBrand { padding: 0 12px; }
+.collapsed .primaryNav a { justify-content: center; padding: 0; }
+.collapsed .primaryNav span, .collapsed .desktopAccount > span { display: none; }
+.collapsed .desktopAccount { grid-template-columns: 40px; justify-content: center; }
+.main { width: min(1520px, 100%); min-width: 0; min-height: 100dvh; margin: 0 auto; overflow-x: clip; }
+.mobileHeader, .bottomNav { display: none; }
+
+@media (max-width: 767px) {
+  .shell, .shell.collapsed { padding: 60px 0 calc(68px + env(safe-area-inset-bottom)); }
+  .sidebar { display: none; }
+  .mobileHeader { position: fixed; z-index: var(--layer-sidebar); inset: 0 0 auto; display: flex; height: 60px; align-items: center; justify-content: space-between; padding: 0 12px 0 16px; border-bottom: 1px solid var(--border); background: color-mix(in srgb, var(--surface) 94%, transparent); backdrop-filter: blur(12px); }
+  .mobileActions { display: flex; align-items: center; gap: 4px; }
+  .bottomNav { position: fixed; z-index: var(--layer-sidebar); right: 0; bottom: 0; left: 0; display: grid; min-height: calc(60px + env(safe-area-inset-bottom)); grid-template-columns: repeat(2, 1fr); padding: 6px 12px calc(6px + env(safe-area-inset-bottom)); border-top: 1px solid var(--border); background: color-mix(in srgb, var(--surface) 96%, transparent); backdrop-filter: blur(12px); }
+  .bottomNav a { min-height: 48px; flex-direction: column; justify-content: center; gap: 2px; font-size: .75rem; }
+  .bottomNav a.active { background: transparent; }
+  .main { min-height: calc(100dvh - 128px); }
+}
+
+@media (prefers-reduced-motion: reduce) { .shell, .sidebar { transition: none; } }

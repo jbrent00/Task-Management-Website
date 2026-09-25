@@ -1,10 +1,20 @@
 .root { position: relative; }
-.trigger { position: relative; display: grid; width: 38px; height: 38px; place-items: center; border: 1px solid var(--border); border-radius: 50%; background: white; color: var(--text); font-size: 1.25rem; }
-.trigger svg { width: 19px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-.trigger:hover, .trigger[aria-expanded="true"] { border-color: var(--primary); background: var(--primary-soft); color: var(--primary); }
-.trigger b { position: absolute; top: -6px; right: -7px; min-width: 19px; height: 19px; padding: 0 5px; border: 2px solid white; border-radius: 999px; background: var(--danger); color: white; font-size: .66rem; line-height: 15px; }
-.panel { position: absolute; z-index: 50; top: calc(100% + 12px); right: 0; width: min(430px, calc(100vw - 24px)); max-height: min(650px, calc(100vh - 84px)); overflow: auto; border: 1px solid var(--border); border-radius: 14px; background: white; box-shadow: var(--shadow-md); }
-.heading { position: sticky; z-index: 1; top: 0; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px; border-bottom: 1px solid var(--border); background: rgba(255,255,255,.97); }
-.heading small { display: block; margin-top: 3px; color: var(--text-muted); }.heading button { border: 0; background: none; color: var(--primary); font-weight: 700; }
-.items { display: grid; }.item { display: grid; gap: 11px; padding: 15px 16px; border-bottom: 1px solid var(--border); }.item.unread { border-left: 3px solid var(--primary); background: var(--primary-soft); }.item p { margin: 5px 0; color: var(--text); font-size: .88rem; line-height: 1.45; }.item small { color: var(--text-muted); }.kind { color: var(--primary); font-size: .66rem; font-weight: 850; letter-spacing: .07em; text-transform: uppercase; }.actions { display: flex; justify-content: flex-end; gap: 7px; }.actions button, .actions a { min-height: 32px; padding: 6px 9px; border: 1px solid var(--border); border-radius: 7px; background: white; color: var(--text); font-size: .78rem; font-weight: 700; text-decoration: none; }.actions .primary { border-color: var(--primary); background: var(--primary); color: white; }.empty, .error { padding: 28px 16px; color: var(--text-muted); text-align: center; }.error { padding: 10px 16px; color: var(--danger); }
-@media (max-width: 560px) { .panel { position: fixed; top: 70px; right: 12px; left: 12px; width: auto; } }
+.trigger { position: relative; display: grid; width: 40px; height: 40px; place-items: center; border: 1px solid var(--border); border-radius: var(--radius-control); background: var(--surface); color: var(--text-muted); }
+.trigger:hover, .trigger[aria-expanded="true"] { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
+.trigger b { position: absolute; top: -6px; right: -7px; min-width: 19px; height: 19px; padding: 0 5px; border: 2px solid var(--surface); border-radius: 999px; background: var(--danger); color: var(--surface-elevated); font-size: .66rem; line-height: 15px; }
+.panel { position: absolute; z-index: var(--layer-menu); bottom: calc(100% + 12px); left: 0; width: min(430px, calc(100vw - 24px)); max-height: min(650px, calc(100vh - 84px)); overflow: auto; border: 1px solid var(--border); border-radius: var(--radius-panel); background: var(--surface-elevated); box-shadow: var(--shadow-elevated); }
+.heading { position: sticky; z-index: 1; top: 0; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px; border-bottom: 1px solid var(--border); background: var(--surface-elevated); }
+.heading small { display: block; margin-top: 3px; color: var(--text-muted); }
+.heading button { border: 0; background: none; color: var(--accent); font-weight: 700; }
+.items { display: grid; }
+.item { display: grid; gap: 11px; padding: 15px 16px; border-bottom: 1px solid var(--border); }
+.item.unread { border-left: 3px solid var(--accent); background: var(--accent-soft); }
+.item p { margin: 5px 0; color: var(--text); font-size: .88rem; line-height: 1.45; }
+.item small { color: var(--text-muted); }
+.kind { color: var(--accent); font-size: .66rem; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; }
+.actions { display: flex; justify-content: flex-end; gap: 7px; }
+.actions button, .actions a { min-height: 32px; padding: 6px 9px; border: 1px solid var(--border); border-radius: 7px; background: var(--surface); color: var(--text); font-size: .78rem; font-weight: 700; text-decoration: none; }
+.actions .primary { border-color: var(--accent); background: var(--accent); color: var(--accent-ink); }
+.empty, .error { padding: 28px 16px; color: var(--text-muted); text-align: center; }
+.error { padding: 10px 16px; color: var(--danger); }
+@media (max-width: 767px) { .panel { position: fixed; top: 70px; right: 12px; bottom: auto; left: 12px; width: auto; } }

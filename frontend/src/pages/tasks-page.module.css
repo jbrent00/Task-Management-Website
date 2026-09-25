@@ -1,25 +1,26 @@
-.tasksPage { width: min(1440px, 100%); min-height: 100vh; margin: 0 auto; padding: 32px clamp(16px, 4vw, 56px) 48px; }
-.header { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin-bottom: 28px; }
-.eyebrow { margin-bottom: 6px; color: var(--primary); font-size: 0.78rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
-.title { color: var(--text-strong); font-size: clamp(2rem, 4vw, 3rem); letter-spacing: -0.045em; line-height: 1; }
-.taskTotal { margin-top: 10px; color: var(--text-muted); }
-.taskTotal strong { color: var(--text); }
-.userButton { display: grid; width: 42px; height: 42px; place-items: center; border: 1px solid var(--border); border-radius: 50%; background: var(--surface); box-shadow: var(--shadow-sm); }
-.createTask { margin-bottom: 28px; }
-.createTask[hidden], .taskBoards > [hidden] { display: none; }
+.tasksPage { width: min(1520px, 100%); min-width: 0; min-height: 100dvh; margin: 0 auto; padding: 28px clamp(16px, 2.5vw, 36px) 56px; overflow-x: clip; }
+.header { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin-bottom: 18px; }
+.title { color: var(--text); font-size: clamp(2rem, 3vw, 2.75rem); font-weight: 650; letter-spacing: -.04em; line-height: 1; }
+.taskTotal { margin-top: 7px; color: var(--text-muted); font-size: .88rem; }
+.taskTotal strong { color: var(--text); font-family: 'Geist Mono Variable', monospace; font-weight: 600; }
 .headerActions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-.createButton { min-height: 42px; padding: 0 14px; border: 1px solid var(--primary); border-radius: 8px; background: var(--primary); color: white; font-weight: 700; }
-.statusSelectors { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
-.statusSelectors button, .switchStatus { min-height: 42px; padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text); }
-.statusSelectors button[aria-pressed="true"] { background: var(--primary); color: white; border-color: var(--primary); }
-.switchStatus { margin: 8px 8px 0 0; color: var(--primary); }
-@media (max-width: 640px) { .header { flex-wrap: wrap; gap: 16px; } }
-.notice { position: sticky; z-index: 10; top: 12px; display: flex; align-items: center; justify-content: space-between; gap: 16px; margin: -12px 0 18px; padding: 11px 14px; border: 1px solid; border-radius: 10px; box-shadow: var(--shadow-md); font-size: .88rem; font-weight: 650; }
-.notice button { flex: none; padding: 0 4px; border: 0; background: transparent; color: inherit; font-size: 1.2rem; line-height: 1; }
-.success { border-color: #a7f3d0; background: var(--success-soft); color: var(--success); }
-.error { border-color: #fecaca; background: var(--danger-soft); color: var(--danger); }
-.loadError { margin: -8px 0 20px; padding: 12px 14px; border: 1px solid #fecaca; border-radius: 10px; background: var(--danger-soft); color: var(--danger); font-size: 0.9rem; font-weight: 600; line-height: 1.4; }
-.taskBoards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; align-items: stretch; }
-.taskBoards > div:not([hidden]) { display: flex; flex-direction: column; }
-@media (max-width: 960px) { .taskBoards { grid-template-columns: 1fr; } }
-@media (max-width: 640px) { .tasksPage { padding: 24px 16px 36px; } .header { align-items: flex-start; margin-bottom: 22px; } }
+.createButton { min-height: 44px; padding: 0 16px; border: 1px solid var(--accent); border-radius: var(--radius-control); background: var(--accent); color: var(--accent-ink); font-weight: 700; transition: transform 180ms var(--ease-out), background 180ms var(--ease-out); }
+.createButton:hover { background: var(--accent-hover); }
+.createButton:active { transform: scale(.98); }
+.createTask { margin-bottom: 18px; }
+.createTask[hidden], .taskBoards > [hidden] { display: none; }
+.notice { position: sticky; z-index: 10; top: 12px; display: flex; align-items: center; justify-content: space-between; gap: 16px; margin: -8px 0 18px; padding: 12px 14px; border: 1px solid; border-radius: var(--radius-control); box-shadow: var(--shadow-elevated); font-size: .9rem; }
+.notice button { display: grid; width: 40px; height: 40px; flex: none; place-items: center; border: 0; border-radius: var(--radius-control); background: transparent; color: inherit; }
+.success { border-color: color-mix(in srgb, var(--success) 42%, var(--border)); background: var(--success-soft); color: var(--success); }
+.error, .loadError { border-color: color-mix(in srgb, var(--danger) 42%, var(--border)); background: var(--danger-soft); color: var(--danger); }
+.loadError { margin: 16px 0; padding: 14px 16px; border: 1px solid; border-radius: var(--radius-control); }
+.statusSelectors { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; margin-bottom: 12px; padding: 4px; overflow: hidden; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); }
+.statusSelectors button { display: flex; min-width: 0; min-height: 42px; align-items: center; justify-content: center; gap: 6px; padding: 7px 6px; border: 0; border-radius: 8px; background: transparent; color: var(--text-muted); font-size: .82rem; font-weight: 650; white-space: nowrap; }
+.statusSelectors button span { font-family: 'Geist Mono Variable', monospace; font-size: .75rem; }
+.statusSelectors button[aria-pressed='true'] { background: var(--accent-soft); color: var(--accent); }
+.taskBoards { display: grid; width: 100%; min-width: 0; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; align-items: stretch; }
+.taskBoards > div { display: flex; min-width: 0; }
+.switchStatus { min-height: 44px; margin: 8px 8px 0 0; padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius-control); background: var(--surface); color: var(--accent); }
+@media (max-width: 1180px) and (min-width: 961px) { .tasksPage { padding-inline: 16px; } .taskBoards { gap: 8px; } }
+@media (max-width: 960px) { .taskBoards { grid-template-columns: 1fr; } .taskBoards > div { display: block; } }
+@media (max-width: 640px) { .tasksPage { padding-top: 24px; } .header { align-items: stretch; flex-direction: column; gap: 16px; } .headerActions, .createButton { width: 100%; } }

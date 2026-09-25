@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import styles from './member-picker.module.css';
+import { CaretDownIcon } from '@phosphor-icons/react/dist/csr/CaretDown';
+import { XIcon } from '@phosphor-icons/react/dist/csr/X';
 
 const nameOf = (member) => [member.user?.fname, member.user?.lname].filter(Boolean).join(' ') || member.user?.primaryEmail || 'Member';
 
@@ -22,9 +24,9 @@ export default function MemberPicker({ members, selectedIds, onChange, disabled 
     return <div className={styles.root} ref={root}>
         <span className={styles.label}>{label}</span>
         <button type="button" className={styles.trigger} disabled={disabled} aria-haspopup="dialog" aria-expanded={open} onClick={() => setOpen((value) => !value)}>
-            <span>{selected.length ? `${selected.length} selected` : 'Unassigned'}</span><span aria-hidden="true">▾</span>
+            <span>{selected.length ? `${selected.length} selected` : 'Unassigned'}</span><CaretDownIcon aria-hidden="true" size={16} />
         </button>
-        {selected.length > 0 && <div className={styles.chips}>{selected.map((member) => <span key={member.userId}>{nameOf(member)}<button type="button" disabled={disabled} aria-label={`Remove ${nameOf(member)}`} onClick={() => toggle(member.userId)}>×</button></span>)}</div>}
+        {selected.length > 0 && <div className={styles.chips}>{selected.map((member) => <span key={member.userId}>{nameOf(member)}<button type="button" disabled={disabled} aria-label={`Remove ${nameOf(member)}`} onClick={() => toggle(member.userId)}><XIcon size={13} /></button></span>)}</div>}
         {open && <section className={styles.popover} role="dialog" aria-label="Choose assignees" onKeyDown={(event) => { if (event.key === 'Escape') { event.preventDefault(); setOpen(false); } }}>
             <input ref={search} type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search project members" aria-label="Search project members" />
             <div className={styles.options}>{visible.length ? visible.map((member) => <label key={member.userId}>
