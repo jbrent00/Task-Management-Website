@@ -88,6 +88,13 @@ export const getVisibleTasksByStatus = (tasks, view, searchQuery, now = new Date
     });
 
     const compareTasks = (first, second) => {
+        const firstProject = first.projectId !== null && first.projectId !== undefined;
+        const secondProject = second.projectId !== null && second.projectId !== undefined;
+        if (firstProject !== secondProject) return firstProject ? -1 : 1;
+        if (sort === 'manual' && firstProject && first.projectId !== second.projectId) {
+            return (first.project?.title ?? '').localeCompare(second.project?.title ?? '', undefined, { sensitivity: 'base' })
+                || first.projectId - second.projectId;
+        }
         if (sort === 'manual') return (first.orderIndex - second.orderIndex) || stableCompare(first, second);
         if (sort === 'priority') return (priorityRank[first.priority] - priorityRank[second.priority]) || stableCompare(first, second);
         if (sort === 'title') return stableCompare(first, second);

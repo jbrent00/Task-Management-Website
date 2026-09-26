@@ -1,22 +1,21 @@
-.backdrop { position: fixed; z-index: 300; inset: 0; display: grid; place-items: center; padding: 20px; background: color-mix(in srgb, var(--text) 42%, transparent); }
-.dialog { position: relative; display: grid; width: min(100%, 440px); overflow: hidden; border: 1px solid var(--border); border-radius: var(--radius-panel); background: var(--surface-elevated); box-shadow: var(--shadow-elevated); }
-.marker { height: 4px; }
-.marker.danger { background: var(--danger); }
-.marker.warning { background: var(--warning); }
-.marker.primary { background: var(--primary); }
-.content { display: grid; gap: 9px; padding: 22px 22px 18px; }
-.content h2 { color: var(--text-strong); font-size: 1.08rem; line-height: 1.3; }
+.backdrop { position: fixed; z-index: 300; inset: 0; display: grid; place-items: center; padding: 20px; background: color-mix(in srgb, var(--text) 44%, transparent); }
+.dialog { position: relative; display: grid; width: min(100%, 420px); overflow: hidden; border: 1px solid var(--border); border-radius: var(--radius-panel); background: var(--surface-elevated); box-shadow: var(--shadow-elevated); }
+.content { display: grid; gap: 10px; padding: 28px 28px 18px; }
+.content h2 { color: var(--text); font-size: 1.25rem; font-weight: 650; letter-spacing: -.025em; line-height: 1.3; }
 .description { color: var(--text-muted); font-size: .9rem; line-height: 1.55; }
 .description p + p { margin-top: 8px; }
-.actions { display: flex; justify-content: flex-end; gap: 9px; padding: 14px 22px 18px; border-top: 1px solid var(--border); background: var(--surface-muted); }
+.actions { display: flex; justify-content: flex-end; gap: 9px; padding: 12px 28px 28px; }
 .actions button { min-height: 40px; padding: 0 14px; border-radius: 8px; font-weight: 750; white-space: nowrap; }
-.cancel { border: 1px solid var(--border-strong); background: var(--surface); color: var(--text); }
+.cancel { border: 1px solid var(--border); background: var(--surface-elevated); color: var(--text); }
+.cancel:hover:not(:disabled) { border-color: var(--border-strong); background: var(--surface-muted); }
 .confirm { border: 1px solid transparent; color: var(--accent-ink); }
 .confirm.danger { background: var(--danger); }
-.confirm.warning { background: var(--warning); }
+.confirm.danger:hover:not(:disabled) { background: color-mix(in srgb, var(--danger) 86%, var(--text)); }
+.confirm.warning { border-color: var(--border-strong); background: var(--surface-elevated); color: var(--text); }
+.confirm.warning:hover:not(:disabled) { background: var(--surface-muted); }
 .confirm.primary { background: var(--primary); }
 .confirm.primary:hover:not(:disabled) { background: var(--primary-hover); }
-.actions button:disabled { opacity: .6; }
+.actions button:disabled { border-color: var(--border); background: var(--surface-muted); color: var(--text-subtle); cursor: not-allowed; }
 
 @media (max-width: 480px) {
     .backdrop { align-items: end; padding: 12px; }

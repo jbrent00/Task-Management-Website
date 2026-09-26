@@ -1,7 +1,6 @@
 import styles from './task-view-controls.module.css';
 import { getActiveSort, hasActiveTaskFilters } from '../../functions/taskViews';
 import { noProjectFilter } from '../../functions/taskViews';
-import ProjectTagManager from '../project-tag-manager/project-tag-manager';
 import TaskSelectField from '../task-form-controls/task-select-field';
 import { useState } from 'react';
 import { CaretDownIcon } from '@phosphor-icons/react/dist/csr/CaretDown';
@@ -10,12 +9,12 @@ import { FunnelSimpleIcon } from '@phosphor-icons/react/dist/csr/FunnelSimple';
 
 const filterOptions = {
     priorityFilters: [['high', 'High'], ['medium', 'Medium'], ['low', 'Low']],
-    statusFilters: [['todo', 'To do'], ['in_progress', 'In progress'], ['completed', 'Completed']],
     dueFilters: [['overdue', 'Overdue'], ['noDueDate', 'No due date']],
+    statusFilters: [['todo', 'To do'], ['in_progress', 'In progress'], ['completed', 'Completed']],
 };
 const filterLabels = { priorityFilters: 'Priority', statusFilters: 'Status', dueFilters: 'Due' };
 
-function TaskViewControls({ view, searchQuery, onSearchChange, onViewChange, onClearFilters, projects, tags, onUpdateTag, onDeleteTag, onNotify }) {
+function TaskViewControls({ view, searchQuery, onSearchChange, onViewChange, onClearFilters, projects, tags }) {
     const [filtersExpanded, setFiltersExpanded] = useState(false);
     const activeSort = getActiveSort(view);
     const toggleFilter = (filterName, value) => {
@@ -38,8 +37,8 @@ function TaskViewControls({ view, searchQuery, onSearchChange, onViewChange, onC
             </div>
             <button className={styles.filterToggle} type="button" onClick={() => setFiltersExpanded((value) => !value)} aria-expanded={filtersExpanded} aria-controls="task-filter-content"><FunnelSimpleIcon size={18} />{filtersExpanded ? 'Hide filters' : 'Filters'}{filtersExpanded ? <CaretDownIcon size={16} /> : <CaretRightIcon size={16} />}</button>
             <div id="task-filter-content" className={styles.filterContent} hidden={!filtersExpanded}>
-            <div className={styles.projectRow}><TaskSelectField label="Project" compact value={view.projectId ?? 'all'} onChange={(value) => onViewChange({ ...view, projectId: value === 'all' ? null : value === noProjectFilter ? noProjectFilter : Number(value) })} options={[{ value: 'all', label: 'All tasks' }, { value: noProjectFilter, label: 'No project' }, ...projects.map((project) => ({ value: project.id, label: project.title }))]} /><ProjectTagManager tags={tags} onUpdateTag={onUpdateTag} onDeleteTag={onDeleteTag} onNotify={onNotify} /></div>
-            <fieldset className={styles.filterGroup}><legend>Tags (match any)</legend>{tags.map((tag) => <label className={styles.checkLabel} key={tag.id}><input type="checkbox" checked={view.tagIds.includes(tag.id)} onChange={() => onViewChange({ ...view, tagIds: view.tagIds.includes(tag.id) ? view.tagIds.filter((id) => id !== tag.id) : [...view.tagIds, tag.id] })} />{tag.name}</label>)}</fieldset>
+            <div className={styles.contextRow}><TaskSelectField label="Project" compact value={view.projectId ?? 'all'} onChange={(value) => onViewChange({ ...view, projectId: value === 'all' ? null : value === noProjectFilter ? noProjectFilter : Number(value) })} options={[{ value: 'all', label: 'All tasks' }, { value: noProjectFilter, label: 'No project' }, ...projects.map((project) => ({ value: project.id, label: project.title }))]} />
+            <fieldset className={styles.filterGroup}><legend>Tags (match any)</legend>{tags.length ? tags.map((tag) => <label className={styles.checkLabel} key={tag.id}><input type="checkbox" checked={view.tagIds.includes(tag.id)} onChange={() => onViewChange({ ...view, tagIds: view.tagIds.includes(tag.id) ? view.tagIds.filter((id) => id !== tag.id) : [...view.tagIds, tag.id] })} />{tag.name}</label>) : <span className={styles.noTags}>No tags yet</span>}</fieldset></div>
             <div className={styles.filters}>
                 {Object.entries(filterOptions).map(([filterName, options]) => <fieldset className={styles.filterGroup} key={filterName}><legend>{filterLabels[filterName]}</legend>{options.map(([value, label]) => <label className={styles.checkLabel} key={value}><input type="checkbox" checked={view[filterName].includes(value)} onChange={() => toggleFilter(filterName, value)} />{label}</label>)}</fieldset>)}
             </div>

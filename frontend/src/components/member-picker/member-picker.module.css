@@ -1,5 +1,5 @@
 .root { position: relative; display: grid; gap: 6px; min-width: 0; }
-.label { color: var(--text-muted); font-size: .78rem; font-weight: 700; }
+.label { color: var(--text); font-size: .78rem; font-weight: 700; }
 .trigger { display: flex; min-height: 44px; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 10px; border: 1px solid var(--border-strong); border-radius: var(--radius-control); background: color-mix(in srgb, var(--surface-muted) 48%, var(--surface-elevated)); color: var(--text); text-align: left; }
 .trigger:hover:not(:disabled) { border-color: var(--accent); background: color-mix(in srgb, var(--accent-soft) 22%, var(--surface-elevated)); }
 .trigger:focus-visible, .trigger[aria-expanded='true'] { border-color: var(--accent); outline: 0; box-shadow: 0 0 0 1px var(--surface-elevated), 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent); }

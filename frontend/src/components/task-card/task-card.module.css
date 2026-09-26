@@ -26,12 +26,15 @@
 .dueDate.dueSoon { color: var(--warning); }
 .tagList { display: flex; min-width: 0; align-items: center; gap: 4px; overflow: hidden; }
 .tag { flex: none; padding: 3px 6px; border-radius: 6px; font-size: .66rem; font-weight: 600; line-height: 1.15; white-space: nowrap; }
-.tag_slate { background: var(--surface-muted); color: var(--text-muted); }
-.tag_red { background: var(--danger-soft); color: var(--danger); }
-.tag_orange { background: var(--accent-soft); color: var(--accent); }
-.tag_yellow { background: var(--warning-soft); color: var(--warning); }
-.tag_green, .tag_teal { background: var(--success-soft); color: var(--success); }
-.tag_blue, .tag_purple, .tagMore { background: var(--surface-muted); color: var(--text-muted); }
+.tag_slate { background: var(--tag-slate-bg); color: var(--tag-slate-fg); }
+.tag_red { background: var(--tag-red-bg); color: var(--tag-red-fg); }
+.tag_orange { background: var(--tag-orange-bg); color: var(--tag-orange-fg); }
+.tag_yellow { background: var(--tag-yellow-bg); color: var(--tag-yellow-fg); }
+.tag_green { background: var(--tag-green-bg); color: var(--tag-green-fg); }
+.tag_teal { background: var(--tag-teal-bg); color: var(--tag-teal-fg); }
+.tag_blue { background: var(--tag-blue-bg); color: var(--tag-blue-fg); }
+.tag_purple { background: var(--tag-purple-bg); color: var(--tag-purple-fg); }
+.tagMore { background: var(--surface-muted); color: var(--text-muted); }
 .commentCount { min-height: 28px; gap: 4px; padding-right: 5px; font-family: 'Geist Mono Variable', monospace; font-size: .68rem; }
 .checklistSummary { gap: 5px; font-size: .7rem; font-weight: 600; }
 .checklistSummary svg { color: var(--accent); }
@@ -42,7 +45,7 @@
 .separator { flex: none; color: var(--text-subtle); }
 .assigneeList b { flex: none; font-size: .68rem; }
 .compactAssigneeOverflow { display: none; }
-.noAssignees { color: var(--text-subtle); font-size: .72rem; }
+.noAssignees { color: var(--text-subtle); font-size: .67rem; line-height: 1.15; }
 .cardActions { position: absolute; z-index: 3; right: 9px; bottom: 9px; display: flex; align-items: center; gap: 2px; }
 .participation { min-height: 32px; padding: 0 7px; border: 0; border-radius: 7px; background: transparent; color: var(--accent); font-size: .72rem; font-weight: 650; }
 .participation:hover { background: var(--accent-soft); }

@@ -9,16 +9,19 @@ const projectApi = vi.hoisted(() => ({
     revokeProjectInvitation: vi.fn(),
     transferProjectOwnership: vi.fn(),
     updateProjectMember: vi.fn(),
+    updateProjectTag: vi.fn(),
 }));
 const aiApi = vi.hoisted(() => ({ generateTaskDraft: vi.fn() }));
+const taskApi = vi.hoisted(() => ({ createProjectTask: vi.fn() }));
 
 vi.mock('../api/projects', () => ({
     archiveProject: vi.fn(), createProjectTag: projectApi.createProjectTag, deleteProject: projectApi.deleteProject, deleteProjectTag: projectApi.deleteProjectTag,
     getProject: vi.fn(), inviteProjectMember: projectApi.inviteProjectMember, removeProjectMember: projectApi.removeProjectMember,
     restoreProject: vi.fn(), revokeProjectInvitation: projectApi.revokeProjectInvitation, transferProjectOwnership: projectApi.transferProjectOwnership,
-    updateProject: vi.fn(), updateProjectMember: projectApi.updateProjectMember,
+    updateProject: vi.fn(), updateProjectMember: projectApi.updateProjectMember, updateProjectTag: projectApi.updateProjectTag,
 }));
 vi.mock('../api/aiGeneration', () => ({ AiGenerationError: class AiGenerationError extends Error {}, generateTaskDraft: aiApi.generateTaskDraft }));
+vi.mock('../api/projectTasks', () => ({ createProjectTask: taskApi.createProjectTask, getProjectTasks: vi.fn() }));
 vi.mock('../components/member-picker/member-picker', () => ({ default: () => <div>Member picker</div> }));
 vi.mock('../components/checklist/checklist', () => ({ default: () => <div>Checklist</div> }));
 
@@ -49,6 +52,17 @@ test('asks before replacing generated project-task content', async () => {
     expect(screen.getByLabelText(/Description/)).toHaveValue('Generated copy');
 });
 
+test('keeps a failed project-task draft visible for retry', async () => {
+    taskApi.createProjectTask.mockRejectedValue(new Error('Save failed.'));
+    const onCreate = vi.fn();
+    render(<CreateProjectTask project={project} currentUserId="owner" tasks={[]} onCreate={onCreate} getToken={async () => 'token'} onError={() => {}} />);
+    fireEvent.change(screen.getByLabelText('Title'), { target: { value: 'Review copy' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Create task' }));
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('Save failed. Your entries were kept'));
+    expect(screen.getByLabelText('Title')).toHaveValue('Review copy');
+    expect(onCreate).not.toHaveBeenCalled();
+});
+
 test('confirms shared-tag deletion before mutating', async () => {
     projectApi.deleteProjectTag.mockResolvedValue(undefined);
     const onChanged = vi.fn();
@@ -60,6 +74,31 @@ test('confirms shared-tag deletion before mutating', async () => {
     fireEvent.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Delete tag' }));
     await waitFor(() => expect(projectApi.deleteProjectTag).toHaveBeenCalledWith('token', 2, 4));
     expect(onChanged).toHaveBeenCalledOnce();
+});
+
+test('opens shared-tag creation from the plus action and restores focus on Escape', async () => {
+    render(<ProjectTags project={project} getToken={async () => 'token'} onChanged={async () => {}} onError={() => {}} />);
+    fireEvent.click(screen.getByRole('button', { name: /Shared tags/i }));
+    const trigger = screen.getByRole('button', { name: 'Create shared tag' });
+    fireEvent.click(trigger);
+    expect(screen.getByRole('textbox', { name: 'New tag' })).toBeInTheDocument();
+    fireEvent.keyDown(screen.getByRole('textbox', { name: 'New tag' }), { key: 'Escape' });
+    await waitFor(() => expect(trigger).toHaveFocus());
+    expect(screen.queryByRole('textbox', { name: 'New tag' })).not.toBeInTheDocument();
+});
+
+test('edits a shared tag and restores focus to its action', async () => {
+    projectApi.updateProjectTag.mockResolvedValue(undefined);
+    const onChanged = vi.fn().mockResolvedValue(undefined);
+    render(<ProjectTags project={project} getToken={async () => 'token'} onChanged={onChanged} onError={() => {}} />);
+
+    fireEvent.click(screen.getByRole('button', { name: /Shared tags/i }));
+    fireEvent.click(screen.getByRole('button', { name: 'Edit Urgent' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Tag name' }), { target: { value: 'Launch' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+    await waitFor(() => expect(projectApi.updateProjectTag).toHaveBeenCalledWith('token', 2, 4, 'Launch', 'red'));
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Edit Urgent' })).toHaveFocus());
 });
 
 test('confirms ownership transfer and member removal before mutating', async () => {

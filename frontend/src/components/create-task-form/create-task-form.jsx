@@ -11,12 +11,13 @@ import TaskDateField from '../task-form-controls/task-date-field';
 import { useTaskMutation } from '../../functions/taskMutationContext';
 import { AiGenerationError, generateTaskDraft } from '../../api/aiGeneration';
 
-function CreateTaskForm ({tasks, setTasks, tags, onCreateTag, onNotify, expanded, onCreated}) {
+function CreateTaskForm ({tasks, setTasks, tags, onCreateTag, onNotify, expanded, initialStatus = 'todo', onCreated}) {
     const { getToken } = useAuth();
     const mutation = useTaskMutation();
 
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
+    const [status, setStatus] = useState(initialStatus);
     const [priority, setPriority] = useState('low');
     const [dueDate, setDueDate] = useState('');
     const [projectId, setProjectId] = useState(null);
@@ -26,9 +27,11 @@ function CreateTaskForm ({tasks, setTasks, tags, onCreateTag, onNotify, expanded
     const [checklistResetKey, setChecklistResetKey] = useState(0);
     const [generating, setGenerating] = useState(null);
     const [aiMessage, setAiMessage] = useState(null);
+    const [submitError, setSubmitError] = useState('');
     const [confirmationKind, setConfirmationKind] = useState(null);
     const titleRef = useRef(null);
     useEffect(() => { if (expanded) titleRef.current?.focus(); }, [expanded]);
+    useEffect(() => { if (expanded) setStatus(initialStatus); }, [initialStatus, expanded]);
     const validAiTitle = Boolean(title.trim()) && title.length <= 100;
 
     const describeAiError = (error) => {
@@ -70,19 +73,21 @@ function CreateTaskForm ({tasks, setTasks, tags, onCreateTag, onNotify, expanded
     if (submitting || !title.trim() || title.length > 100 || description.length > 500) return;
     if (!mutation.begin()) return;
     setSubmitting(true);
+    setSubmitError('');
     try {
         const token = await getToken();
 
-        const todoTasks = tasks.filter(task => task.status === 'todo');
-        const orderIndex = todoTasks.length > 0
-            ? Math.max(...todoTasks.map(task => task.orderIndex)) + 1
+        const statusTasks = tasks.filter(task => task.status === status);
+        const orderIndex = statusTasks.length > 0
+            ? Math.max(...statusTasks.map(task => task.orderIndex)) + 1
             : 0;
 
-        const newTask = await createTask(token, title, description, priority, dueDate || null, orderIndex, projectId, tagIds, checklistItems);
+        const newTask = await createTask(token, title, description, priority, dueDate || null, orderIndex, projectId, tagIds, checklistItems, status);
         setTasks((prevTasks) => [...prevTasks, newTask]);
         setTitle('');
         setDescription('');
         setPriority('low');
+        setStatus('todo');
         setDueDate('');
         setProjectId(null);
         setTagIds([]);
@@ -94,7 +99,7 @@ function CreateTaskForm ({tasks, setTasks, tags, onCreateTag, onNotify, expanded
         onNotify({ tone: 'success', message: `Created “${newTask.title}”.` });
     } catch (error) {
         console.error('Error creating task', error);
-        onNotify({ tone: 'error', message: 'Could not create the task. Your entries were kept so you can try again.' });
+        setSubmitError('Could not create the task. Your entries were kept so you can try again.');
     } finally {
         setSubmitting(false);
         mutation.end();
@@ -114,13 +119,14 @@ function CreateTaskForm ({tasks, setTasks, tags, onCreateTag, onNotify, expanded
                 <textarea id="description" name="description" value={description} maxLength={500} disabled={Boolean(generating)} placeholder="Add the context that will help you finish the task." onChange={(e) => setDescription(e.target.value)} />
             </div>
             <div className={styles.details}>
-                <div className={`${styles.field} ${styles.statusField}`}><span className={styles.staticLabel}>Status</span><span className={styles.staticValue}>To do</span></div>
+                <TaskSelectField label="Status" value={status} onChange={setStatus} options={[{ value: 'todo', label: 'To do' }, { value: 'in_progress', label: 'In progress' }, { value: 'completed', label: 'Completed' }]} />
                 <TaskSelectField label="Priority" value={priority} onChange={setPriority} options={[{ value: 'low', label: 'Low' }, { value: 'medium', label: 'Medium' }, { value: 'high', label: 'High' }]} />
                 <TaskDateField label="Due date" value={dueDate} onChange={setDueDate} min={getLocalDateTimeMinimum()} />
             </div>
             <div className={styles.tagSection}><TaskAssignmentFields tags={tags} projectId={null} tagIds={tagIds} onProjectChange={() => {}} onTagIdsChange={setTagIds} onCreateTag={onCreateTag} showProject={false} /></div>
             <div className={styles.checklistField}><Checklist items={checklistItems} draft defaultExpanded resetKey={checklistResetKey} disabled={Boolean(generating)} onGenerate={() => requestGeneration('checklist')} generating={generating === 'checklist'} generateDisabled={!validAiTitle || Boolean(generating)} onItemsChange={setChecklistItems} onNotify={onNotify} /></div>
             {aiMessage && <p className={`${styles.aiMessage} ${styles[aiMessage.tone]}`} role={aiMessage.tone === 'error' ? 'alert' : 'status'} aria-live="polite">{aiMessage.text}</p>}
+            {submitError && <p className={`${styles.aiMessage} ${styles.error}`} role="alert">{submitError}</p>}
             <footer className={styles.formFooter}><button className={styles.submitButton} disabled={mutation.busy || !title.trim() || Boolean(generating)} type="submit">{submitting ? 'Creating…' : 'Create task'}</button></footer>
             {confirmationKind && <ConfirmDialog title={`Replace existing ${confirmationKind}?`} confirmLabel="Replace and generate" tone="warning" onCancel={() => setConfirmationKind(null)} onConfirm={() => runGeneration(confirmationKind)}>Generating new content will replace the {confirmationKind} currently in this form.</ConfirmDialog>}
             </div>

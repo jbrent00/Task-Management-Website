@@ -36,10 +36,12 @@ function ConfirmDialog({
     const handleKeyDown = (event) => {
         if (event.key === 'Escape') {
             event.preventDefault();
+            event.stopPropagation();
             cancel();
             return;
         }
         if (event.key !== 'Tab') return;
+        event.stopPropagation();
 
         const focusable = [...dialogRef.current.querySelectorAll('button:not(:disabled)')];
         if (!focusable.length) {
@@ -66,13 +68,12 @@ function ConfirmDialog({
                 aria-describedby={descriptionId}
                 onKeyDown={handleKeyDown}
             >
-                <div className={`${styles.marker} ${styles[tone]}`} aria-hidden="true" />
                 <div className={styles.content}>
                     <h2 id={titleId}>{title}</h2>
                     <div id={descriptionId} className={styles.description}>{children}</div>
                 </div>
                 <div className={styles.actions}>
-                    <button ref={cancelRef} type="button" className={styles.cancel} disabled={busy} onClick={cancel}>Cancel</button>
+                    <button ref={cancelRef} type="button" className={styles.cancel} disabled={busy} onClick={cancel}>{tone === 'warning' && confirmLabel === 'Discard changes' ? 'Keep editing' : 'Cancel'}</button>
                     <button type="button" className={`${styles.confirm} ${styles[tone]}`} disabled={busy} onClick={onConfirm}>{busy ? busyLabel : confirmLabel}</button>
                 </div>
             </section>

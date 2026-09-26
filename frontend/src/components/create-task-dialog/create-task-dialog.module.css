@@ -1,0 +1,6 @@
+.backdrop { position: fixed; z-index: 190; inset: 0; display: grid; place-items: center; padding: 24px; background: color-mix(in srgb, var(--text) 44%, transparent); }
+.backdrop[hidden] { display: none; }
+.dialog { position: relative; width: min(960px, 100%); max-height: calc(100dvh - 48px); overflow-x: hidden; overflow-y: auto; border: 1px solid var(--border); border-radius: var(--radius-panel); background: var(--surface-elevated); box-shadow: var(--shadow-elevated); }
+.close { position: absolute; z-index: 1; top: 20px; right: 20px; display: grid; width: 40px; height: 40px; place-items: center; border: 1px solid var(--border); border-radius: var(--radius-control); background: var(--surface-elevated); color: var(--text-muted); }
+.close:hover { border-color: var(--border-strong); color: var(--text); }
+@media (max-width: 640px) { .backdrop { padding: 0; } .dialog { width: 100%; max-height: 100dvh; min-height: 100dvh; border: 0; border-radius: 0; } .close { top: 16px; right: 16px; } }

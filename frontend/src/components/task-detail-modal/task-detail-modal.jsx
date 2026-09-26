@@ -14,6 +14,8 @@ import TaskSelectField from '../task-form-controls/task-select-field';
 import TaskDateField from '../task-form-controls/task-date-field';
 import styles from './task-detail-modal.module.css';
 import { XIcon } from '@phosphor-icons/react/dist/csr/X';
+import { DotsThreeIcon } from '@phosphor-icons/react/dist/csr/DotsThree';
+import { TrashIcon } from '@phosphor-icons/react/dist/csr/Trash';
 
 const sortedIds = (items) => [...items].sort((first, second) => String(first).localeCompare(String(second)));
 
@@ -34,6 +36,7 @@ export default function TaskDetailModal({
     project = null,
     personalTags = [],
     onCreatePersonalTag,
+    onCreateProjectTag,
     projectLoading = false,
     projectError = '',
     onRetryProject,
@@ -45,6 +48,9 @@ export default function TaskDetailModal({
     const { getToken, userId } = useAuth();
     const dialog = useRef(null);
     const closeButton = useRef(null);
+    const actionsRoot = useRef(null);
+    const actionsTrigger = useRef(null);
+    const actionsMenu = useRef(null);
     const initial = taskSnapshot(task);
     const [title, setTitle] = useState(initial.title);
     const [description, setDescription] = useState(initial.description);
@@ -58,6 +64,7 @@ export default function TaskDetailModal({
     const [tab, setTab] = useState('details');
     const [error, setError] = useState('');
     const [confirmation, setConfirmation] = useState(null);
+    const [actionsOpen, setActionsOpen] = useState(false);
     const isProjectTask = Boolean(task.projectId);
     const canEdit = task.capabilities?.canEdit !== false;
     const canDelete = Boolean(task.capabilities?.canDelete);
@@ -85,6 +92,14 @@ export default function TaskDetailModal({
         window.addEventListener('beforeunload', warnBeforeUnload);
         return () => window.removeEventListener('beforeunload', warnBeforeUnload);
     }, [isDirty]);
+
+    useEffect(() => {
+        if (!actionsOpen) return undefined;
+        actionsMenu.current?.querySelector('button')?.focus();
+        const dismissOutside = (event) => { if (!actionsRoot.current?.contains(event.target)) setActionsOpen(false); };
+        document.addEventListener('pointerdown', dismissOutside);
+        return () => document.removeEventListener('pointerdown', dismissOutside);
+    }, [actionsOpen]);
 
     const requestClose = () => {
         if (isDirty) {
@@ -143,7 +158,13 @@ export default function TaskDetailModal({
             setError(deleteError.message);
             setSaving(false);
             setConfirmation(null);
+            window.requestAnimationFrame(() => actionsTrigger.current?.focus());
         }
+    };
+
+    const closeDeleteConfirmation = () => {
+        setConfirmation(null);
+        window.requestAnimationFrame(() => actionsTrigger.current?.focus());
     };
 
     const setChecklistItems = (checklistItems) => onUpdated({ ...task, checklistItems });
@@ -160,7 +181,7 @@ export default function TaskDetailModal({
                 else if (!event.shiftKey && document.activeElement === focusable.at(-1)) { event.preventDefault(); focusable[0]?.focus(); }
             }
         }}>
-            <header className={styles.header}><div><span>{isProjectTask ? `${project?.title ?? 'Project'} / Project task` : 'Personal task'}</span><h2 id={`task-detail-${task.id}`}>Task details</h2></div><div className={styles.headerActions}>{canEdit && !projectLoading && !projectError && tab === 'details' && <button className={styles.headerSave} form={formId} type="submit" disabled={saving || !title.trim() || !isDirty}>{saving ? 'Saving…' : 'Save changes'}</button>}<button ref={closeButton} className={styles.close} onClick={requestClose} aria-label="Close task details"><XIcon size={20} /></button></div></header>
+            <header className={styles.header}><div><span>{isProjectTask ? `${project?.title ?? 'Project'} / Project task` : 'Personal task'}</span><h2 id={`task-detail-${task.id}`}>Task details</h2></div><div className={styles.headerActions}>{canEdit && !projectLoading && !projectError && tab === 'details' && <button className={styles.headerSave} form={formId} type="submit" disabled={saving || !title.trim() || !isDirty}>{saving ? 'Saving…' : 'Save changes'}</button>}{canDelete && !projectLoading && !projectError && <div ref={actionsRoot} className={styles.menuRoot}><button ref={actionsTrigger} className={styles.moreActions} type="button" disabled={saving} aria-label="More task actions" aria-haspopup="menu" aria-expanded={actionsOpen} aria-controls={`task-detail-actions-${task.id}`} onClick={() => setActionsOpen((value) => !value)} onKeyDown={(event) => { if (event.key === 'ArrowDown' || event.key === 'ArrowUp') { event.preventDefault(); setActionsOpen(true); } else if (event.key === 'Escape' && actionsOpen) { event.preventDefault(); event.stopPropagation(); setActionsOpen(false); actionsTrigger.current?.focus(); } }}><DotsThreeIcon size={20} weight="bold" aria-hidden="true" /></button>{actionsOpen && <div ref={actionsMenu} id={`task-detail-actions-${task.id}`} className={styles.actionsMenu} role="menu" aria-label="Task actions" onKeyDown={(event) => { if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); setActionsOpen(false); actionsTrigger.current?.focus(); } else if (event.key === 'Tab') { setActionsOpen(false); } else if (['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) { event.preventDefault(); actionsMenu.current?.querySelector('button')?.focus(); } }}><button role="menuitem" type="button" onClick={() => { setActionsOpen(false); setConfirmation('delete'); }}><TrashIcon size={17} aria-hidden="true" />Delete task</button></div>}</div>}<button ref={closeButton} className={styles.close} onClick={requestClose} aria-label="Close task details"><XIcon size={20} /></button></div></header>
             {!projectLoading && !projectError && <nav className={styles.tabs} aria-label="Task detail sections">{tabs.map((value) => <button key={value} aria-current={tab === value ? 'page' : undefined} onClick={() => setTab(value)}>{value}</button>)}</nav>}
             {error && <p className={styles.error} role="alert">{error}</p>}
             <div className={styles.content}>
@@ -172,15 +193,14 @@ export default function TaskDetailModal({
                         <label>Description<textarea maxLength="500" value={description} disabled={!canEdit} placeholder="Add context for this task." onChange={(event) => setDescription(event.target.value)} /></label>
                     </div>
                     <div className={styles.grid}><TaskSelectField label="Status" value={status} disabled={!canEdit} onChange={setStatus} options={[{ value: 'todo', label: 'To do' }, { value: 'in_progress', label: 'In progress' }, { value: 'completed', label: 'Completed' }]} /><TaskSelectField label="Priority" value={priority} disabled={!canEdit} onChange={setPriority} options={[{ value: 'low', label: 'Low' }, { value: 'medium', label: 'Medium' }, { value: 'high', label: 'High' }]} /><TaskDateField label="Due date" value={dueDate} disabled={!canEdit} onChange={setDueDate} /></div>
-                    <div className={styles.peopleAndTags}>{project && <MemberPicker members={project.memberships} selectedIds={assigneeIds} onChange={changeAssignees} disabled={!canEdit || project.archivedAt || project.role === 'viewer'} />}<TaskTagPicker tags={project?.tags ?? personalTags} selectedIds={tagIds} onChange={setTagIds} onCreateTag={!isProjectTask && canEdit ? onCreatePersonalTag : undefined} disabled={!canEdit} /></div>
+                    <div className={styles.peopleAndTags}>{project && <MemberPicker members={project.memberships} selectedIds={assigneeIds} onChange={changeAssignees} disabled={!canEdit || project.archivedAt || project.role === 'viewer'} />}<TaskTagPicker tags={project?.tags ?? personalTags} selectedIds={tagIds} onChange={setTagIds} onCreateTag={canEdit ? (isProjectTask ? onCreateProjectTag : onCreatePersonalTag) : undefined} disabled={!canEdit} /></div>
                     <Checklist defaultExpanded disabled={saving} readOnly={!canEdit} taskId={task.id} items={task.checklistItems ?? []} getToken={getToken} onItemsChange={setChecklistItems} onNotify={onNotify} />
-                    {canDelete && <div className={styles.actions}><button type="button" className={styles.delete} disabled={saving} onClick={() => setConfirmation('delete')}>Delete task</button></div>}
                 </form>}
                 {project && tab === 'discussion' && <TaskComments task={task} project={project} onChanged={(delta) => delta && onUpdated({ ...task, commentCount: Math.max(0, (task.commentCount ?? 0) + delta) })} />}
                 {project && tab === 'activity' && <ActivityTimeline projectId={project.id} taskId={task.id} />}
             </div>
         </section>
-        {confirmation === 'discard' && <ConfirmDialog title="Discard unsaved changes?" confirmLabel="Discard changes" tone="warning" onCancel={() => setConfirmation(null)} onConfirm={onClose}>Your edits to “{task.title}” will be lost.</ConfirmDialog>}
-        {confirmation === 'delete' && <ConfirmDialog title="Delete task?" confirmLabel="Delete task" busyLabel="Deleting…" busy={saving} onCancel={() => setConfirmation(null)} onConfirm={remove}>Delete “{task.title}”? This cannot be undone.</ConfirmDialog>}
+        {confirmation === 'discard' && <ConfirmDialog title="Discard changes?" confirmLabel="Discard changes" tone="warning" onCancel={() => setConfirmation(null)} onConfirm={onClose}>Changes to “{task.title}” have not been saved. Discard them?</ConfirmDialog>}
+        {confirmation === 'delete' && <ConfirmDialog title="Delete this task?" confirmLabel="Delete task" busyLabel="Deleting…" busy={saving} onCancel={closeDeleteConfirmation} onConfirm={remove}>“{task.title}” and its checklist and discussion will be deleted. This cannot be undone.</ConfirmDialog>}
     </div>;
 }

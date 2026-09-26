@@ -8,6 +8,7 @@ import getAllTasks from './getAllTasks';
 import { createInvitation, acceptInvitation } from './projectInvitations';
 import { removeMember, transferOwnership, updateMember } from './projectMembers';
 import { createProjectTask, getProjectTasks } from './projectTasks';
+import createPersonalTask from './createTask';
 import { archiveProject, getProjects, updateProject } from './projects';
 import updateTask from './updateTask';
 import { joinTask, leaveTask } from './taskParticipation';
@@ -69,6 +70,33 @@ after(async () => {
     await prisma.project.deleteMany({ where: { id: { in: projectIds } } });
     await prisma.user.deleteMany({ where: { id: { in: Object.values(users) } } });
     await prisma.$disconnect();
+});
+
+test('creation accepts supported statuses and defaults omitted status to To do', async () => {
+    const project = await createProject('creation statuses', [
+        { userId: users.owner, role: 'owner' }, { userId: users.editor, role: 'editor' }, { userId: users.viewer, role: 'viewer' },
+    ]);
+    const base = { title: `${runId} status task`, description: null, priority: 'low', dueDate: null, orderIndex: 0, tagIds: [], checklistItems: [], assigneeIds: [] };
+    const params = { projectId: String(project.id) };
+    const inProgress = await invoke(createProjectTask, { userId: users.owner, params, body: { ...base, status: 'in_progress' } });
+    assert.equal(inProgress.status, 201);
+    assert.equal((inProgress.body as { status: string }).status, 'in_progress');
+    const completed = await invoke(createProjectTask, { userId: users.editor, params, body: { ...base, status: 'completed' } });
+    assert.equal(completed.status, 201);
+    assert.equal((completed.body as { status: string }).status, 'completed');
+    const fallback = await invoke(createProjectTask, { userId: users.owner, params, body: base });
+    assert.equal((fallback.body as { status: string }).status, 'todo');
+    assert.equal((await invoke(createProjectTask, { userId: users.owner, params, body: { ...base, status: 'blocked' } })).status, 400);
+    assert.equal((await invoke(createProjectTask, { userId: users.viewer, params, body: { ...base, status: 'completed' } })).status, 403);
+
+    const personal = await invoke(createPersonalTask, { userId: users.owner, body: { ...base, status: 'completed' } });
+    assert.equal(personal.status, 201);
+    assert.equal((personal.body as { status: string }).status, 'completed');
+    const personalId = (personal.body as { id: number }).id;
+    const personalFallback = await invoke(createPersonalTask, { userId: users.owner, body: base });
+    assert.equal((personalFallback.body as { status: string }).status, 'todo');
+    assert.equal((await invoke(createPersonalTask, { userId: users.owner, body: { ...base, status: 'blocked' } })).status, 400);
+    await prisma.task.deleteMany({ where: { id: { in: [personalId, (personalFallback.body as { id: number }).id] } } });
 });
 
 test('concurrent duplicate invitation creation stores one pending invitation', async () => {

@@ -1,7 +1,7 @@
-.createTask { width: min(960px, 100%); margin: 0 auto 24px; border: 1px solid var(--border); border-radius: var(--radius-panel); background: var(--surface-elevated); box-shadow: var(--shadow-small); }
+.createTask { width: 100%; margin: 0; background: var(--surface-elevated); }
 .formContent { display: grid; gap: 0; padding: 0 32px; }
 .formContent[hidden] { display: none; }
-.formHeader { margin: 0 -32px 24px; padding: 24px 32px 20px; border-bottom: 1px solid var(--border); }
+.formHeader { margin: 0 -32px 24px; padding: 24px 80px 20px 32px; border-bottom: 1px solid var(--border); }
 .eyebrow { color: var(--text-muted); font-size: .73rem; font-weight: 600; }
 .formHeader h2 { margin-top: 8px; color: var(--text); font-size: 1.5rem; letter-spacing: -.035em; }
 .formHeader p { margin-top: 5px; color: var(--text-muted); font-size: .85rem; }
@@ -22,7 +22,7 @@
 .staticValue { display: flex; min-height: 44px; align-items: center; padding: 9px 12px; border: 1px solid var(--border); border-radius: var(--radius-control); background: var(--accent-soft); color: var(--text); font-size: .85rem; font-weight: 600; }
 .tagSection { padding: 0 0 22px; }
 .checklistField { min-width: 0; padding: 6px 0 22px; border-top: 1px solid var(--border); }
-.formFooter { display: flex; justify-content: flex-end; margin: 0 -32px; padding: 16px 32px; border-top: 1px solid var(--border); background: color-mix(in srgb, var(--surface-muted) 25%, var(--surface-elevated)); }
+.formFooter { display: flex; justify-content: flex-end; margin: 0 -32px; padding: 16px 32px; border-top: 1px solid var(--border); background: var(--surface-elevated); }
 .submitButton { min-height: 44px; padding: 0 20px; border: 1px solid var(--accent); border-radius: var(--radius-control); background: var(--accent); color: var(--accent-ink); font-weight: 700; white-space: nowrap; }
 .submitButton:hover:not(:disabled) { border-color: var(--accent-hover); background: var(--accent-hover); box-shadow: 0 4px 12px color-mix(in srgb, var(--accent) 18%, transparent); }
 .submitButton:active:not(:disabled) { transform: translateY(1px); }

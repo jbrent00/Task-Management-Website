@@ -6,11 +6,10 @@
 - `DESIGN.md`: approved
 - Six landing-page composition references: approved
 - Phase 1, Foundation and product shell: complete and verified on 2026-09-24
-- Phase 2, Authenticated product redesign: in progress; additional user-requested visual refinements are queued before acceptance
+- Phase 2, Authenticated product redesign: visually accepted and complete on 2026-09-25
 - Application implementation: in progress
-- Next implementation phase: implement the Phase 2 refinement backlog below, then request another user visual review
-- Phase 3 is blocked until the user accepts the Phase 2 visual result
-- Backend schema changes: none identified; board-targeted task creation needs creation-endpoint status support
+- Next phase: Phase 3, Public experience
+- Backend schema changes: none needed for Phase 2; board-targeted creation status support is implemented
 
 ### Phase 1 completion record
 
@@ -288,6 +287,55 @@ The user has identified the following remaining visual work. These are implement
 
 For this pass, inspect existing repository changes before editing and preserve all Phase 1/2 work and unrelated user changes. Verify frontend lint, every frontend test, production build, relevant signed-in create/edit/delete flows, owner/editor/viewer behavior, checklist CRUD and keyboard reordering, dialog focus trapping/restoration, responsive layouts at 375px/768px/1024px/1440px, light/dark themes, reduced motion, error states, and the `design-taste-frontend` pre-flight. Run applicable backend tests when creation endpoints change. Record exact changes, verification, remaining mismatches, and intentional deviations here. Do not begin Phase 3 or mark Phase 2 complete until the user explicitly accepts the visual result.
 
+### Phase 2 refinement implementation and review — 2026-09-25
+
+**Design decisions and exact changes.** Applied `design-taste-frontend` to the existing authenticated Flowboard system (brief: calm, compact personal and team task management; density/personality/motion dials 6/5/5). Read the repository and frontend instructions, `DESIGN.md`, this plan, and the reference README before editing; inspected all six approved PNGs at original resolution, the live signed-in app, and a clean `eb8a201` working tree. References 3 and 4 guided the create/edit surface hierarchy. No imagery was needed or generated. The My Tasks project variant now centers a project-name pill and compact task metadata, omits the visually redundant assignee row, and leaves discussion and participation aligned at the bottom. This is the user's subsequent explicit refinement to the earlier four-row baseline. Project Board cards now show right-aligned tags immediately under the title and right-aligned members below them; cards without tags move members into the first available metadata row. Discussion, due date, and checklist progress remain left aligned at the bottom, with wrapping at narrow column widths so values remain visible. The three card variants, drag surface, actions, tag overflow, and equal-height columns remain distinct.
+
+Redesigned the project shared-tags disclosure with a concise introduction, consistent tag rows, inline edit, add and delete controls, empty state, and restored focus after editing. Made discard and task-delete confirmations quieter and more explicit; nested confirmation dialogs now contain Escape/Tab events so the underlying Create task dialog remains open. Both personal and project Create task forms now live in a bounded portal modal aligned to Edit task, trap/restore focus, preserve drafts on failures, and show a clear status picker and inline creation error. Create/Delete button treatments are more restrained and consistent. A 40px `+` action on each available status column opens creation with that status preselected; reopening the general Create action resets status to To do. Both creation controllers validate optional status, default omitted status to `todo`, and set `completedAt` when a task is created as completed. No schema or migration change was needed.
+
+**Verification.** Frontend lint passed; all 48 tests in 16 files passed; production build passed. Backend typecheck and all 39 tests passed, including creation-status defaults/validation and owner/editor/viewer permission coverage. Signed-in owner testing on the temporary E2E Collaboration project passed personal and project status-targeted creation, editing, checklist add/rename/complete/reorder by keyboard, delete confirmation, focus trapping/restoration, and cleanup of the disposable tasks. Shared-tag inline editing and failed project creation with preserved draft are covered by focused frontend tests; nested dialog Escape/focus restoration has a dedicated test. Signed-in Project Board and My Tasks were reviewed at 375px, 768px, 1024px, and 1440px with no document overflow; the 1024px card utility row was adjusted after a visible clip. Light and dark card, board, tag, and creation surfaces were inspected. Reduced-motion behavior was reviewed against the global transition/animation override and component-specific rules. Error states were checked through the failed-create test and visible inline error styling. The `design-taste-frontend` pre-flight was applied to the authenticated surfaces: consistent semantic accent/radii, readable button and form contrast, focus indicators, responsive collapse, no new em-dash copy or decorative motion, loading/empty/error states, and existing Phosphor icons. Marketing-specific hero, photography, bento, and section-pattern checks do not apply to this authenticated workflow.
+
+**Remaining review and intentional deviations.** References 3 and 4 show curated content and omit some real collaboration controls; the signed-in app retains permissions, role actions, shared tags, checklist editing, and status-targeted creation. Current real card density varies with task data. Direct signed-in editor and viewer sessions were unavailable in the browser; their create/edit/view restrictions were checked by integration and frontend tests rather than claimed as live manual verification. No unrelated files, reference PNGs, or credentials were changed. No commit was made. Phase 2 is **in progress** and awaits explicit user visual acceptance; Phase 3 has not started.
+
+### Phase 2 follow-up: creation, deletion, and card density — 2026-09-25
+
+At the user's direction, softened the header Create task action on My Tasks and Project Board into an accent-tinted, sentence-case button with a leading plus icon; the per-column plus actions remain quiet. Its text/background contrast is approximately 5.48:1 in light theme and 6.01:1 in dark theme. Moved Delete task from the isolated bottom of the editor into a keyboard-operable More task actions menu beside Close in the sticky header. Delete remains permission-gated and requires the same explicit confirmation. Escape closes only the menu, Cancel restores focus to its trigger, and failed deletion still reports the error without dismissing the editor. At 375px, the editor context line now truncates to prevent the extra header control from causing multi-line crowding.
+
+My Tasks project cards now combine due date, checklist progress, tags, and discussion into one utility area beneath the centered project-name pill. Discussion stays anchored at the lower left even when the other details wrap on narrow cards; Join/Leave and Edit remain at the lower right. Project Board cards use shorter tag/member rows and a smaller, quiet `No assignees` label while retaining tag-first/member-second order, left-aligned bottom details, and equal-height columns.
+
+After live review showed the first Project Board tightening was too subtle, reduced its tag row to the content height, kept avatar rows at 24px, and gave unassigned cards a dedicated 18px row. The real 1024px card now measures about 121px high for a tagged, unassigned task; metadata and participation remain visible at 375px, 768px, 1024px, and 1440px without document overflow.
+
+**Follow-up verification.** Frontend lint passed; all 49 tests in 16 files passed, including new coverage for the editor action menu's Escape/focus behavior and the My Tasks discussion anchor; production build passed. Signed-in light/dark and 375px/768px/1024px/1440px review showed no document overflow. At 1024px, secondary My Tasks metadata wraps above the fixed lower-left discussion count. The mobile Delete menu, confirmation, Cancel focus restoration, and editor header were exercised live. Existing backend creation/permission tests from the preceding pass remain applicable; backend code was unchanged in this follow-up. Phase 2 remains **in progress** pending explicit visual acceptance. No commit was made.
+
+### Phase 2 follow-up: shared tags and project task fields — 2026-09-25
+
+- Replaced the Project Board Shared tags grid of boxed management rows with a wrapping pill field and a `+` action. Its inline add form opens on demand, focuses the name input, and returns focus to the trigger on Escape. Edit and confirmed Delete remain available for each tag.
+- Added the same `+` tag creation affordance to project task creation and editing. A new tag is added through the existing project tag API, refreshes project tag choices, and is selected in the current task draft. The API and permission rules are unchanged.
+- Aligned the Tags and Assignees headings at the top of the same row and gave both the strong text color used by the other task field headings. Escape from inline tag creation now closes that editor and restores focus without closing task details.
+- Intentional deviation: Shared tags keeps explicit Edit and Delete actions beside each pill, since project-wide tag management has actions that the task editor's selection pills do not need. No imagery was required.
+- Frontend lint, all 52 tests in 16 files, and production build passed. Signed-in desktop review covered Shared tags and the project task editor, including Escape/focus handling for inline tag creation. Document width stayed within 375px, 768px, 1024px, and 1440px viewport overrides, which were reset after review. Final user visual acceptance is still required. Phase 2 remains **in progress**. No commit was made.
+
+### Phase 2 follow-up: My Tasks personal tags — 2026-09-25
+
+- Moved personal tag management out of the My Tasks filter panel into its own collapsible section above search and filters. The filter panel still contains tag selection for narrowing tasks.
+- Matched the Project Board Shared tags layout: compact heading and count, wrapping tag pills, accessible icon actions for edit/delete, and a plus action that opens an inline create form. The title is **Personal tags** so these account-level tags are distinguishable from project shared tags.
+- Preserved personal tag create, edit, and confirmed delete behavior. Inline editing and creation restore focus after Escape or completion. Deleting a tag also removes its now-invalid active tag filter.
+- Frontend lint, all 54 tests in 16 files, and production build passed. Signed-in desktop and 375px review showed the separate section and inline form in light theme; the section was also reviewed in dark theme. Viewport widths of 375px, 768px, 1024px, and 1440px had no document overflow. The viewport override was reset and the light theme restored. This section intentionally uses the personal tag API rather than the project shared tag API. Phase 2 remains **in progress** pending explicit visual acceptance. No commit was made.
+
+### Phase 2 follow-up: tag palette, filters, drag feedback, ordering, and tag form layout — 2026-09-25
+
+- Replaced the eight plain-text tag color choices with one reusable radio-group picker used by personal, shared, and task-inline tag creation and editing. Each labeled choice has a color swatch and a live tag-name preview. Eight distinct light/dark palette pairs now match the rendered tag pills on cards and in tag managers; existing stored color values and API behavior are unchanged.
+- My Tasks filters now put Project and Tags together above Priority, Due, and Status, in that order; the rows stack on narrow viewports. Project tasks appear before personal tasks in each My Tasks status column for manual and automatic sorts. Manual order groups project tasks by project and preserves their per-project positions, then preserves personal drag order. Project Board ordering is unchanged.
+- The active dragged card gets a subtle lift, tilt, accent border, and shadow for pointer and keyboard dragging; the DnD wrapper remains untouched. Reduced motion removes the transform while retaining the border/shadow cue. Keyboard drag and Escape cancellation were exercised in the signed-in app.
+- At the user's later direction, My Tasks project cards no longer display shared tag chips. The project-name pill, lower-left discussion, due date, checklist progress, and actions remain. Shared tags remain available in task details and on Project Board cards. This supersedes the earlier My Tasks card record that included tags in the utility row.
+- Reworked all create-tag layouts to a clear sequence: full-width New tag input, Color picker, then Preview at the left with Add tag at the right. The same layout is used in personal/shared tag management and task-inline creation. Narrowed broad Project task form selectors that had stacked color swatches over their labels in the modal. Matched Project task's Generate with AI control to the Generate checklist button's dimensions, border, radius, surface, and typography.
+- Verification: frontend lint passed, all 56 tests in 17 files passed, and production build passed. New tests cover My Tasks project-first ordering and the absence of shared tag chips on its project-card variant. Signed-in light and dark tag pickers, live preview, filter arrangement, My Tasks card density, Project Board tags, and the Project task modal were inspected. My Tasks and Project Board showed no document overflow at 375px, 768px, 1024px, and 1440px; viewport overrides were reset. The revised Project task modal was checked at the same widths. The new color and layout work is frontend-only, so the previously passing backend creation tests remain applicable. `git diff --check` passed; the final changed-file audit found only the intended Phase 1/2 baseline plus these related refinements.
+- Intentional deviations and remaining review: the task modal's inline color picker uses the available Tags column width and may increase modal scroll height while open; this keeps the Assignees/Tags heading alignment and avoids changing the edit form's base layout. The approved references do not specify a color picker, so the palette follows the existing Flowboard tokens and contrast/focus conventions. Direct signed-in editor and viewer browser sessions were unavailable in Phase 2; prior integration tests cover their permissions, and the live role check is explicitly deferred to Phase 5. Phase 2 is **in progress** pending explicit user visual acceptance. Phase 3 has not started. No commit was made.
+
+### Phase 2 visual acceptance — 2026-09-25
+
+The user reviewed the final authenticated product and said the website looks good, then explicitly requested a commit and a prompt to begin Phase 3 in a new chat. This satisfies the Phase 2 visual acceptance gate. Phase 2 is complete; the deferred live editor/viewer role sessions remain a Phase 5 verification item. No Phase 3 implementation was started in this phase.
+
 The approved visual references live in `docs/design-references/`. They are the primary visual target for hierarchy, composition, proportions, spacing, palette, material direction, and component character. References 1-4 should be followed especially closely for boards, columns, cards, controls, and product-detail surfaces. Reproduce them as closely as practical, then adapt only where real Flowboard functionality, responsive behavior, permissions, accessibility, or `DESIGN.md` requires a difference. They are not production assets and must not be embedded in the shipped site as substitutes for real Flowboard UI.
 
 ## Objective
@@ -386,6 +434,12 @@ Completion gate:
 
 ### Phase 3: Public experience
 
+#### Representative product content and captures
+
+Before building the landing-page visuals, prepare a coherent, realistic example workspace in a safe local or development account. Include several personal tasks and at least one shared project with tasks across statuses, meaningful titles and descriptions, due dates, priorities, tags, checklist progress, and appropriate assignees and discussion. Use the same example content across the task board, project board, task detail, and related captures so the story is consistent. Remove temporary E2E labels and avoid personal or sensitive data in public assets.
+
+Capture the actual redesigned Flowboard UI using this content for the public pages. Curate the data and viewport for clarity, but do not draw or generate a fake interface. Phase 4 can reuse the content concepts for its guest-demo seed; the Phase 3 captures should not depend on the unfinished demo.
+
 #### Landing page
 
 Build exactly six sections, corresponding to the approved references:
@@ -479,6 +533,7 @@ Completion gate:
    - task CRUD and drag-and-drop;
    - checklists and task details;
    - project collaboration, roles, comments, activity, and invitations;
+   - separate signed-in editor and viewer browser sessions: confirm permitted task and assignment actions for the editor, read-only restrictions for the viewer, and the absence of owner-only controls for both roles;
    - all public routes;
    - guest demo persistence and reset;
    - loading, empty, success, warning, and error states.

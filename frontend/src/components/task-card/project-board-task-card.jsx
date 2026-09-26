@@ -6,8 +6,8 @@ export default function ProjectBoardTaskCard({ view, busy, onCompletion, onOpenD
     const hasParticipation = Boolean(onParticipation);
     return <CardShell task={task} busy={busy} onCompletion={onCompletion} dragHandleProps={dragHandleProps} isDragEnabled={isDragEnabled} actions={<><ParticipationAction label={task.capabilities?.canJoin ? 'Join' : 'Leave'} busy={busy} onClick={onParticipation} /><DetailAction task={task} busy={busy} onOpenDetails={onOpenDetails} /></>}>
         <TitleRow task={task} />
-        <div className={styles.assigneeRow}><AssigneeList assignees={task.assignees} /></div>
         {task.tags?.length > 0 && <div className={styles.tagRow}><TagList tags={task.tags} limit={3} /></div>}
+        <div className={`${styles.assigneeRow} ${task.tags?.length ? '' : styles.assigneeFirst} ${task.assignees?.length ? '' : styles.unassignedRow}`}><AssigneeList assignees={task.assignees} /></div>
         <div className={`${styles.actionRow} ${hasParticipation ? styles.withParticipation : ''}`}><DiscussionCount count={task.commentCount} /><DueDate formattedDueDate={formattedDueDate} dueState={dueState} /><ChecklistSummary items={task.checklistItems} /></div>
     </CardShell>;
 }

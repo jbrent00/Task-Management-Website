@@ -1,6 +1,8 @@
 import TaskBoard from '../components/task-board/task-board';
 import CreateTaskForm from '../components/create-task-form/create-task-form';
+import CreateTaskDialog from '../components/create-task-dialog/create-task-dialog';
 import TaskViewControls from '../components/task-view-controls/task-view-controls';
+import ProjectTagManager from '../components/project-tag-manager/project-tag-manager';
 import TaskViewTabs from '../components/task-view-tabs/task-view-tabs';
 import TaskDetailModal from '../components/task-detail-modal/task-detail-modal';
 import styles from './tasks-page.module.css';
@@ -15,6 +17,7 @@ import { getProject, getProjects } from '../api/projects';
 import { createTag, deleteTag, getTags, updateTag } from '../api/tags';
 import { defaultTaskView, getActiveSort, getTaskTabCounts, getVisibleTasksByStatus, hasActiveTaskFilters, isValidTaskView, taskStatuses } from '../functions/taskViews';
 import { XIcon } from '@phosphor-icons/react/dist/csr/X';
+import { PlusIcon } from '@phosphor-icons/react/dist/csr/Plus';
 
 const getStorageKey = (userId) => `task-manager:view:${userId}`;
 
@@ -40,6 +43,8 @@ function TasksPage() {
     const [dateReference, setDateReference] = useState(() => new Date());
     const [notice, setNotice] = useState(null);
     const [creationExpanded, setCreationExpanded] = useState(false);
+    const [creationStatus, setCreationStatus] = useState('todo');
+    const [creationReturnSelector, setCreationReturnSelector] = useState('[data-create-task-trigger]');
     const creationTrigger = useRef(null);
     const closingTaskId = useRef(null);
     const [selectedStatus, setSelectedStatus] = useState('todo');
@@ -200,7 +205,7 @@ function TasksPage() {
     };
     const handleCreateTag = async (name, color) => { const tag = await withToken((token) => createTag(token, name, color)); setTags((current) => [...current, tag].sort((a, b) => a.name.localeCompare(b.name))); return tag; };
     const handleUpdateTag = async (id, name, color) => { const tag = await withToken((token) => updateTag(token, id, name, color)); setTags((current) => current.map((item) => item.id === id ? tag : item)); setTasks((current) => current.map((task) => ({ ...task, tags: (task.tags ?? []).map((item) => item.id === id ? tag : item) }))); };
-    const handleDeleteTag = async (id) => { await withToken((token) => deleteTag(token, id)); setTags((current) => current.filter((tag) => tag.id !== id)); setTasks((current) => current.map((task) => ({ ...task, tags: (task.tags ?? []).filter((tag) => tag.id !== id) }))); };
+    const handleDeleteTag = async (id) => { await withToken((token) => deleteTag(token, id)); setTags((current) => current.filter((tag) => tag.id !== id)); setTasks((current) => current.map((task) => ({ ...task, tags: (task.tags ?? []).filter((tag) => tag.id !== id) }))); setView((current) => ({ ...current, tagIds: current.tagIds.filter((tagId) => tagId !== id) })); };
 
     const handleDragEnd = async (result) => {
         if (!isManualOrder) return;
@@ -259,19 +264,20 @@ function TasksPage() {
                     <p className={styles.taskTotal}><strong>{totalVisibleTasks}</strong>{isFiltered ? ` of ${tasks.length}` : ''} {totalVisibleTasks === 1 ? 'task' : 'tasks'} in your workspace</p>
                 </div>
                 <div className={styles.headerActions}>
-                    <button ref={creationTrigger} className={styles.createButton} type="button" aria-expanded={creationExpanded} aria-controls="create-task-content" onClick={() => { setCreationExpanded((value) => !value); if (creationExpanded) creationTrigger.current?.focus(); }}>{creationExpanded ? 'Hide form' : 'Create task'}</button>
+                    <button ref={creationTrigger} data-create-task-trigger className={styles.createButton} type="button" onClick={() => { setCreationStatus('todo'); setCreationReturnSelector('[data-create-task-trigger]'); setCreationExpanded(true); }}><PlusIcon size={18} weight="bold" aria-hidden="true" />Create task</button>
                 </div>
             </div>
             {notice && <div className={`${styles.notice} ${styles[notice.tone]}`} role={notice.tone === 'error' ? 'alert' : 'status'} aria-live="polite"><span>{notice.message}</span><button type="button" onClick={() => setNotice(null)} aria-label="Dismiss notification"><XIcon size={18} /></button></div>}
-            <div className={styles.createTask} hidden={!creationExpanded}><CreateTaskForm expanded={creationExpanded} onCreated={() => { setCreationExpanded(false); window.requestAnimationFrame(() => creationTrigger.current?.focus()); }} tasks={tasks} setTasks={setTasks} projects={projects} tags={tags} onCreateTag={handleCreateTag} onNotify={setNotice} /></div>
+            <CreateTaskDialog open={creationExpanded} title="Create task" onClose={() => setCreationExpanded(false)} returnFocusSelector={creationReturnSelector}><CreateTaskForm expanded={creationExpanded} initialStatus={creationStatus} onCreated={() => setCreationExpanded(false)} tasks={tasks} setTasks={setTasks} projects={projects} tags={tags} onCreateTag={handleCreateTag} onNotify={setNotice} /></CreateTaskDialog>
             <TaskViewTabs selectedTab={view.selectedTab} counts={tabCounts} onSelect={(selectedTab) => setView((currentView) => ({ ...currentView, selectedTab }))} />
-            <TaskViewControls view={view} searchQuery={searchQuery} onSearchChange={setSearchQuery} onViewChange={setView} onClearFilters={handleClearFilters} projects={projects} tags={tags} onUpdateTag={handleUpdateTag} onDeleteTag={handleDeleteTag} onNotify={setNotice} />
+            <ProjectTagManager tags={tags} onCreateTag={handleCreateTag} onUpdateTag={handleUpdateTag} onDeleteTag={handleDeleteTag} onNotify={setNotice} />
+            <TaskViewControls view={view} searchQuery={searchQuery} onSearchChange={setSearchQuery} onViewChange={setView} onClearFilters={handleClearFilters} projects={projects} tags={tags} />
             {loadError && <p className={styles.loadError} role="alert">{loadError}</p>}
             {narrow && <nav className={styles.statusSelectors} aria-label="Task status">{taskStatuses.map((status) => <button type="button" key={status} aria-pressed={selectedStatus === status} onClick={() => setSelectedStatus(status)}>{({ todo: 'To do', in_progress: 'In progress', completed: 'Completed' })[status]} <span>{tasksByStatus[status].length}</span></button>)}</nav>}
             <div className={styles.taskBoards}>
                 <DragDropContext onDragEnd={handleDragEnd}>
                     {taskStatuses.map((status) => <div key={status} hidden={narrow && selectedStatus !== status}>
-                        <TaskBoard status={status} tasks={tasksByStatus[status]} setAllTasks={setTasks} loading={loading} isManualOrder={isManualOrder && !mutationBusy} isFiltered={isFiltered} selectedTab={view.selectedTab} onNotify={setNotice} onOpenDetails={openTask} />
+                        <TaskBoard status={status} tasks={tasksByStatus[status]} setAllTasks={setTasks} loading={loading} isManualOrder={isManualOrder && !mutationBusy} isFiltered={isFiltered} selectedTab={view.selectedTab} onNotify={setNotice} onOpenDetails={openTask} onCreateTask={(nextStatus) => { setCreationStatus(nextStatus); setCreationReturnSelector(`[data-create-status="${nextStatus}"]`); setCreationExpanded(true); }} />
                         {narrow && !loading && tasksByStatus[status].length === 0 && taskStatuses.filter((other) => other !== status && tasksByStatus[other].length > 0).map((other) => <button className={styles.switchStatus} type="button" key={other} onClick={() => setSelectedStatus(other)}>Show {({ todo: 'To do', in_progress: 'In progress', completed: 'Completed' })[other]} tasks ({tasksByStatus[other].length})</button>)}
                     </div>)}
                 </DragDropContext>

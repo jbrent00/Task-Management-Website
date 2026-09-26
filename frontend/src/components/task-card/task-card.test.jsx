@@ -42,7 +42,7 @@ test('makes the non-interactive personal card body the keyboard drag surface', (
     expect(screen.getByRole('button', { name: 'Edit Write release notes' })).not.toBe(dragSurface);
 });
 
-test('uses the four requested metadata rows for project tasks inside My tasks', () => {
+test('shows project identity and task details without an assignee row inside My tasks', () => {
     const detailedTask = {
         ...task,
         dueDate: '2026-01-15T12:00:00.000Z',
@@ -60,18 +60,17 @@ test('uses the four requested metadata rows for project tasks inside My tasks', 
     render(<TaskMutationContext.Provider value={mutation}><TaskCard task={detailedTask} setAllTasks={() => {}} onOpenDetails={() => {}} onNotify={() => {}} /></TaskMutationContext.Provider>);
 
     const projectName = screen.getByText('Website refresh');
-    expect(projectName.closest('div')).not.toHaveTextContent('Jamie Chen');
-    const memberName = screen.getByText('Jamie Chen');
-    const memberRow = memberName.closest('div');
-    expect(memberRow.children[0]).toHaveTextContent('Jamie ChenJ');
-    expect(memberRow.children[1]).toHaveTextContent(',Ari PatelA');
-    expect(memberRow.children[2]).toHaveTextContent('+2');
-    expect(memberRow.children[3]).toHaveTextContent('+1');
+    expect(projectName.closest('div')).toHaveTextContent('Website refresh');
+    expect(screen.queryByText('Jamie Chen')).not.toBeInTheDocument();
     const dueDate = screen.getByText(/Jan 15/);
-    expect(within(dueDate.closest('div')).getByText('Research')).toBeInTheDocument();
+    expect(screen.queryByText('Research')).not.toBeInTheDocument();
+    expect(screen.queryByText('Content')).not.toBeInTheDocument();
+    expect(screen.queryByText('Launch')).not.toBeInTheDocument();
     expect(within(dueDate.closest('div')).getByLabelText('1 of 2 subtasks complete')).toHaveTextContent('1/2 subtasks');
     const discussion = screen.getByLabelText('3 comments');
     expect(within(discussion.closest('div')).queryByText('Research')).not.toBeInTheDocument();
+    expect(discussion.parentElement.parentElement).toBe(dueDate.parentElement.parentElement);
+    expect(discussion.parentElement).toBe(discussion.parentElement.parentElement.firstElementChild);
     expect(screen.getByRole('button', { name: 'Edit Write release notes' })).toBeInTheDocument();
 });
 
@@ -96,6 +95,7 @@ test('uses project-board assignee, optional tag, and utility rows', () => {
     expect(assigneeRow.children[1]).toHaveTextContent(',Ari PatelA');
     expect(assigneeRow.children[2]).toHaveTextContent('+1');
     expect(screen.getByText('Research')).toBeInTheDocument();
+    expect(screen.getByText('Research').closest('div').parentElement.nextElementSibling).toContainElement(screen.getByText('Jamie Chen'));
     const discussion = screen.getByLabelText('1 comment');
     const utilityRow = discussion.closest('div');
     expect(within(utilityRow).getByText(/Jan 15/)).toBeInTheDocument();

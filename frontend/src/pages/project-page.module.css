@@ -11,6 +11,9 @@
 .primary:hover:not(:disabled) { border-color: var(--accent-hover); background: var(--accent-hover); box-shadow: 0 4px 12px color-mix(in srgb, var(--accent) 18%, transparent); }
 .primary:active:not(:disabled) { transform: translateY(1px); }
 .primary:disabled { border-color: var(--border); background: var(--surface-muted); color: var(--text-subtle); }
+.createTrigger { display: inline-flex; min-height: 44px; flex: none; align-items: center; justify-content: center; gap: 8px; padding: 0 15px; border: 1px solid color-mix(in srgb, var(--accent) 32%, var(--border)); border-radius: var(--radius-control); background: var(--accent-soft); color: var(--accent-hover); font-weight: 700; white-space: nowrap; }
+.createTrigger:hover { background: color-mix(in srgb, var(--accent-soft) 90%, var(--accent)); }
+.createTrigger:active { transform: scale(.98); }
 .notice, .error { margin-bottom: 16px; padding: 12px 14px; border: 1px solid; border-radius: var(--radius-control); }
 .notice { display: flex; align-items: center; justify-content: space-between; border-color: color-mix(in srgb, var(--success) 42%, var(--border)); background: var(--success-soft); color: var(--success); }
 .notice button { display: grid; width: 40px; height: 40px; place-items: center; border: 0; background: none; color: inherit; }
@@ -21,13 +24,13 @@
 .tabs button[aria-current='page'] { border-color: var(--accent); color: var(--accent); }
 .boards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; align-items: stretch; }
 .taskForm, .panel { margin-bottom: 22px; padding: 20px; border: 1px solid var(--border); border-radius: var(--radius-panel); background: var(--surface); }
-.taskForm { display: grid; width: min(960px, 100%); gap: 20px; margin-inline: auto; padding: 0 32px; background: var(--surface-elevated); box-shadow: var(--shadow-small); }
-.taskFormHeader { margin: 0 -32px; padding: 24px 32px 20px; border-bottom: 1px solid var(--border); }
+.taskForm { display: grid; width: 100%; gap: 20px; margin: 0; padding: 0 32px; border: 0; background: var(--surface-elevated); }
+.taskFormHeader { margin: 0 -32px; padding: 24px 80px 20px 32px; border-bottom: 1px solid var(--border); }
 .taskFormHeader span { color: var(--text-muted); font-size: .73rem; font-weight: 600; }
 .taskFormHeader h2 { margin-top: 8px; font-size: 1.5rem; letter-spacing: -.035em; }
 .taskFormHeader p { margin-top: 4px; color: var(--text-muted); font-size: .82rem; }
-.taskForm label, .inviteForm label, .settingsForm label { display: grid; gap: 6px; color: var(--text-muted); font-size: .78rem; font-weight: 650; }
-.taskForm input, .taskForm textarea, .taskForm select, .inviteForm input, .inviteForm select, .settingsForm input, .settingsForm textarea, .dangerZone input, .tagManager input, .tagManager select { min-height: 44px; padding: 9px 11px; border: 1px solid var(--border-strong); border-radius: var(--radius-control); background: var(--surface-elevated); color: var(--text); }
+.taskForm > label, .taskForm .fieldHeading label, .inviteForm label, .settingsForm label { display: grid; gap: 6px; color: var(--text-muted); font-size: .78rem; font-weight: 650; }
+.taskForm input:not([type='radio']):not([type='checkbox']), .taskForm textarea, .taskForm select, .inviteForm input, .inviteForm select, .settingsForm input, .settingsForm textarea, .dangerZone input, .tagManager input:not([type='radio']):not([type='checkbox']), .tagManager select { min-height: 44px; padding: 9px 11px; border: 1px solid var(--border-strong); border-radius: var(--radius-control); background: var(--surface-elevated); color: var(--text); }
 .projectTaskTitle input { min-height: 56px; font-size: clamp(1.3rem, 2.5vw, 1.65rem); font-weight: 650; letter-spacing: -.025em; }
 .taskForm textarea { min-height: 112px; background: color-mix(in srgb, var(--surface-muted) 48%, var(--surface-elevated)); resize: vertical; }
 .taskForm .formGrid :is(input, select) { background: color-mix(in srgb, var(--surface-muted) 48%, var(--surface-elevated)); }
@@ -36,7 +39,7 @@
 .staticField { display: grid; gap: 6px; color: var(--text); font-size: .8rem; font-weight: 650; }
 .staticField strong { display: flex; min-height: 44px; align-items: center; padding: 9px 12px; border: 1px solid var(--border); border-radius: var(--radius-control); background: var(--accent-soft); color: var(--text); font-size: .85rem; font-weight: 600; }
 .assignmentGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; gap: 24px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
-.taskFormFooter { display: flex; justify-content: flex-end; margin: 0 -32px; padding: 16px 32px; border-top: 1px solid var(--border); background: color-mix(in srgb, var(--surface-muted) 25%, var(--surface-elevated)); }
+.taskFormFooter { display: flex; justify-content: flex-end; margin: 0 -32px; padding: 16px 32px; border-top: 1px solid var(--border); background: var(--surface-elevated); }
 .taskForm fieldset { margin: 0; padding: 0; border: 0; }
 .taskForm legend { margin-bottom: 7px; color: var(--text-muted); font-size: .78rem; font-weight: 650; }
 .tagChoices { display: flex; flex-wrap: wrap; gap: 10px; }
@@ -52,14 +55,40 @@
 .boardControls label { display: grid; gap: 5px; color: var(--text-muted); font-size: .74rem; font-weight: 650; }
 .boardControls input, .boardControls select { min-height: 42px; padding: 7px 9px; border: 1px solid var(--border-strong); border-radius: var(--radius-control); background: var(--surface-elevated); color: var(--text); }
 .filterSummary { display: grid; justify-items: end; gap: 4px; color: var(--text-muted); font-size: .76rem; }
-.filterSummary button, .inlineAction { border: 0; background: none; color: var(--accent); font-weight: 700; }
-.tagManager { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; padding: 12px 4px 14px; border-top: 1px solid var(--border); }
-.tagManager > div { display: flex; flex-wrap: wrap; gap: 6px; }
-.tagManager > div span { display: inline-flex; min-height: 30px; align-items: center; gap: 4px; padding: 4px 7px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); font-size: .76rem; }
-.tagManager span button { display: grid; width: 26px; height: 26px; place-items: center; border: 0; border-radius: 50%; background: none; color: inherit; }
-.tagManager form { display: flex; gap: 7px; margin-left: auto; }
-.tagManager form > :nth-child(2) { min-width: 125px; }
-.tagManager form > button { min-height: 42px; border: 1px solid var(--border); border-radius: var(--radius-control); background: var(--surface-elevated); color: var(--text); }
+.filterSummary button { border: 0; background: none; color: var(--accent); font-weight: 700; }
+.inlineAction { min-height: 34px; padding: 0 10px; border: 1px solid var(--border-strong); border-radius: var(--radius-control); background: var(--surface); color: var(--accent); font-size: .74rem; font-weight: 700; }
+.inlineAction:hover:not(:disabled) { background: var(--accent-soft); }
+.tagManager { display: grid; gap: 10px; padding: 16px 4px 20px; border-top: 1px solid var(--border); }
+.tagManagerIntro { display: flex; align-items: start; justify-content: space-between; gap: 12px; }
+.tagManagerIntro h2 { margin: 0; font-size: .8rem; font-weight: 700; }
+.tagManagerIntro p, .emptyTags { margin-top: 3px; color: var(--text-muted); font-size: .82rem; }
+.addTagTrigger { display: grid; width: 32px; height: 32px; flex: none; place-items: center; border: 1px solid var(--border-strong); border-radius: 50%; background: var(--surface); color: var(--text-muted); }
+.addTagTrigger:hover { border-color: var(--accent); color: var(--accent); }
+.sharedTagList { display: flex; min-height: 52px; align-items: center; align-content: flex-start; flex-wrap: wrap; gap: 8px; padding: 7px; border: 1px solid var(--border-strong); border-radius: var(--radius-control); background: color-mix(in srgb, var(--surface-muted) 58%, var(--surface)); }
+.sharedTagRow { display: inline-flex; min-width: 0; min-height: 36px; align-items: center; gap: 4px; }
+.sharedTagRow:has(form) { width: 100%; }
+.sharedTag { display: inline-flex; min-width: 0; min-height: 30px; align-items: center; overflow: hidden; padding: 3px 10px; border: 1px solid var(--border-strong); border-radius: 999px; background: var(--surface); color: var(--text-muted); font-size: .78rem; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.sharedTag_slate { background: var(--tag-slate-bg); color: var(--tag-slate-fg); }
+.sharedTag_red { background: var(--tag-red-bg); color: var(--tag-red-fg); }
+.sharedTag_orange { background: var(--tag-orange-bg); color: var(--tag-orange-fg); }
+.sharedTag_yellow { background: var(--tag-yellow-bg); color: var(--tag-yellow-fg); }
+.sharedTag_green { background: var(--tag-green-bg); color: var(--tag-green-fg); }
+.sharedTag_teal { background: var(--tag-teal-bg); color: var(--tag-teal-fg); }
+.sharedTag_blue { background: var(--tag-blue-bg); color: var(--tag-blue-fg); }
+.sharedTag_purple { background: var(--tag-purple-bg); color: var(--tag-purple-fg); }
+.sharedTagActions { display: flex; gap: 2px; flex: none; }
+.sharedTagActions button { display: grid; width: 30px; min-height: 30px; place-items: center; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--text-muted); }
+.sharedTagActions button:hover { background: var(--surface-muted); color: var(--text); }
+.sharedTagActions button:last-child:hover { background: var(--danger-soft); color: var(--danger); }
+.addTagForm { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; max-width: 620px; padding: 10px 2px 2px; }
+.addTagForm > label { display: grid; gap: 6px; color: var(--text); font-size: .78rem; font-weight: 650; }
+.tagManager form > button { min-height: 44px; padding: 0 14px; border: 1px solid var(--border-strong); border-radius: var(--radius-control); background: var(--surface-elevated); color: var(--text); font-weight: 650; }
+.tagManager form > button:hover:not(:disabled) { background: var(--surface-muted); }
+.tagManager form > button:disabled { color: var(--text-subtle); cursor: not-allowed; }
+.editTagForm { display: flex; width: 100%; align-items: center; flex-wrap: wrap; gap: 6px; }
+.editTagForm > input { flex: 1 1 110px; min-width: 0; }
+.editTagForm > :nth-child(2) { flex: 1 1 280px; min-width: 0; }
+.editTagForm button { min-height: 36px !important; }
 .panel { max-width: 1040px; }
 .panel h2 { margin-bottom: 6px; }
 .panelHeading p, .panel > p, .settingRow p { color: var(--text-muted); }
@@ -99,7 +128,7 @@
 @media (max-width: 1100px) { .boardControls { grid-template-columns: repeat(2, 1fr); } .filterSummary { justify-items: start; } }
 @media (max-width: 1100px) { .formGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 960px) { .boards { grid-template-columns: 1fr; } }
-@media (max-width: 720px) { .hero, .memberList article, .settingRow { align-items: stretch; flex-direction: column; } .formGrid, .inviteForm { grid-template-columns: 1fr; } .memberActions, .tagManager form { flex-wrap: wrap; margin-left: 0; } .page { padding-top: 24px; } .panel { padding: 16px; } }
+@media (max-width: 720px) { .hero, .memberList article, .settingRow { align-items: stretch; flex-direction: column; } .formGrid, .inviteForm, .addTagForm { grid-template-columns: 1fr; } .memberActions { flex-wrap: wrap; } .page { padding-top: 24px; } .panel { padding: 16px; } }
 @media (max-width: 560px) { .tabs button { min-width: 0; flex: 1; padding-inline: 8px; font-size: .82rem; } .boardControls { grid-template-columns: 1fr; } .policyHeading { align-items: stretch; flex-direction: column; } .pending > div { align-items: stretch; flex-direction: column; } }
 @media (max-width: 720px) { .taskForm { padding-inline: 20px; } .taskFormHeader, .taskFormFooter { margin-inline: -20px; padding-inline: 20px; } .assignmentGrid { grid-template-columns: 1fr; } }
 @media (max-width: 520px) { .taskForm { padding-inline: 16px; } .taskFormHeader, .taskFormFooter { margin-inline: -16px; padding-inline: 16px; } .taskFormFooter .primary { width: 100%; } }

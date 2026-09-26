@@ -22,8 +22,7 @@ test('creates and selects a new personal tag from the circular add control', asy
 
     fireEvent.click(screen.getByRole('button', { name: 'Create tag' }));
     fireEvent.change(screen.getByLabelText('New tag name'), { target: { value: 'Planning' } });
-    fireEvent.click(screen.getByRole('button', { name: 'New tag color' }));
-    fireEvent.click(screen.getByRole('option', { name: 'purple' }));
+    fireEvent.click(screen.getByRole('radio', { name: 'purple' }));
     fireEvent.click(screen.getByRole('button', { name: 'Add' }));
 
     await waitFor(() => expect(onCreateTag).toHaveBeenCalledWith('Planning', 'purple'));

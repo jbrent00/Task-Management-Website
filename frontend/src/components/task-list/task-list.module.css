@@ -6,9 +6,13 @@
 .completed .statusMarker { background: var(--success); }
 .heading h2 { color: var(--text); font-size: .85rem; font-weight: 650; }
 .count { min-width: 23px; padding: 2px 6px; border-radius: 999px; background: var(--surface); color: var(--text-muted); font-family: 'Geist Mono Variable', monospace; font-size: .68rem; font-weight: 600; text-align: center; }
+.headingActions { display: flex; align-items: center; gap: 7px; }
+.addTask { display: grid; width: 40px; height: 40px; place-items: center; border: 1px solid transparent; border-radius: var(--radius-control); background: transparent; color: var(--text-muted); }
+.addTask:hover { border-color: var(--border); background: var(--surface); color: var(--accent); }
 .emptyState, .loadingState { display: grid; min-height: 218px; place-items: center; padding: 24px; color: var(--text-muted); font-size: .875rem; line-height: 1.5; text-align: center; }
 .emptyState { border: 1px dashed var(--border-strong); border-radius: var(--radius-nested); background: color-mix(in srgb, var(--surface) 60%, transparent); }
 .loadingState { border-radius: var(--radius-nested); background: linear-gradient(100deg, var(--surface-muted) 20%, var(--surface) 40%, var(--surface-muted) 60%); background-size: 200% 100%; animation: loading-sweep 1.4s ease-in-out infinite; }
 .draggableItem { position: relative; min-width: 0; }
+.draggableItem[data-dragging='true'] > article { transform: rotate(-.6deg) scale(1.01); border-color: var(--accent); box-shadow: 0 12px 28px color-mix(in srgb, var(--text) 16%, transparent); }
 @keyframes loading-sweep { to { background-position: -200% 0; } }
-@media (prefers-reduced-motion: reduce) { .loadingState { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .loadingState { animation: none; } .draggableItem[data-dragging='true'] > article { transform: none; } }
