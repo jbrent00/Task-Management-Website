@@ -8,7 +8,7 @@
 - Phase 1, Foundation and product shell: complete and verified on 2026-09-24
 - Phase 2, Authenticated product redesign: visually accepted and complete on 2026-09-25
 - Application implementation: in progress
-- Next phase: Phase 3, Public experience
+- Current phase: Phase 3, Public experience, implemented for visual review but not accepted or complete
 - Backend schema changes: none needed for Phase 2; board-targeted creation status support is implemented
 
 ### Phase 1 completion record
@@ -494,6 +494,68 @@ Completion gate:
 - Landing claims correspond to implemented behavior.
 - Public pages work in both themes and at required responsive widths.
 - Real product captures replace generated UI portions of the composition references.
+- Before Phase 3 is marked complete, start a completely fresh chat for an independent **visual critique of the entire website**, with particular attention to the landing page and every Phase 3 section, `/case-study`, `/sign-in`, `/sign-up`, and the signed-out/not-found experience. Review the live pages at 375px, 768px, 1024px, and 1440px in light and dark themes where applicable. Compare the six approved PNG compositions at full resolution. Ask for specific strengths, flaws, visual inconsistencies, and prioritized improvements to hierarchy, typography, spacing, color, imagery/capture clarity, section rhythm, responsiveness, and overall feel. This is a critique and recommendation pass, not an implementation or acceptance pass.
+- Record the fresh-chat findings and any follow-up changes here, then obtain the user's explicit visual acceptance. Keep Phase 3 in progress and uncommitted until the user requests otherwise.
+
+#### Phase 3 implementation and review record, 2026-09-25
+
+Implementation is **ready for user visual review and remains in progress**. The user has not accepted Phase 3. No commit was made.
+
+Changes:
+
+- Replaced the root redirect with a six-section public landing page and retained route-level lazy loading. The sections are Hero, Personal planning, Shared projects, Product depth with exactly five cells, Built for real workflows, and Closing CTA with footer. Copy, hierarchy, and composition follow the approved references; Product, case-study, GitHub, auth, and app links have distinct destinations.
+- Added `/case-study` with the product problem, intended audience, design decisions, React/Vite/Clerk/Express/Prisma/PostgreSQL data flow, verified features, testing and accessibility approach, lessons, and the existing repository link.
+- Added a shared themed auth layout for `/sign-in` and `/sign-up`, including Clerk appearance values, desktop tactile crop, mobile image removal, and theme selection. Added a designed wildcard not-found page. Updated the favicon to adapt to the operating-system theme and added the page title, description, and social-preview metadata.
+- Replaced the development account's old tasks, project, and tags with a coherent Northline site launch example and realistic personal work. The single shared project has three genuine development account members shown locally as Alex Rivera, Riley Morgan, and Maya Chen. Generated fictional portraits appear in real assignment and discussion surfaces. Project tasks cover three statuses, three priorities, dates, shared tags, checklist progress, assignments, comments from all three members, activity, and a notification. Public assets contain no account email addresses or temporary E2E labels.
+- Captured the actual signed-in Flowboard UI for the project board, My tasks, personal and project task details, three-person discussion, and task creation with AI controls. The full source captures are unaltered browser captures; the close views added in the visual-feedback pass below are lossless pixel crops of those real captures. Generated imagery is limited to the text-free planning still life and fictional portraits. None of the six approved reference PNGs were embedded, replaced, or changed.
+- Saved representative page review captures in `docs/phase3-review/`. The example database content and aliases are local development data, not a migration or source-controlled seed. The local member portrait URLs use the development server.
+
+Verification:
+
+- Frontend `npm run lint`, `npm run test` (18 files, 58 tests after the visual-feedback pass), and `npm run build` passed after the final layout changes.
+- Manually inspected all six reference PNGs at full resolution and compared the landing sections against them. The hero, shared-project, and depth framing were adjusted after browser visual review. The source contains exactly six landing sections and five product-depth cells, with no document-level horizontal overflow at 375px, 768px, 1024px, or 1440px.
+- Signed-out browser checks covered `/`, `/case-study`, `/sign-in`, `/sign-up`, `/demo`, wildcard not-found, and redirects from `/tasks`, `/projects`, and a project detail route. Signed-in checks covered the same public routes plus all protected route groups. Light and dark themes were checked in separate signed-in and signed-out sessions. The auth image hides at 375px and remains visible at desktop widths.
+- Keyboard focus was checked on the auth route; the public and auth layouts expose skip links and visible focus. The shared product retains the existing reduced-motion override, keyboard reorder, modal focus management, and error recovery tests. The lazy route skeleton and designed missing-route state were observed. All public capture image requests resolved after loading.
+- `git diff --check` passed. No backend code, schema, migration, approved reference, or Phase 4 demo implementation was changed.
+- The `design-taste-frontend` pre-flight was applied to all six sections: two editorial eyebrows across six sections, a two-line desktop hero, consistent semantic theme and rust accent, one-line desktop navigation, readable CTAs, varied section layouts, exactly five depth cells, no decorative animation, no invented social proof, and no visible em dash or en dash. All Flowboard interface images are actual application captures.
+
+Remaining mismatches and intentional deviations:
+
+- The approved references depict conceptual interfaces and a specific physical arrangement; actual screenshots use the Phase 2 product, current example content, and responsive CSS framing. Their section geometry and product detail density therefore differ from the comps. The user must review this visual difference before Phase 3 can be accepted.
+- The primary CTA keeps the plan's exact `Explore the demo` label and points to `/demo`, but Phase 4's interactive guest workspace does not exist yet. The wildcard page explicitly explains this and offers account creation. No `/demo` route or guest operations were built in Phase 3. This is a known conversion limitation until Phase 4.
+- The three fictional display names and portraits are applied to local Flowboard user records and appear in project/task surfaces. Clerk's account menu still shows each account's underlying Clerk profile name and avatar. Public screenshots focus on fictional task and project identities; Clerk profiles were not changed.
+- Reduced-motion behavior was checked against the existing global media-query override and source, but a live operating-system reduced-motion session was not available. A browser-emulated reduced-motion visual pass remains for Phase 5.
+- The three-member project was rechecked through the third signed-in account's Members view on 2026-09-27. It shows Alex as owner and Riley and Maya as editors, with their fictional display identities. The working tree remains uncommitted and Phase 3 still awaits user visual acceptance.
+
+#### Phase 3 visual-feedback pass, 2026-09-27
+
+The user liked the landing page overall but identified soft screenshots in the personal, collaboration, and product-depth sections; an unclear case-study return CTA; and unreadable native theme options in dark mode. Phase 3 remains **in progress and uncommitted**, pending visual acceptance.
+
+Changes and rationale:
+
+- Kept the full 1440px project and personal board captures as overview images. Reframed the inset and product-depth images from actual 768px tablet and 375px mobile Flowboard captures so interface text occupies more of each card. Saved the unaltered tablet/mobile source captures in `docs/phase3-review/mobile-source-captures/` and lossless PNG crops in `frontend/public/captures/`. The mobile personal and shared-project captures now stack, and mobile product-depth cells select genuine mobile views. No interface was drawn, generated, or composited.
+- Replaced the native `<select>` on public and auth headers with one themed menu. All three option labels remain visible in dark mode. The menu supports keyboard arrows, Home/End, Escape, outside click, checked state, and trigger focus restoration. Added two focused menu tests.
+- The case-study CTA previously linked to `/` under the vague label “View the public experience.” It now labels that destination “Back to landing page.” “Create an account” is the primary working action. A direct `/demo` link is deferred until the Phase 4 guest workspace exists; it currently reaches the designed not-found page.
+- Gave the landing page's secondary CTA an opaque semantic background so it remains legible where the planning photograph sits behind it at tablet and mobile widths.
+
+Verification and visual review:
+
+- Frontend lint, all 18 test files and 58 tests, and the production build pass. `git diff --check` passes. No backend code or database schema changed.
+- Reviewed the revised landing at 375px, 768px, 1024px, and 1440px, including the personal, collaboration, and five-cell depth sections. Checked no document-level horizontal overflow at those widths. Viewed the case study, sign-in, and sign-up while signed out in dark mode, and inspected the shared theme menu in dark mode on both the case-study and auth layouts. Confirmed the case-study return link navigates to `/`.
+- Refreshed full landing and case-study screenshots and saved representative personal, shared, depth, and dark-menu views in `docs/phase3-review/`. The live root route remains available for user review.
+
+Remaining visual and product decisions:
+
+- The overview board images intentionally show the whole workspace, so individual task labels are smaller than in the new close views. The close views are now legible at their intended sizes; the user must judge the overall result against the approved compositions.
+- The global `Explore the demo` CTAs still point to the Phase 4 placeholder. When the guest demo exists, the case-study closing primary action should be reconsidered as a direct demo link, as the user suggested. No Phase 4 code was added here.
+- Clerk's own account menu still reflects the underlying sign-in profiles rather than the fictional local Flowboard names and portraits. Recommended follow-up: add an explicit workspace display identity in Flowboard while retaining Clerk's actual account identity for sign-in and account security, or update the development Clerk profiles themselves if these three accounts are exclusively disposable presentation accounts. No Clerk profile was changed in this pass.
+- A live reduced-motion emulation pass remains outstanding; existing reduced-motion styles and earlier keyboard/focus checks were retained.
+- The user requested a separate fresh-chat visual critique before deciding whether to accept Phase 3. That review should cover the whole site, especially all new Phase 3 pages and sections, and identify concrete visual flaws and improvements. Its findings have not yet been received; Phase 3 must not be marked complete on the strength of this implementation record alone.
+- The fresh-chat critique must specifically recheck the landing-page image-resolution concern: inspect every actual Flowboard screenshot at its rendered size on desktop and mobile, especially the smaller image in “Your day, without the noise,” the collaboration image in “Bring the right people into the work,” and all five “The details stay connected” cells. Distinguish source-image resolution from CSS scaling, crop choice, browser rendering, and text that is simply too small to read. Report any remaining blur or legibility issues with precise locations and recommended fixes.
+
+#### Phase 3 source-control checkpoint, 2026-09-27
+
+The user requested that the current Phase 3 implementation and review assets be committed and pushed as a recoverable checkpoint. This source-control snapshot does **not** mean Phase 3 is visually accepted or complete. The fresh-chat critique and any requested refinements remain ahead of the explicit acceptance gate. Frontend lint, all 58 tests, and the production build passed immediately before this checkpoint; the text/asset audit found no credentials, account email addresses, or temporary E2E labels in the public additions.
 
 ### Phase 4: Interactive guest demo
 
@@ -619,7 +681,7 @@ Required automated scenarios include:
 
 ## Recommended chat boundaries
 
-Start a new chat after each completed and verified phase:
+Start a new chat after each completed and verified phase, with one explicit Phase 3 exception: start a completely fresh chat for the independent whole-site visual critique **before** Phase 3 acceptance. Return its findings to the Phase 3 review, make any requested refinements, and wait for explicit user visual acceptance before marking the phase complete or moving to Phase 4.
 
 1. Foundation and product shell
 2. Authenticated product redesign

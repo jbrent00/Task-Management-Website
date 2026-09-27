@@ -13,9 +13,12 @@ export function getClerkAppearance(resolvedTheme) {
       fontFamily: '"Geist Variable", sans-serif',
     },
     elements: {
-      cardBox: { boxShadow: 'none' },
-      card: { border: `1px solid ${dark ? '#343438' : '#DAD9D4'}`, boxShadow: 'none' },
-      formButtonPrimary: { boxShadow: 'none' },
+      rootBox: { width: '100%' },
+      cardBox: { width: '100%', boxShadow: 'none' },
+      card: { width: '100%', border: `1px solid ${dark ? '#343438' : '#DAD9D4'}`, boxShadow: 'none', background: dark ? '#1C1C1F' : '#FCFCFA' },
+      headerTitle: { display: 'none' },
+      headerSubtitle: { display: 'none' },
+      formButtonPrimary: { boxShadow: 'none', fontWeight: 650 },
       footerActionLink: { color: dark ? '#F07A59' : '#B9472B' },
     },
   };

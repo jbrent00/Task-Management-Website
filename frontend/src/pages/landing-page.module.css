@@ -1,0 +1,90 @@
+.hero, .personal, .shared, .depth, .workflows, .closing { overflow: hidden; }
+.hero { position: relative; min-height: 870px; padding: clamp(60px, 6vw, 104px) max(32px, calc((100vw - 1440px) / 2)); }
+.heroCopy { position: relative; z-index: 2; max-width: 710px; }
+.hero h1 { font-size: clamp(60px, 6.2vw, 100px); line-height: .96; letter-spacing: -.071em; font-weight: 720; }
+.heroCopy > p { max-width: 600px; margin-top: 27px; color: var(--text-muted); font-size: clamp(19px, 1.7vw, 25px); line-height: 1.42; letter-spacing: -.026em; }
+.actions { display: flex; align-items: center; gap: 12px; margin-top: 30px; }
+.actions a, .outlineAction { min-height: 54px; padding: 0 23px; display: inline-flex; align-items: center; justify-content: center; gap: 10px; border-radius: 7px; text-decoration: none; font-size: 15px; font-weight: 620; white-space: nowrap; }
+.primaryAction { background: var(--accent); border: 1px solid var(--accent); color: var(--accent-ink); }
+.primaryAction:hover { background: var(--accent-hover); }
+.secondaryAction, .outlineAction { background: transparent; border: 1px solid var(--border-strong); color: var(--text); }
+.secondaryAction { background: var(--page-bg); }
+.secondaryAction:hover, .outlineAction:hover { border-color: var(--accent); color: var(--accent); }
+.heroVisual { position: absolute; inset: 350px 0 0 35%; }
+.heroStill { position: absolute; width: 100%; height: 100%; object-fit: cover; object-position: center; opacity: .65; }
+:global(:root[data-theme='dark']) .heroStill { opacity: .22; }
+.capture { overflow: hidden; border: 1px solid var(--border); border-radius: 14px; background: var(--surface-elevated); box-shadow: 0 22px 60px rgb(24 22 20 / .12); }
+.capture picture { display: block; width: 100%; height: 100%; }
+.capture img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top left; }
+.heroCapture { position: absolute; top: 118px; left: 7%; width: min(1090px, 96%); height: 550px; transform: rotate(-2deg); box-shadow: 0 28px 75px rgb(24 22 20 / .2); }
+.heroCapture img { object-fit: cover; object-position: top left; }
+.personal { min-height: 790px; display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(330px, .7fr); align-items: center; gap: clamp(35px, 6vw, 100px); padding: 100px max(32px, calc((100vw - 1440px) / 2)); background: var(--surface); }
+.personalVisual { position: relative; min-width: 0; padding: 20px 16px 90px 0; }
+.personalVisual > .capture:first-child { aspect-ratio: 1.58; }
+.personalInset { position: absolute; bottom: 8px; left: 36%; width: 61%; height: 275px; }
+.personalInset img { object-position: 51% 30%; }
+.kicker { color: var(--text-muted); font-size: 12px; font-weight: 650; text-transform: uppercase; letter-spacing: .17em; }
+.personal h2, .shared h2, .workflows h2 { margin-top: 26px; font-size: clamp(49px, 4.7vw, 78px); line-height: 1.02; letter-spacing: -.064em; font-weight: 680; }
+.shared h2 { margin-top: 0; }
+.personalCopy > p, .sharedCopy > p, .workflowCopy > p { max-width: 490px; margin-top: 30px; color: var(--text-muted); font-size: clamp(18px, 1.45vw, 23px); line-height: 1.5; letter-spacing: -.018em; }
+.textLink { display: inline-flex; align-items: center; gap: 8px; margin-top: 44px; padding-bottom: 5px; border-bottom: 1px solid currentColor; color: var(--accent); text-decoration: none; font-size: 18px; }
+.textLink:hover { gap: 14px; }
+.shared { position: relative; min-height: 970px; padding: 110px max(32px, calc((100vw - 1440px) / 2)); }
+.sharedCopy { position: relative; z-index: 2; max-width: 650px; }
+.sharedCopy > p { max-width: 600px; }
+.outlineAction { margin-top: 32px; border-color: var(--text); border-radius: 50px; }
+.sharedVisual { position: absolute; top: 475px; left: 25%; width: 71%; height: 465px; }
+.sharedVisual > .capture:first-child { width: 85%; height: 100%; }
+.sharedInset { position: absolute; right: 0; top: 42px; width: 47%; height: 380px; }
+.sharedInset img { object-position: center; }
+.depth { padding: 105px max(32px, calc((100vw - 1440px) / 2)) 120px; background: var(--surface); }
+.sectionIntro { max-width: 860px; margin: 0 auto 49px; text-align: center; }
+.sectionIntro h2 { margin-top: 21px; font-size: clamp(48px, 4.6vw, 74px); line-height: 1.06; letter-spacing: -.06em; }
+.sectionIntro p { margin-top: 16px; color: var(--text-muted); font-size: clamp(18px, 1.4vw, 22px); }
+.depthGrid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px; }
+.depthCell { min-width: 0; min-height: 320px; grid-column: span 2; padding: 28px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface-elevated); overflow: hidden; }
+.depthCell h3 { font-size: clamp(22px, 1.8vw, 30px); letter-spacing: -.04em; line-height: 1.15; }
+.depthCell p { max-width: 350px; margin-top: 9px; color: var(--text-muted); font-size: 15px; line-height: 1.47; }
+.depthLarge { min-height: 455px; grid-column: span 3; display: flex; flex-direction: column; gap: 17px; }
+.depthLarge .capture { flex: 1; min-height: 260px; box-shadow: none; }
+.depthLarge .capture img { width: 100%; object-fit: cover; object-position: center 42%; }
+.tagSamples { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 38px; }
+.tagSamples span { padding: 9px 13px; border-radius: 30px; background: var(--tag-orange-bg); color: var(--tag-orange-fg); font-size: 13px; }
+.tagSamples span:nth-child(2) { background: var(--tag-blue-bg); color: var(--tag-blue-fg); }
+.tagSamples span:nth-child(3) { background: var(--tag-green-bg); color: var(--tag-green-fg); }
+.smallCapture { height: 160px; margin-top: 22px; border-radius: 7px; box-shadow: none; }
+.smallCapture img { object-position: center; }
+.aiCapture { height: 230px; }
+.aiCell { background: var(--accent-soft); }
+.workflows { min-height: 705px; display: grid; grid-template-columns: .82fr 1.18fr; gap: clamp(50px, 8vw, 150px); padding: 110px max(32px, calc((100vw - 1440px) / 2)); }
+.workflowCopy { position: relative; }
+.workflowCopy h2 { margin-top: 0; }
+.workflowCopy > img { position: absolute; top: 370px; left: 0; width: min(480px, 90%); height: 300px; object-fit: cover; border-radius: 4px; opacity: .85; }
+.workflowRows { display: grid; gap: 12px; align-content: start; }
+.workflowRows article { min-height: 142px; display: flex; align-items: flex-start; gap: 23px; padding: 29px 31px; border: 1px solid var(--border); border-radius: 13px; background: var(--surface-elevated); }
+.workflowRows article > svg { flex: none; margin-top: 3px; color: var(--accent); }
+.workflowRows h3 { font-size: clamp(21px, 2vw, 28px); letter-spacing: -.04em; }
+.workflowRows p { max-width: 500px; margin-top: 8px; color: var(--text-muted); font-size: 16px; line-height: 1.5; }
+.closing { position: relative; min-height: 610px; display: grid; place-items: center; padding: 90px 24px 150px; background: var(--surface); text-align: center; }
+.closingContent { position: relative; z-index: 2; }
+.closingContent > svg { color: var(--accent); margin-bottom: 22px; }
+.closing h2 { font-size: clamp(46px, 4.9vw, 78px); letter-spacing: -.064em; line-height: 1.05; }
+.closing p { max-width: 710px; margin: 21px auto 0; color: var(--text-muted); font-size: clamp(18px, 1.4vw, 22px); line-height: 1.5; }
+.actionsCentered { justify-content: center; margin-top: 35px; }
+.closingMaterial { position: absolute; inset: auto 0 0; height: 200px; background-image: url('/images/planning-still-life.png'); background-size: cover; background-position: center 70%; opacity: .48; mask-image: linear-gradient(transparent, black); }
+@media (max-width: 1100px) { .hero { min-height: 735px; } .heroVisual { top: 240px; left: 20%; } .heroCapture { top: 90px; height: 450px; } .personal { min-height: 650px; } .sharedVisual { left: 15%; width: 83%; } .depthLarge .capture { min-height: 225px; } .workflowCopy > img { top: 410px; } }
+@media (max-width: 767px) { .hero, .personal, .shared, .depth, .workflows { padding-left: 18px; padding-right: 18px; } .hero { min-height: 740px; padding-top: 60px; } .hero h1 { font-size: clamp(51px, 11vw, 76px); } .heroCopy > p { margin-top: 21px; font-size: 18px; } .actions { gap: 9px; flex-wrap: wrap; } .actions a { min-height: 47px; padding: 0 15px; font-size: 13px; } .heroVisual { inset: 335px -165px 0 10px; } .heroCapture { top: 76px; left: 0; width: 710px; max-width: none; height: 360px; transform: rotate(-2deg); } .personal { display: flex; flex-direction: column-reverse; gap: 30px; padding-top: 76px; padding-bottom: 70px; } .personalCopy, .sharedCopy { width: 100%; } .personal h2, .shared h2, .workflows h2 { margin-top: 17px; font-size: clamp(46px, 10vw, 65px); } .personalCopy > p, .sharedCopy > p, .workflowCopy > p { margin-top: 20px; font-size: 18px; } .textLink { margin-top: 25px; font-size: 16px; } .personalVisual { width: 100%; padding-bottom: 65px; } .personalVisual > .capture:first-child { height: 330px; aspect-ratio: auto; } .personalVisual > .capture:first-child img { width: 660px; max-width: none; } .personalInset { width: 65%; height: 190px; bottom: 0; } .shared { min-height: 840px; padding-top: 75px; padding-bottom: 50px; } .sharedVisual { top: 455px; left: 18px; width: calc(100% - 36px); height: 310px; } .sharedVisual > .capture:first-child { width: 100%; } .sharedVisual > .capture:first-child img { width: 650px; max-width: none; } .sharedInset { top: 155px; right: 0; width: 65%; height: 285px; } .depth { padding-top: 75px; padding-bottom: 75px; } .sectionIntro { margin-bottom: 29px; text-align: left; } .sectionIntro h2 { font-size: clamp(46px, 9vw, 63px); } .sectionIntro p { font-size: 17px; } .depthGrid { display: block; } .depthCell { min-height: 0; margin-bottom: 10px; padding: 22px; } .depthLarge .capture { height: 240px; } .smallCapture { height: 150px; } .aiCapture { height: 230px; } .workflows { display: block; min-height: 0; padding-top: 78px; padding-bottom: 78px; } .workflowCopy > img { display: none; } .workflowRows { margin-top: 35px; } .workflowRows article { padding: 24px 20px; gap: 15px; } .workflowRows h3 { font-size: 22px; } .workflowRows p { font-size: 15px; } .closing { min-height: 550px; padding: 70px 18px 140px; } .closing h2 { font-size: clamp(43px, 9vw, 65px); } .closing p { font-size: 17px; } }
+@media (prefers-reduced-motion: reduce) { .textLink:hover { gap: 8px; } }
+@media (max-width: 767px) { .shared { min-height: 0; } .sharedVisual { position: relative; top: auto; left: auto; width: 100%; height: 440px; margin-top: 42px; } }
+.smallCapture { height: auto; aspect-ratio: 560 / 235; }
+.aiCapture { height: auto; aspect-ratio: 330 / 185; }
+@media (max-width: 767px) {
+  .personalVisual { display: grid; gap: 16px; padding: 0; }
+  .personalInset { position: relative; left: auto; bottom: auto; width: 100%; height: auto; aspect-ratio: 345 / 280; }
+  .sharedVisual { display: grid; gap: 16px; height: auto; }
+  .sharedVisual > .capture:first-child { height: 280px; }
+  .sharedInset { position: relative; top: auto; right: auto; width: 100%; height: auto; aspect-ratio: 345 / 460; }
+  .depthLarge .capture { height: auto; min-height: 0; aspect-ratio: 345 / 280; flex: none; }
+  .depthLarge:nth-child(2) .capture { aspect-ratio: 345 / 320; }
+  .depthCell:nth-child(4) .smallCapture { aspect-ratio: 315 / 345; }
+}

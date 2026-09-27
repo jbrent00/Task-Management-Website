@@ -1,0 +1,10 @@
+.main { position: relative; min-height: calc(100dvh - 180px); width: min(100% - 64px, 1200px); margin: auto; padding: clamp(80px, 10vw, 150px) 0; overflow: hidden; }
+.code { color: var(--accent); font: 600 12px 'Geist Mono Variable', monospace; letter-spacing: .18em; }
+.rule { width: 50px; height: 2px; margin: 24px 0; background: var(--accent); }
+.main h1 { position: relative; z-index: 1; max-width: 850px; font-size: clamp(56px, 7vw, 100px); line-height: .98; letter-spacing: -.07em; }
+.main p { position: relative; z-index: 1; max-width: 630px; margin-top: 25px; color: var(--text-muted); font-size: clamp(18px, 2vw, 23px); line-height: 1.48; }
+.actions { position: relative; z-index: 1; display: flex; flex-wrap: wrap; gap: 12px; margin-top: 32px; }
+.actions a { display: inline-flex; align-items: center; min-height: 50px; padding: 0 19px; border: 1px solid var(--border-strong); border-radius: 7px; text-decoration: none; font-weight: 600; }
+.actions a:first-child { border-color: var(--accent); background: var(--accent); color: var(--accent-ink); }
+.material { position: absolute; right: -20%; bottom: -20%; width: 70%; height: 80%; background: url('/images/planning-still-life.png') center / cover; opacity: .25; transform: rotate(-9deg); mask-image: linear-gradient(to right, transparent, black); }
+@media (max-width: 767px) { .main { width: calc(100% - 36px); min-height: 670px; } .material { right: -40%; width: 110%; height: 44%; } }

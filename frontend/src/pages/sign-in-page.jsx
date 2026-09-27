@@ -1,10 +1,11 @@
 import { SignIn } from '@clerk/react'
+import AuthLayout from '../components/auth-layout/auth-layout'
 
 function SignInPage() {
   return (
-    <div style={{ display: 'flex', justifyContent: 'center', marginTop: '100px' }}>
+    <AuthLayout kind="sign-in">
       <SignIn routing="path" path="/sign-in" signUpUrl="/sign-up" />
-    </div>
+    </AuthLayout>
   )
 }
 

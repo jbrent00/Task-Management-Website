@@ -1,0 +1,20 @@
+.publicPage { background: var(--page-bg); color: var(--text); min-height: 100dvh; }
+.skipLink { position: fixed; z-index: 100; top: 12px; left: 16px; padding: 10px 16px; background: var(--surface-elevated); border: 2px solid var(--accent); border-radius: 8px; clip-path: inset(100%); }
+.skipLink:focus { clip-path: none; }
+.header { position: relative; z-index: 20; border-bottom: 1px solid var(--border); background: var(--page-bg); }
+.headerInner { width: min(100% - 64px, 1440px); min-height: 78px; margin: auto; display: flex; align-items: center; justify-content: space-between; gap: 32px; }
+.nav { display: flex; align-items: center; gap: clamp(16px, 2.2vw, 34px); }
+.nav a { display: inline-flex; align-items: center; gap: 3px; white-space: nowrap; color: var(--text-muted); font-size: 13px; font-weight: 550; text-decoration: none; }
+.nav a:hover { color: var(--accent); }
+.nav .accountLink { color: var(--text); }
+.nav .navCta { padding: 12px 17px; border: 1px solid var(--text); border-radius: 5px; background: var(--text); color: var(--page-bg); font-weight: 650; }
+.nav .navCta:hover { border-color: var(--accent); background: var(--accent); color: var(--accent-ink); }
+.menuToggle { display: none; border: 0; background: none; color: var(--text); }
+.footer { border-top: 1px solid var(--border); }
+.footerInner { width: min(100% - 64px, 1440px); min-height: 100px; margin: auto; display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+.footerInner p { color: var(--text-muted); font-size: 13px; }
+.footerInner > div { display: flex; align-items: center; gap: 24px; }
+.footerInner a { display: inline-flex; align-items: center; gap: 3px; color: var(--text-muted); font-size: 13px; text-decoration: none; }
+.footerInner a:hover { color: var(--accent); }
+@media (max-width: 1050px) { .headerInner { width: min(100% - 40px, 1440px); } .nav { gap: 14px; } .nav a { font-size: 12px; } }
+@media (max-width: 767px) { .headerInner { width: calc(100% - 36px); min-height: 64px; } .menuToggle { display: inline-flex; padding: 8px; } .nav { display: none; position: absolute; top: 64px; left: 0; right: 0; padding: 20px 18px 24px; background: var(--page-bg); border-bottom: 1px solid var(--border); box-shadow: var(--shadow-elevated); align-items: stretch; flex-direction: column; } .navOpen { display: flex; } .nav a { font-size: 15px; min-height: 38px; } .nav .navCta { justify-content: center; } .footerInner { width: calc(100% - 36px); padding: 28px 0; align-items: flex-start; flex-direction: column; min-height: 0; } }
