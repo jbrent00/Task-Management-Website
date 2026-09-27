@@ -7,7 +7,7 @@
 .nav a { display: inline-flex; align-items: center; gap: 3px; white-space: nowrap; color: var(--text-muted); font-size: 13px; font-weight: 550; text-decoration: none; }
 .nav a:hover { color: var(--accent); }
 .nav .accountLink { color: var(--text); }
-.nav .navCta { padding: 12px 17px; border: 1px solid var(--text); border-radius: 5px; background: var(--text); color: var(--page-bg); font-weight: 650; }
+.nav .navCta { padding: 12px 17px; border: 1px solid var(--text); border-radius: 10px; background: var(--text); color: var(--page-bg); font-weight: 650; }
 .nav .navCta:hover { border-color: var(--accent); background: var(--accent); color: var(--accent-ink); }
 .menuToggle { display: none; border: 0; background: none; color: var(--text); }
 .footer { border-top: 1px solid var(--border); }

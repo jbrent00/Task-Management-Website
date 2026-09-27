@@ -4,7 +4,7 @@
 .hero h1 { font-size: clamp(60px, 6.2vw, 100px); line-height: .96; letter-spacing: -.071em; font-weight: 720; }
 .heroCopy > p { max-width: 600px; margin-top: 27px; color: var(--text-muted); font-size: clamp(19px, 1.7vw, 25px); line-height: 1.42; letter-spacing: -.026em; }
 .actions { display: flex; align-items: center; gap: 12px; margin-top: 30px; }
-.actions a, .outlineAction { min-height: 54px; padding: 0 23px; display: inline-flex; align-items: center; justify-content: center; gap: 10px; border-radius: 7px; text-decoration: none; font-size: 15px; font-weight: 620; white-space: nowrap; }
+.actions a, .outlineAction { min-height: 54px; padding: 0 23px; display: inline-flex; align-items: center; justify-content: center; gap: 10px; border-radius: 10px; text-decoration: none; font-size: 15px; font-weight: 620; white-space: nowrap; }
 .primaryAction { background: var(--accent); border: 1px solid var(--accent); color: var(--accent-ink); }
 .primaryAction:hover { background: var(--accent-hover); }
 .secondaryAction, .outlineAction { background: transparent; border: 1px solid var(--border-strong); color: var(--text); }
@@ -32,7 +32,7 @@
 .shared { position: relative; min-height: 970px; padding: 110px max(32px, calc((100vw - 1440px) / 2)); }
 .sharedCopy { position: relative; z-index: 2; max-width: 650px; }
 .sharedCopy > p { max-width: 600px; }
-.outlineAction { margin-top: 32px; border-color: var(--text); border-radius: 50px; }
+.outlineAction { margin-top: 32px; border-color: var(--text); }
 .sharedVisual { position: absolute; top: 475px; left: 25%; width: 71%; height: 465px; }
 .sharedVisual > .capture:first-child { width: 85%; height: 100%; }
 .sharedInset { position: absolute; right: 0; top: 42px; width: 47%; height: 380px; }
@@ -87,4 +87,108 @@
   .depthLarge .capture { height: auto; min-height: 0; aspect-ratio: 345 / 280; flex: none; }
   .depthLarge:nth-child(2) .capture { aspect-ratio: 345 / 320; }
   .depthCell:nth-child(4) .smallCapture { aspect-ratio: 315 / 345; }
+}
+
+/* Phase 3 visual follow-up: preserve complete, readable product evidence. */
+.hero { min-height: 900px; }
+.heroVisual { inset: 300px 0 0 30%; }
+.heroProof { position: absolute; top: 52px; left: 2%; width: min(1020px, 94%); transform: rotate(-1deg); }
+.heroStill { mask-image: linear-gradient(to bottom, transparent, black 25%); }
+.heroProof > span { display: block; margin: 0 16px 10px 0; color: var(--text-muted); font: 600 11px 'Geist Mono Variable', monospace; letter-spacing: .06em; text-align: right; text-transform: uppercase; }
+.heroCapture { position: relative; top: auto; left: auto; width: 100%; height: auto; aspect-ratio: 1110 / 495; transform: none; }
+.heroCapture img { object-fit: contain; }
+.capture { background: var(--surface-elevated); }
+.capture img { object-fit: contain; }
+:global(:root[data-theme='dark']) .capture { border: 6px solid var(--surface-muted); box-shadow: 0 18px 45px rgb(0 0 0 / .22); }
+.personalInset { height: auto; aspect-ratio: 660 / 365; }
+.sharedInset { height: auto; aspect-ratio: 660 / 550; }
+.depthLarge .capture { min-height: 0; height: auto; aspect-ratio: 660 / 260; flex: none; }
+.depthLarge:nth-child(2) .capture { aspect-ratio: 660 / 412; }
+.depthLarge .checklistDetail { width: min(100%, 500px); aspect-ratio: 500 / 170; }
+.depthLarge .capture img, .smallCapture img { object-fit: contain; object-position: center; }
+.smallCapture { width: min(100%, 315px); height: auto; aspect-ratio: 315 / 345; margin: 22px auto 0; }
+.aiCapture { width: min(100%, 330px); aspect-ratio: 330 / 185; }
+.checklistCapture { width: 100%; aspect-ratio: 890 / 135; margin-top: 12px; }
+.captureNote { color: var(--text-muted); font-size: 12px; line-height: 1.4; }
+.tagSamples { margin-top: 32px; align-content: start; }
+.tagSamples span { min-width: 100px; text-align: center; }
+.workflowRows { gap: 0; border-top: 1px solid var(--border); }
+.workflowRows article { min-height: 0; display: grid; grid-template-columns: 104px minmax(0, 1fr); gap: 20px; padding: 28px 8px; border: 0; border-bottom: 1px solid var(--border); border-radius: 0; background: transparent; }
+.workflowRows h3 { font-size: clamp(22px, 2vw, 29px); }
+.workflowIndex { padding-top: 8px; color: var(--accent); font: 600 11px 'Geist Mono Variable', monospace; letter-spacing: .04em; }
+.workflowEvidence { display: block; margin-top: 14px; color: var(--text-muted); font-size: 13px; }
+.roleProof { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; margin-top: 17px; }
+.roleProof span { padding: 10px; border: 1px solid var(--border); border-radius: 7px; font-size: 12px; }
+.roleProof b { display: block; margin-top: 3px; color: var(--accent); font-weight: 650; }
+.recoveryProof { display: inline-flex; align-items: center; gap: 8px; margin-top: 17px; padding: 10px 12px; border: 1px solid var(--border-strong); border-radius: 7px; color: var(--text); font-size: 12px; }
+:global(:root[data-theme='dark']) .workflowCopy > img { opacity: .43; }
+
+@media (min-width: 1101px) {
+  .shared { min-height: 1090px; }
+  .sharedVisual { height: auto; }
+  .sharedVisual > .capture:first-child { height: auto; aspect-ratio: 1425 / 891; }
+}
+
+@media (max-width: 1100px) {
+  .hero { min-height: 865px; }
+  .heroVisual { inset: 280px 0 0 16%; }
+  .heroProof { top: 75px; width: min(790px, 93%); }
+  .heroCapture { aspect-ratio: 1425 / 891; }
+  .personal { display: flex; flex-direction: column-reverse; gap: 36px; padding-top: 90px; padding-bottom: 90px; }
+  .personalCopy { width: 100%; }
+  .personalVisual { width: min(100%, 840px); padding: 0 0 90px; }
+  .personalVisual > .capture:first-child { aspect-ratio: 1425 / 891; }
+  .personalInset { left: auto; right: 0; bottom: 0; width: min(66%, 510px); }
+  .shared { min-height: 0; padding-top: 90px; padding-bottom: 90px; }
+  .sharedVisual { position: relative; top: auto; left: auto; width: min(100%, 840px); height: auto; margin: 55px 0 0 auto; padding-bottom: 65px; }
+  .sharedVisual > .capture:first-child { width: 100%; height: auto; aspect-ratio: 1425 / 891; }
+  .sharedInset { top: auto; right: 0; bottom: 0; width: min(64%, 510px); }
+  .depthGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .depthLarge { grid-column: span 2; min-height: 0; }
+  .depthLarge .capture { width: min(100%, 910px); }
+  .depthCell:not(.depthLarge) { grid-column: span 1; }
+  .depthCell:last-child { grid-column: span 2; }
+  .smallCapture { margin-left: 0; }
+  .workflows { grid-template-columns: .75fr 1.25fr; gap: 45px; }
+  .workflowCopy > img { position: relative; top: auto; left: auto; width: 100%; height: 230px; margin-top: 48px; }
+}
+@media (max-width: 767px) {
+  .hero { min-height: 740px; }
+  .heroVisual { inset: 335px -165px 0 10px; }
+  .heroProof { top: 100px; left: 0; width: 710px; }
+  .heroProof > span { display: none; }
+  .heroCapture { width: 710px; height: 360px; aspect-ratio: auto; }
+  .heroCapture img { object-fit: cover; }
+  .personal { padding-top: 76px; padding-bottom: 70px; }
+  .personalVisual { display: grid; gap: 16px; padding: 0; }
+  .personalVisual > .capture:first-child { height: 330px; aspect-ratio: auto; }
+  .personalVisual > .capture:first-child img { object-fit: cover; }
+  .personalInset { position: relative; left: auto; right: auto; bottom: auto; width: 100%; aspect-ratio: 660 / 365; }
+  .shared { padding-top: 75px; padding-bottom: 75px; }
+  .sharedVisual { display: grid; gap: 16px; width: 100%; padding: 0; margin-top: 42px; }
+  .sharedVisual > .capture:first-child { height: 280px; aspect-ratio: auto; }
+  .sharedVisual > .capture:first-child img { object-fit: cover; }
+  .sharedInset { position: relative; top: auto; right: auto; bottom: auto; width: 100%; aspect-ratio: 660 / 550; }
+  .depthGrid { display: block; }
+  .depthLarge .capture { width: 100%; aspect-ratio: 660 / 260; }
+  .depthLarge:nth-child(2) .capture { width: 100%; aspect-ratio: 660 / 412; }
+  .depthLarge .checklistDetail { width: min(100%, 500px); aspect-ratio: 500 / 170; }
+  .depthLarge:nth-child(2) .capture { aspect-ratio: 660 / 412; }
+  .depthCell .smallCapture { width: min(100%, 315px); }
+  .depthCell .aiCapture { width: min(100%, 330px); }
+  .depthCell .checklistCapture { width: 100%; }
+  .workflows { display: block; }
+  .workflowCopy > img { display: none; }
+  .workflowRows article { grid-template-columns: 1fr; gap: 6px; padding: 25px 0; }
+  .roleProof { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 600px) {
+  .personalInset { aspect-ratio: 345 / 280; }
+  .sharedInset { aspect-ratio: 345 / 460; }
+  .depthLarge .capture { aspect-ratio: 345 / 280; }
+  .depthLarge:nth-child(2) .capture { aspect-ratio: 345 / 460; }
+  .depthLarge .checklistDetail { width: min(100%, 315px); aspect-ratio: 315 / 140; }
+  .depthCell .smallCapture { aspect-ratio: 315 / 345; }
+  .depthCell .aiCapture { aspect-ratio: 330 / 185; }
+  .depthCell .checklistCapture { aspect-ratio: 890 / 135; }
 }

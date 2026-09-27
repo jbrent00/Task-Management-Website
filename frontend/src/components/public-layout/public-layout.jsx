@@ -22,8 +22,8 @@ export function PublicHeader() {
         <Link to="/case-study">Case study</Link>
         <a href={repoUrl} target="_blank" rel="noopener noreferrer">GitHub <ArrowUpRightIcon size={14} aria-hidden="true" /></a>
         <ThemePicker />
-        <Link className={styles.accountLink} to={isSignedIn ? '/tasks' : '/sign-in'}>{isSignedIn ? 'Open app' : 'Sign in'}</Link>
-        <Link className={styles.navCta} to="/demo">Explore the demo <ArrowUpRightIcon size={16} aria-hidden="true" /></Link>
+        <Link className={styles.accountLink} to={isSignedIn ? '/tasks' : '/sign-in'}>{isSignedIn ? 'My tasks' : 'Sign in'}</Link>
+        <Link className={styles.navCta} to={isSignedIn ? '/tasks' : '/sign-up'}>{isSignedIn ? 'Open workspace' : 'Create an account'} <ArrowUpRightIcon size={16} aria-hidden="true" /></Link>
       </nav>
     </div>
   </header>;

@@ -51,5 +51,7 @@
 .participation:hover { background: var(--accent-soft); }
 .detailAction { display: grid; width: 32px; height: 32px; place-items: center; padding: 0; border: 0; border-radius: 8px; background: transparent; color: var(--text-muted); }
 .detailAction:hover { background: var(--surface-muted); color: var(--text); }
+:global(:root[data-theme='dark']) .card :is(.dueDate:not(.overdue):not(.dueSoon), .commentCount, .checklistSummary, .separator, .noAssignees) { color: var(--text-muted); }
+:global(:root[data-theme='dark']) .card :is(.dueDate, .commentCount, .checklistSummary) { font-size: .75rem; }
 @media (max-width: 1180px) and (min-width: 961px) { .card { padding: 10px; } .completion { top: 10px; left: 10px; } .withCompletion { --completion-indent: 29px; } .cardActions { right: 7px; bottom: 7px; } .dueDate svg, .checklistSummary svg { display: none; } }
 @container (max-width: 280px) { .assigneeEntry:nth-child(2), .assigneeOverflow { display: none; } .compactAssigneeOverflow { display: inline; } }
