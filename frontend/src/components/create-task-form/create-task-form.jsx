@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 import styles from './create-task-form.module.css';
-import { createTask } from '../../api/createTask';
 import { useAuth } from '@clerk/react';
 import TaskAssignmentFields from '../task-assignment-fields/task-assignment-fields';
 import { getLocalDateTimeMinimum } from '../../functions/toLocalDateTime';
@@ -10,10 +9,18 @@ import TaskSelectField from '../task-form-controls/task-select-field';
 import TaskDateField from '../task-form-controls/task-date-field';
 import { useTaskMutation } from '../../functions/taskMutationContext';
 import { AiGenerationError, generateTaskDraft } from '../../api/aiGeneration';
+import { createAuthenticatedOperations } from '../../functions/workspace-operations';
+import { useWorkspaceOperations } from '../../functions/workspace-context';
 
-function CreateTaskForm ({tasks, setTasks, tags, onCreateTag, onNotify, expanded, initialStatus = 'todo', onCreated}) {
+function AuthenticatedCreateTaskForm(props) {
     const { getToken } = useAuth();
+    return <CreateTaskFormContent {...props} operations={createAuthenticatedOperations(getToken)} />;
+}
+
+function CreateTaskFormContent ({tasks, setTasks, tags, onCreateTag, onNotify, expanded, initialStatus = 'todo', onCreated, operations, fixedProjectId = null}) {
     const mutation = useTaskMutation();
+    const isDemo = operations.mode === 'demo';
+    const guestAiHint = 'Create an account to use AI generation.';
 
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
@@ -50,8 +57,7 @@ function CreateTaskForm ({tasks, setTasks, tags, onCreateTag, onNotify, expanded
         setGenerating(kind);
         setAiMessage({ tone: 'status', text: kind === 'description' ? 'Generating a task description…' : 'Generating five checklist items…' });
         try {
-            const token = await getToken();
-            const result = await generateTaskDraft(token, kind === 'description' ? { kind, title } : { kind, title, description });
+            const result = await generateTaskDraft(await operations.getToken(), kind === 'description' ? { kind, title } : { kind, title, description });
             if (result.kind === 'description') setDescription(result.description);
             if (result.kind === 'checklist') setChecklistItems(result.items.map((text) => ({ id: `draft-${crypto.randomUUID()}`, text, completed: false })));
             setAiMessage({ tone: 'success', text: kind === 'description' ? 'Description generated. You can edit it before creating the task.' : 'Checklist generated. You can edit the items before creating the task.' });
@@ -75,14 +81,12 @@ function CreateTaskForm ({tasks, setTasks, tags, onCreateTag, onNotify, expanded
     setSubmitting(true);
     setSubmitError('');
     try {
-        const token = await getToken();
-
-        const statusTasks = tasks.filter(task => task.status === status);
+        const statusTasks = tasks.filter(task => task.status === status && task.projectId === fixedProjectId);
         const orderIndex = statusTasks.length > 0
             ? Math.max(...statusTasks.map(task => task.orderIndex)) + 1
             : 0;
 
-        const newTask = await createTask(token, title, description, priority, dueDate || null, orderIndex, projectId, tagIds, checklistItems, status);
+        const newTask = await operations.createTask({ title, description, priority, dueDate: dueDate || null, orderIndex, projectId: fixedProjectId ?? projectId, tagIds, checklistItems, status });
         setTasks((prevTasks) => [...prevTasks, newTask]);
         setTitle('');
         setDescription('');
@@ -109,13 +113,13 @@ function CreateTaskForm ({tasks, setTasks, tags, onCreateTag, onNotify, expanded
     return (
         <form onSubmit={handleSubmit} className={styles.createTask}>
             <div id="create-task-content" className={styles.formContent} hidden={!expanded}>
-            <header className={styles.formHeader}><div><span className={styles.eyebrow}>My tasks / New task</span><h2>New task</h2><p>Give the work a clear name, then add the details you need.</p></div></header>
+            <header className={styles.formHeader}><div><span className={styles.eyebrow}>{fixedProjectId ? 'Project / New task' : 'My tasks / New task'}</span><h2>New task</h2><p>Give the work a clear name, then add the details you need.</p></div></header>
             <div className={`${styles.field} ${styles.titleField}`}>
                 <label htmlFor="title">Task name</label>
                 <input ref={titleRef} type="text" id="title" name="title" value={title} maxLength={100} required disabled={Boolean(generating)} placeholder="What needs to be done?" onChange={(e) => setTitle(e.target.value)} />
             </div>
             <div className={`${styles.field} ${styles.descriptionField}`}>
-                <div className={styles.fieldHeader}><label htmlFor="description">Description (optional) <span className={styles.characterCount}>{description.length}/500</span></label><button type="button" className={styles.generateButton} disabled={!validAiTitle || Boolean(generating)} onClick={() => requestGeneration('description')}>{generating === 'description' ? 'Generating…' : 'Generate description'}</button></div>
+                <div className={styles.fieldHeader}><label htmlFor="description">Description (optional) <span className={styles.characterCount}>{description.length}/500</span></label><span title={isDemo ? guestAiHint : undefined} className={isDemo ? styles.unavailableControl : undefined}><button type="button" className={styles.generateButton} disabled={isDemo || !validAiTitle || Boolean(generating)} aria-describedby={isDemo ? 'guest-ai-help' : undefined} onClick={() => requestGeneration('description')}>{generating === 'description' ? 'Generating…' : 'Generate description'}</button></span></div>
                 <textarea id="description" name="description" value={description} maxLength={500} disabled={Boolean(generating)} placeholder="Add the context that will help you finish the task." onChange={(e) => setDescription(e.target.value)} />
             </div>
             <div className={styles.details}>
@@ -124,7 +128,8 @@ function CreateTaskForm ({tasks, setTasks, tags, onCreateTag, onNotify, expanded
                 <TaskDateField label="Due date" value={dueDate} onChange={setDueDate} min={getLocalDateTimeMinimum()} />
             </div>
             <div className={styles.tagSection}><TaskAssignmentFields tags={tags} projectId={null} tagIds={tagIds} onProjectChange={() => {}} onTagIdsChange={setTagIds} onCreateTag={onCreateTag} showProject={false} /></div>
-            <div className={styles.checklistField}><Checklist items={checklistItems} draft defaultExpanded resetKey={checklistResetKey} disabled={Boolean(generating)} onGenerate={() => requestGeneration('checklist')} generating={generating === 'checklist'} generateDisabled={!validAiTitle || Boolean(generating)} onItemsChange={setChecklistItems} onNotify={onNotify} /></div>
+            <div className={styles.checklistField}><Checklist items={checklistItems} draft defaultExpanded resetKey={checklistResetKey} disabled={Boolean(generating)} onGenerate={() => requestGeneration('checklist')} generating={generating === 'checklist'} generateDisabled={isDemo || !validAiTitle || Boolean(generating)} generateHint={isDemo ? guestAiHint : undefined} generateHintId={isDemo ? 'guest-ai-help' : undefined} onItemsChange={setChecklistItems} onNotify={onNotify} /></div>
+            {isDemo && <p id="guest-ai-help" className={styles.guestAiHelp}>AI generation requires an account. <a href="/sign-up">Create an account</a> to use it.</p>}
             {aiMessage && <p className={`${styles.aiMessage} ${styles[aiMessage.tone]}`} role={aiMessage.tone === 'error' ? 'alert' : 'status'} aria-live="polite">{aiMessage.text}</p>}
             {submitError && <p className={`${styles.aiMessage} ${styles.error}`} role="alert">{submitError}</p>}
             <footer className={styles.formFooter}><button className={styles.submitButton} disabled={mutation.busy || !title.trim() || Boolean(generating)} type="submit">{submitting ? 'Creating…' : 'Create task'}</button></footer>
@@ -134,4 +139,7 @@ function CreateTaskForm ({tasks, setTasks, tags, onCreateTag, onNotify, expanded
     );
 }
 
-export default CreateTaskForm;
+export default function CreateTaskForm(props) {
+    const operations = useWorkspaceOperations();
+    return operations ? <CreateTaskFormContent {...props} operations={operations} /> : <AuthenticatedCreateTaskForm {...props} />;
+}

@@ -1,7 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '@clerk/react';
-import { deleteTask } from '../../api/deleteTask';
-import { updateTask } from '../../api/updateTask';
 import toLocalDateTimeInput from '../../functions/toLocalDateTime';
 import { canChangeProjectTaskAssignments } from '../../functions/projectAssignmentPolicy';
 import MemberPicker from '../member-picker/member-picker';
@@ -9,6 +7,7 @@ import TaskTagPicker from '../task-tag-picker/task-tag-picker';
 import Checklist from '../checklist/checklist';
 import TaskComments from '../task-comments/task-comments';
 import ActivityTimeline from '../activity-timeline/activity-timeline';
+import { DemoActivity, DemoDiscussion } from '../demo-collaboration/demo-collaboration';
 import ConfirmDialog from '../confirm-dialog/confirm-dialog';
 import TaskSelectField from '../task-form-controls/task-select-field';
 import TaskDateField from '../task-form-controls/task-date-field';
@@ -16,6 +15,8 @@ import styles from './task-detail-modal.module.css';
 import { XIcon } from '@phosphor-icons/react/dist/csr/X';
 import { DotsThreeIcon } from '@phosphor-icons/react/dist/csr/DotsThree';
 import { TrashIcon } from '@phosphor-icons/react/dist/csr/Trash';
+import { createAuthenticatedOperations } from '../../functions/workspace-operations';
+import { useWorkspaceOperations } from '../../functions/workspace-context';
 
 const sortedIds = (items) => [...items].sort((first, second) => String(first).localeCompare(String(second)));
 
@@ -31,7 +32,12 @@ function taskSnapshot(task) {
     };
 }
 
-export default function TaskDetailModal({
+function AuthenticatedTaskDetailModal(props) {
+    const { getToken, userId } = useAuth();
+    return <TaskDetailModalContent {...props} operations={createAuthenticatedOperations(getToken, userId)} />;
+}
+
+function TaskDetailModalContent({
     task,
     project = null,
     personalTags = [],
@@ -44,8 +50,9 @@ export default function TaskDetailModal({
     onUpdated,
     onDeleted,
     onNotify,
+    operations,
 }) {
-    const { getToken, userId } = useAuth();
+    const { userId } = operations;
     const dialog = useRef(null);
     const closeButton = useRef(null);
     const actionsRoot = useRef(null);
@@ -137,7 +144,7 @@ export default function TaskDetailModal({
         setSaving(true);
         setError('');
         try {
-            const updated = await updateTask(await getToken(), task.id, title, description, status, priority, dueDate || null, task.projectId, tagIds, assigneeIds);
+            const updated = await operations.updateTask(task.id, { title, description, status, priority, dueDate: dueDate || null, projectId: task.projectId, tagIds, assigneeIds });
             applySavedTask(updated);
             onNotify({ tone: 'success', message: `Saved “${updated.title}”.` });
         } catch (saveError) {
@@ -151,7 +158,7 @@ export default function TaskDetailModal({
         setSaving(true);
         setError('');
         try {
-            await deleteTask(await getToken(), task.id);
+            await operations.deleteTask(task.id);
             onDeleted(task.id);
             onNotify({ tone: 'success', message: `Deleted “${task.title}”.` });
         } catch (deleteError) {
@@ -194,13 +201,18 @@ export default function TaskDetailModal({
                     </div>
                     <div className={styles.grid}><TaskSelectField label="Status" value={status} disabled={!canEdit} onChange={setStatus} options={[{ value: 'todo', label: 'To do' }, { value: 'in_progress', label: 'In progress' }, { value: 'completed', label: 'Completed' }]} /><TaskSelectField label="Priority" value={priority} disabled={!canEdit} onChange={setPriority} options={[{ value: 'low', label: 'Low' }, { value: 'medium', label: 'Medium' }, { value: 'high', label: 'High' }]} /><TaskDateField label="Due date" value={dueDate} disabled={!canEdit} onChange={setDueDate} /></div>
                     <div className={styles.peopleAndTags}>{project && <MemberPicker members={project.memberships} selectedIds={assigneeIds} onChange={changeAssignees} disabled={!canEdit || project.archivedAt || project.role === 'viewer'} />}<TaskTagPicker tags={project?.tags ?? personalTags} selectedIds={tagIds} onChange={setTagIds} onCreateTag={canEdit ? (isProjectTask ? onCreateProjectTag : onCreatePersonalTag) : undefined} disabled={!canEdit} /></div>
-                    <Checklist defaultExpanded disabled={saving} readOnly={!canEdit} taskId={task.id} items={task.checklistItems ?? []} getToken={getToken} onItemsChange={setChecklistItems} onNotify={onNotify} />
+                    <Checklist defaultExpanded disabled={saving} readOnly={!canEdit} taskId={task.id} items={task.checklistItems ?? []} getToken={operations.getToken} onItemsChange={setChecklistItems} onNotify={onNotify} />
                 </form>}
-                {project && tab === 'discussion' && <TaskComments task={task} project={project} onChanged={(delta) => delta && onUpdated({ ...task, commentCount: Math.max(0, (task.commentCount ?? 0) + delta) })} />}
-                {project && tab === 'activity' && <ActivityTimeline projectId={project.id} taskId={task.id} />}
+                {project && tab === 'discussion' && (operations.mode === 'demo' ? <DemoDiscussion task={task} /> : <TaskComments task={task} project={project} onChanged={(delta) => delta && onUpdated({ ...task, commentCount: Math.max(0, (task.commentCount ?? 0) + delta) })} />)}
+                {project && tab === 'activity' && (operations.mode === 'demo' ? <DemoActivity tasks={[task]} taskId={task.id} /> : <ActivityTimeline projectId={project.id} taskId={task.id} />)}
             </div>
         </section>
         {confirmation === 'discard' && <ConfirmDialog title="Discard changes?" confirmLabel="Discard changes" tone="warning" onCancel={() => setConfirmation(null)} onConfirm={onClose}>Changes to “{task.title}” have not been saved. Discard them?</ConfirmDialog>}
         {confirmation === 'delete' && <ConfirmDialog title="Delete this task?" confirmLabel="Delete task" busyLabel="Deleting…" busy={saving} onCancel={closeDeleteConfirmation} onConfirm={remove}>“{task.title}” and its checklist and discussion will be deleted. This cannot be undone.</ConfirmDialog>}
     </div>;
+}
+
+export default function TaskDetailModal(props) {
+    const operations = useWorkspaceOperations();
+    return operations ? <TaskDetailModalContent {...props} operations={operations} /> : <AuthenticatedTaskDetailModal {...props} />;
 }

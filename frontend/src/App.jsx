@@ -13,6 +13,7 @@ const ProjectPage = lazy(() => import('./pages/project-page'));
 const LandingPage = lazy(() => import('./pages/landing-page'));
 const CaseStudyPage = lazy(() => import('./pages/case-study-page'));
 const NotFoundPage = lazy(() => import('./pages/not-found-page'));
+const DemoPage = lazy(() => import('./pages/demo-page'));
 
 export const ProtectedPage = ({ children }) => <>
   <Show when="signed-in"><AppShell>{children}</AppShell></Show>
@@ -37,6 +38,7 @@ function App() {
         <Route path="/projects/:projectId" element={<ProtectedPage><ProjectPage /></ProtectedPage>} />
         <Route path="/" element={<LandingPage />} />
         <Route path="/case-study" element={<CaseStudyPage />} />
+        <Route path="/demo/*" element={<DemoPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </Suspense>

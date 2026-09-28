@@ -261,7 +261,7 @@ function TasksPage() {
             <div className={styles.header}>
                 <div>
                     <h1 className={styles.title}>My tasks</h1>
-                    <p className={styles.taskTotal}><strong>{totalVisibleTasks}</strong>{isFiltered ? ` of ${tasks.length}` : ''} {totalVisibleTasks === 1 ? 'task' : 'tasks'} in your workspace</p>
+                    <p className={styles.taskTotal}><strong>{totalVisibleTasks}</strong>{isFiltered ? ` of ${tasks.length}` : ''} {(isFiltered ? tasks.length : totalVisibleTasks) === 1 ? 'task' : 'tasks'} in your workspace</p>
                 </div>
                 <div className={styles.headerActions}>
                     <button ref={creationTrigger} data-create-task-trigger className={styles.createButton} type="button" onClick={() => { setCreationStatus('todo'); setCreationReturnSelector('[data-create-task-trigger]'); setCreationExpanded(true); }}><PlusIcon size={18} weight="bold" aria-hidden="true" />Create task</button>

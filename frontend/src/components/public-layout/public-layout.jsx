@@ -20,6 +20,7 @@ export function PublicHeader() {
       <nav className={`${styles.nav} ${menuOpen ? styles.navOpen : ''}`} aria-label="Public navigation" onClick={(event) => { if (event.target.closest('a')) setMenuOpen(false); }}>
         <a href="/#product">Product</a>
         <Link to="/case-study">Case study</Link>
+        {!isSignedIn && <a className={styles.demoLink} href="/demo">Try demo</a>}
         <a href={repoUrl} target="_blank" rel="noopener noreferrer">GitHub <ArrowUpRightIcon size={14} aria-hidden="true" /></a>
         <ThemePicker />
         <Link className={styles.accountLink} to={isSignedIn ? '/tasks' : '/sign-in'}>{isSignedIn ? 'My tasks' : 'Sign in'}</Link>

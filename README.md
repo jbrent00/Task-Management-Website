@@ -27,6 +27,7 @@ The application uses Clerk for authentication. Personal tasks and tags stay priv
 - AI-assisted drafting in both personal and project task creation
 - Optimistic drag-and-drop updates with rollback and feedback when a request fails
 - Responsive layouts and keyboard-accessible task reordering
+- Interactive guest demo with browser-local tasks and a seeded collaborative project
 
 ## Technology stack
 
@@ -147,7 +148,13 @@ Start Vite:
 npm run dev
 ```
 
-Open `http://localhost:5173`. Sign up or sign in, then visit `/tasks` to use the workspace.
+Open `http://localhost:5173`. Sign up or sign in, then visit `/tasks` to use the authenticated workspace. To try the guest workspace, open `/demo` directly or use **Try demo** in the signed-out site header. The guest route needs only the frontend dev server; it does not initialize Clerk or call the backend.
+
+### Guest demo
+
+The demo uses the product task board and task editor. You can create, edit, delete, complete, reopen, move, search, filter, sort, and reorder personal or seeded-project tasks; work with tags, due dates, and checklists; browse the sample project and its read-only discussion and activity history; and restore the sample with **Reset demo**. Changes are stored in this browser under `flowboard:demo-workspace:v1` and survive reload. Reset replaces local demo changes with the original sample.
+
+Account-only features remain visible where useful and explain their limits. AI drafting buttons are disabled for guests. Guests cannot add discussion or activity entries, invite members, manage memberships, create projects, or use notifications. Sign in for those features.
 
 ## Environment variables
 
@@ -243,4 +250,4 @@ npm test
 npm run typecheck
 ```
 
-Because the repository does not currently include browser automation, manually verify affected task workflows in the frontend after making UI or API changes.
+Because the repository does not currently include browser automation, manually verify affected task workflows in the frontend after making UI or API changes. The demo operations have automated isolation, persistence, reset, and core operation tests, but a captured browser network trace is still pending in the Phase 4 completion gate documented in `docs/REDESIGN_IMPLEMENTATION_PLAN.md`.

@@ -10,6 +10,8 @@ vi.mock('../activity-timeline/activity-timeline', () => ({ default: () => <div>A
 import TaskDetailModal from './task-detail-modal';
 import { updateTask } from '../../api/updateTask';
 import { deleteTask } from '../../api/deleteTask';
+import { WorkspaceOperationsContext } from '../../functions/workspace-context';
+import { createDemoOperations, createDemoSeed } from '../../functions/workspace-operations';
 
 const task = { id: 4, title: 'Review launch', description: '', status: 'todo', priority: 'medium', dueDate: null, projectId: 1, tags: [], assignees: [], checklistItems: [], capabilities: { canEdit: false } };
 const project = { id: 1, role: 'viewer', archivedAt: null, tags: [], memberships: [{ userId: 'viewer', role: 'viewer', user: { fname: 'Vera', lname: 'Viewer' } }] };
@@ -24,6 +26,18 @@ test('provides an accessible read-only modal with keyboard close and detail tabs
     expect(screen.getByText('Discussion placeholder')).toBeInTheDocument();
     fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' });
     expect(onClose).toHaveBeenCalledOnce();
+});
+
+test('shows local project discussion and activity while disabling guest comments', () => {
+    const demoTask = createDemoSeed().tasks.find((item) => item.id === 4);
+    const storage = { getItem: () => null, setItem: () => {} };
+    render(<WorkspaceOperationsContext.Provider value={createDemoOperations(storage)}><TaskDetailModal task={demoTask} project={{ ...project, role: 'owner' }} onClose={() => {}} onUpdated={() => {}} onDeleted={() => {}} onNotify={() => {}} /></WorkspaceOperationsContext.Provider>);
+    fireEvent.click(screen.getByRole('button', { name: 'discussion' }));
+    expect(screen.getByText(/I have the owners confirmed/)).toBeInTheDocument();
+    expect(screen.getByRole('textbox', { name: 'Add to discussion' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Comment' })).toBeDisabled();
+    fireEvent.click(screen.getByRole('button', { name: 'activity' }));
+    expect(screen.getByText(/moved this task to To do/)).toBeInTheDocument();
 });
 
 test('shows a details-only personal task modal and keeps it open after saving', async () => {

@@ -6,6 +6,8 @@
 .nav { display: flex; align-items: center; gap: clamp(16px, 2.2vw, 34px); }
 .nav a { display: inline-flex; align-items: center; gap: 3px; white-space: nowrap; color: var(--text-muted); font-size: 13px; font-weight: 550; text-decoration: none; }
 .nav a:hover { color: var(--accent); }
+.nav .demoLink { color: var(--accent); font-weight: 650; }
+.nav .demoLink:hover { color: var(--accent-hover); }
 .nav .accountLink { color: var(--text); }
 .nav .navCta { padding: 12px 17px; border: 1px solid var(--text); border-radius: 10px; background: var(--text); color: var(--page-bg); font-weight: 650; }
 .nav .navCta:hover { border-color: var(--accent); background: var(--accent); color: var(--accent-ink); }
@@ -17,4 +19,5 @@
 .footerInner a { display: inline-flex; align-items: center; gap: 3px; color: var(--text-muted); font-size: 13px; text-decoration: none; }
 .footerInner a:hover { color: var(--accent); }
 @media (max-width: 1050px) { .headerInner { width: min(100% - 40px, 1440px); } .nav { gap: 14px; } .nav a { font-size: 12px; } }
-@media (max-width: 767px) { .headerInner { width: calc(100% - 36px); min-height: 64px; } .menuToggle { display: inline-flex; padding: 8px; } .nav { display: none; position: absolute; top: 64px; left: 0; right: 0; padding: 20px 18px 24px; background: var(--page-bg); border-bottom: 1px solid var(--border); box-shadow: var(--shadow-elevated); align-items: stretch; flex-direction: column; } .navOpen { display: flex; } .nav a { font-size: 15px; min-height: 38px; } .nav .navCta { justify-content: center; } .footerInner { width: calc(100% - 36px); padding: 28px 0; align-items: flex-start; flex-direction: column; min-height: 0; } }
+@media (max-width: 900px) { .headerInner { width: calc(100% - 36px); min-height: 64px; } .menuToggle { display: inline-flex; padding: 8px; } .nav { display: none; position: absolute; top: 64px; left: 0; right: 0; padding: 20px 18px 24px; background: var(--page-bg); border-bottom: 1px solid var(--border); box-shadow: var(--shadow-elevated); align-items: stretch; flex-direction: column; } .navOpen { display: flex; } .nav a { font-size: 15px; min-height: 38px; } .nav .navCta { justify-content: center; } }
+@media (max-width: 767px) { .footerInner { width: calc(100% - 36px); padding: 28px 0; align-items: flex-start; flex-direction: column; min-height: 0; } }

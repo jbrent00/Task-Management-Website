@@ -18,6 +18,11 @@
 .field :is(input, textarea, select):focus-visible { background: var(--surface-elevated); }
 .generateButton { flex: none; min-height: 34px; padding: 0 10px; border: 1px solid var(--border); border-radius: var(--radius-control); background: var(--surface); color: var(--accent); font-size: .74rem; font-weight: 700; }
 .generateButton:hover:not(:disabled) { border-color: var(--accent); background: var(--accent-soft); }
+.unavailableControl { display: inline-flex; cursor: not-allowed; }
+.unavailableControl .generateButton { pointer-events: none; }
+.generateButton:disabled { border-color: var(--border); background: var(--surface-muted); color: var(--text-muted); }
+.guestAiHelp { margin: -8px 0 20px; color: var(--text-muted); font-size: .8rem; }
+.guestAiHelp a { color: var(--accent); font-weight: 650; }
 .details { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: start; gap: 16px; padding: 22px 0; border-top: 1px solid var(--border); }
 .staticValue { display: flex; min-height: 44px; align-items: center; padding: 9px 12px; border: 1px solid var(--border); border-radius: var(--radius-control); background: var(--accent-soft); color: var(--text); font-size: .85rem; font-weight: 600; }
 .tagSection { padding: 0 0 22px; }

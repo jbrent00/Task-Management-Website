@@ -10,8 +10,8 @@ const asset = (name) => `/captures/${name.includes('.') ? name : `${name}.jpg`}`
 function ActionLinks({ centered = false }) {
   const { isSignedIn } = useAuth();
   return <div className={`${styles.actions} ${centered ? styles.actionsCentered : ''}`}>
-    <Link className={styles.primaryAction} to={isSignedIn ? '/tasks' : '/sign-up'}>{isSignedIn ? 'Open app' : 'Create an account'} <ArrowRightIcon size={17} aria-hidden="true" /></Link>
-    <Link className={styles.secondaryAction} to="/demo">Demo coming soon</Link>
+    <a className={styles.primaryAction} href="/demo">Explore the demo <ArrowRightIcon size={17} aria-hidden="true" /></a>
+    <Link className={styles.secondaryAction} to={isSignedIn ? '/tasks' : '/sign-up'}>{isSignedIn ? 'Open app' : 'Create an account'}</Link>
   </div>;
 }
 
@@ -43,7 +43,7 @@ function LandingPage() {
         <article className={`${styles.depthCell} ${styles.depthLarge}`}><div><h3>Comments and notifications</h3><p>Discuss work on the task. Mentions and assignments also reach the notification inbox.</p></div><Capture file="task-discussion-wide.png" mobileFile="task-discussion-mobile.png" alt="Real comments from three Northline project members" /><span className={styles.captureNote}>Shown: task discussion. Notifications are available in the signed-in inbox.</span></article>
         <article className={styles.depthCell}><h3>Tags</h3><p>Group related work with reusable personal and shared labels.</p><div className={styles.tagSamples}><span>Content</span><span>Design</span><span>Launch</span></div></article>
         <article className={styles.depthCell}><h3>Due-date views</h3><p>Move between Today, Next 7 days, Overdue, and Unscheduled.</p><Capture file="due-date-views-mobile.png" alt="Real Flowboard date-view menu with Today, Next 7 days, Overdue, and Unscheduled" className={styles.smallCapture} /></article>
-        <article className={`${styles.depthCell} ${styles.aiCell}`}><h3>AI drafting and checklists</h3><p>Turn a rough idea into an editable description or checklist.</p><Capture file="ai-controls-close.png" alt="Real task form showing a Generate description control and editable draft" className={`${styles.smallCapture} ${styles.aiCapture}`} /><Capture file="checklist-proof.png" alt="Real task checklist with a Generate checklist control" className={`${styles.smallCapture} ${styles.checklistCapture}`} /></article>
+        <article className={`${styles.depthCell} ${styles.aiCell}`}><div><h3>AI drafting and checklists</h3><p>Turn a rough idea into an editable description or checklist.</p></div><Capture file="ai-controls-close.png" alt="Real task form showing a Generate description control and editable draft" className={`${styles.smallCapture} ${styles.aiCapture}`} /></article>
       </div>
     </section>
 
@@ -56,7 +56,7 @@ function LandingPage() {
       </div>
     </section>
 
-    <section className={styles.closing} aria-labelledby="closing-title"><div className={styles.closingContent}><CheckCircleIcon size={31} weight="light" aria-hidden="true" /><h2 id="closing-title">Start with work that feels clear.</h2><p>Create an account to use Flowboard now. The interactive guest demo is still on its way.</p><ActionLinks centered /></div><div className={styles.closingMaterial} aria-hidden="true" /></section>
+    <section className={styles.closing} aria-labelledby="closing-title"><div className={styles.closingContent}><CheckCircleIcon size={31} weight="light" aria-hidden="true" /><h2 id="closing-title">Start with work that feels clear.</h2><p>Try the guest workspace in your browser, then create an account when you are ready for your own space.</p><ActionLinks centered /></div><div className={styles.closingMaterial} aria-hidden="true" /></section>
   </main><PublicFooter /></PublicLayout>;
 }
 

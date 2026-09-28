@@ -6,6 +6,9 @@
 .headerActions { gap: 10px; }
 .toggle { display: inline-flex; min-height: 34px; align-items: center; gap: 6px; padding: 0; border: 0; border-radius: var(--radius-control); background: none; color: var(--text); font-size: .82rem; font-weight: 700; }
 .generateButton { min-height: 34px; padding: 0 10px; border: 1px solid var(--border-strong); border-radius: var(--radius-control); background: var(--surface); color: var(--accent); font-size: .74rem; font-weight: 700; }
+.unavailableControl { display: inline-flex; cursor: not-allowed; }
+.unavailableControl .generateButton { pointer-events: none; }
+.generateButton:disabled { border-color: var(--border); background: var(--surface-muted); color: var(--text-muted); }
 .progressText, .limit { color: var(--text-muted); font-family: 'Geist Mono Variable', monospace; font-size: .7rem; }
 .content { margin-top: 8px; }
 .items { display: grid; margin: 0; padding: 0; list-style: none; }

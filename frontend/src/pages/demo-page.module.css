@@ -1,0 +1,28 @@
+.banner { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin: 20px clamp(16px,3vw,40px) 0; padding: 12px 16px; border: 1px solid var(--border); border-radius: var(--radius-panel); background: var(--surface); }
+.banner > div { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; }
+.banner strong { color: var(--accent); font-size: .9rem; }
+.banner span, .limitNote { color: var(--text-muted); font-size: .875rem; }
+.banner button, .banner a { min-height: 40px; padding: 9px 12px; border: 1px solid var(--border-strong); border-radius: var(--radius-control); background: var(--surface); color: var(--text); font: inherit; font-size: .85rem; font-weight: 600; text-decoration: none; cursor: pointer; }
+.banner a { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.banner button:hover { background: var(--surface-muted); }
+.banner a:hover { background: var(--accent-hover); }
+.banner .homeLink { border-color: transparent; background: transparent; color: var(--accent); }
+.banner .homeLink:hover { background: var(--accent-soft); }
+.projectPage { padding: clamp(24px,3vw,40px); }
+.projectPage h1 { margin: 0; font-size: clamp(2rem,4vw,3.5rem); letter-spacing: -.045em; }
+.projectPage header p { color: var(--text-muted); }
+.projectList { max-width: 780px; margin: 32px 0; }
+.projectList a { display: block; padding: 24px; border: 1px solid var(--border); border-radius: var(--radius-panel); background: var(--surface); color: var(--text); text-decoration: none; }
+.projectList a:hover { border-color: var(--accent); }
+.projectList span { color: var(--accent); font-size: .8rem; font-weight: 700; }
+.projectList h2 { margin: 8px 0; font-size: 1.5rem; }
+.projectList p { color: var(--text-muted); }
+.projectList small { color: var(--text-subtle); }
+.limitNote { padding: 12px 0; }
+.limitNote a { color: var(--accent); font-weight: 600; }
+.back { display: inline-block; margin-bottom: 20px; color: var(--accent); font-weight: 600; text-decoration: none; }
+.projectTabs { display: flex; gap: 4px; margin-top: 18px; border-bottom: 1px solid var(--border); }
+.projectTabs button { min-height: 42px; padding: 0 14px; border: 0; border-bottom: 2px solid transparent; background: transparent; color: var(--text-muted); font-size: .85rem; font-weight: 650; }
+.projectTabs button[aria-current='page'] { border-color: var(--accent); color: var(--accent); }
+.activityPanel { padding: 16px 0 32px; }
+@media(max-width:600px) { .banner { align-items: flex-start; flex-direction: column; margin-top: 12px; } .banner > div { gap: 8px; } }

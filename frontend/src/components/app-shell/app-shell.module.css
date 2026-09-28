@@ -10,6 +10,11 @@
 .sidebarFooter { display: grid; gap: 6px; margin-top: auto; }
 .desktopAccount { display: grid; min-height: 48px; grid-template-columns: 40px 40px 1fr; align-items: center; gap: 6px; padding: 4px; color: var(--text-muted); font-size: .875rem; font-weight: 600; }
 .userButton { display: grid; min-width: 40px; min-height: 40px; place-items: center; }
+.guestLink { display: flex; min-height: 40px; align-items: center; justify-content: center; gap: 6px; padding: 0 10px; border: 1px solid var(--border-strong); border-radius: var(--radius-control); color: var(--text); font-size: .8rem; font-weight: 600; text-decoration: none; }
+.guestLink:hover { background: var(--surface-muted); }
+.desktopAccount:has(.guestLink) { display: flex; }
+.collapsed .guestLink { width: 40px; padding: 0; }
+.collapsed .guestLink span { display: none; }
 .collapseButton { position: absolute; right: -17px; bottom: 22px; width: 34px; min-width: 34px; height: 34px; border-radius: 50%; box-shadow: var(--shadow-small); }
 .collapsed .sidebarBrand { padding: 0 12px; }
 .collapsed .primaryNav a { justify-content: center; padding: 0; }

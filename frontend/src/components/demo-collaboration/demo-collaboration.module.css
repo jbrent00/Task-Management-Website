@@ -1,0 +1,21 @@
+.section { display: grid; gap: 16px; max-width: 760px; }
+.heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.heading h3 { color: var(--text); font-size: 1rem; font-weight: 650; }
+.heading span { color: var(--text-muted); font-family: 'Geist Mono Variable', monospace; font-size: .72rem; }
+.items { display: grid; }
+.comment, .event { padding: 16px 0; border-bottom: 1px solid var(--border); }
+.author { display: flex; align-items: center; gap: 9px; }
+.avatar { display: grid; width: 34px; height: 34px; flex: none; place-items: center; border-radius: 50%; background: var(--accent-soft); color: var(--accent); font-weight: 800; }
+.author strong, .event strong { color: var(--text); font-weight: 650; }
+.author time, .event time { display: block; margin-top: 2px; color: var(--text-muted); font-size: .7rem; }
+.comment > p { margin: 12px 0 0; color: var(--text); line-height: 1.55; white-space: pre-wrap; }
+.event p { margin: 0; color: var(--text); line-height: 1.5; }
+.event time { font-family: 'Geist Mono Variable', monospace; }
+.empty { margin: 0; padding: 18px 0; color: var(--text-muted); }
+.composer { display: grid; gap: 8px; }
+.composer label { color: var(--text); font-size: .8rem; font-weight: 650; }
+.composer textarea { min-height: 104px; padding: 11px; resize: none; border: 1px solid var(--border-strong); border-radius: var(--radius-control); background: var(--surface-muted); color: var(--text-muted); font: inherit; cursor: not-allowed; }
+.composer textarea::placeholder { color: var(--text-subtle); }
+.composer button { justify-self: end; min-height: 40px; padding: 0 12px; border: 1px solid var(--border); border-radius: var(--radius-control); background: var(--surface-muted); color: var(--text-subtle); font-weight: 700; cursor: not-allowed; }
+.guestNote { margin: 0; color: var(--text-muted); font-size: .85rem; line-height: 1.5; }
+.guestNote a { color: var(--accent); font-weight: 650; }

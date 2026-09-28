@@ -1,20 +1,25 @@
 import { useAuth } from '@clerk/react';
-import { updateTask } from '../../api/updateTask';
 import { joinProjectTask, leaveProjectTask } from '../../api/projectTasks';
 import { getTaskDueState } from '../../functions/taskViews';
 import { useTaskMutation } from '../../functions/taskMutationContext';
 import MyTasksProjectCard from './my-tasks-project-card';
 import PersonalTaskCard from './personal-task-card';
 import ProjectBoardTaskCard from './project-board-task-card';
+import { createAuthenticatedOperations } from '../../functions/workspace-operations';
+import { useWorkspaceOperations } from '../../functions/workspace-context';
 
-function TaskCard({ task, setAllTasks, projectMode = false, onNotify, onOpenDetails, dragHandleProps, isDragEnabled }) {
+function AuthenticatedTaskCard(props) {
     const { getToken } = useAuth();
+    return <TaskCardContent {...props} operations={createAuthenticatedOperations(getToken)} />;
+}
+
+function TaskCardContent({ task, setAllTasks, projectMode = false, onNotify, onOpenDetails, dragHandleProps, isDragEnabled, operations }) {
     const mutation = useTaskMutation();
     const currentAssigneeIds = (task.assignees ?? []).map((person) => person.id);
     const handleCompletion = async () => {
         if (!mutation.begin()) return;
         try {
-            const updated = await updateTask(await getToken(), task.id, task.title, task.description ?? '', task.status === 'completed' ? 'todo' : 'completed', task.priority, task.dueDate, task.projectId, (task.tags ?? []).map((tag) => tag.id), currentAssigneeIds);
+            const updated = await operations.updateTask(task.id, { title: task.title, description: task.description ?? '', status: task.status === 'completed' ? 'todo' : 'completed', priority: task.priority, dueDate: task.dueDate, projectId: task.projectId, tagIds: (task.tags ?? []).map((tag) => tag.id), assigneeIds: currentAssigneeIds });
             setAllTasks((current) => current.map((item) => item.id === task.id ? updated : item));
             onNotify({ tone: 'success', message: `${updated.status === 'completed' ? 'Completed' : 'Reopened'} “${updated.title}”.` });
         } catch {
@@ -27,7 +32,7 @@ function TaskCard({ task, setAllTasks, projectMode = false, onNotify, onOpenDeta
         if (!joining && !task.capabilities?.canLeave) return;
         if (!mutation.begin()) return;
         try {
-            const updated = joining ? await joinProjectTask(await getToken(), task.id) : await leaveProjectTask(await getToken(), task.id);
+            const updated = joining ? await joinProjectTask(await operations.getToken(), task.id) : await leaveProjectTask(await operations.getToken(), task.id);
             setAllTasks((current) => current.map((item) => item.id === task.id ? updated : item));
             onNotify({ tone: 'success', message: `${joining ? 'Joined' : 'Left'} “${task.title}”.` });
         } catch (error) { onNotify({ tone: 'error', message: error.message }); }
@@ -52,4 +57,7 @@ function TaskCard({ task, setAllTasks, projectMode = false, onNotify, onOpenDeta
     return <PersonalTaskCard {...common} />;
 }
 
-export default TaskCard;
+export default function TaskCard(props) {
+    const operations = useWorkspaceOperations();
+    return operations ? <TaskCardContent {...props} operations={operations} /> : <AuthenticatedTaskCard {...props} />;
+}

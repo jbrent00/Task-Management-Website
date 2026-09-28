@@ -10,8 +10,8 @@ export function FlowboardMark({ size = 28, title }) {
     </svg>;
 }
 
-export default function Brand({ compact = false, to = '/tasks' }) {
-    return <Link className={styles.brand} to={to} aria-label="Flowboard home">
+export default function Brand({ compact = false, to = '/tasks', reloadDocument = false }) {
+    return <Link className={styles.brand} to={to} reloadDocument={reloadDocument} aria-label="Flowboard home">
         <FlowboardMark />
         {!compact && <span>Flowboard</span>}
     </Link>;

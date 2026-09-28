@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import styles from './checklist.module.css';
 import { createChecklistItem, deleteChecklistItem, reorderChecklistItems, updateChecklistItem } from '../../api/checklistItems';
 import { useTaskMutation } from '../../functions/taskMutationContext';
+import { useWorkspaceOperations } from '../../functions/workspace-context';
 import { CaretDownIcon } from '@phosphor-icons/react/dist/csr/CaretDown';
 import { CaretRightIcon } from '@phosphor-icons/react/dist/csr/CaretRight';
 import { CaretUpIcon } from '@phosphor-icons/react/dist/csr/CaretUp';
@@ -11,7 +12,8 @@ import { PlusIcon } from '@phosphor-icons/react/dist/csr/Plus';
 
 const reorder = (items, from, to) => { const next = [...items]; const [item] = next.splice(from, 1); next.splice(to, 0, item); return next; };
 
-function Checklist({ taskId, items = [], getToken, onItemsChange, onNotify, draft = false, resetKey, openRequest = 0, hideEmpty = false, disabled = false, readOnly = false, defaultExpanded = false, onGenerate, generating = false, generateDisabled = false }) {
+function Checklist({ taskId, items = [], getToken, onItemsChange, onNotify, draft = false, resetKey, openRequest = 0, hideEmpty = false, disabled = false, readOnly = false, defaultExpanded = false, onGenerate, generating = false, generateDisabled = false, generateHint, generateHintId }) {
+    const operations = useWorkspaceOperations();
     const mutation = useTaskMutation();
     const [expanded, setExpanded] = useState(defaultExpanded);
     const [newText, setNewText] = useState('');
@@ -39,7 +41,7 @@ function Checklist({ taskId, items = [], getToken, onItemsChange, onNotify, draf
         if (draft) { replace([...items, { id: `draft-${crypto.randomUUID()}`, text, completed: false }]); setNewText(''); inputRef.current?.focus(); return; }
         if (mutation && !mutation.begin()) return;
         setPending(true);
-        try { const item = await createChecklistItem(await getToken(), taskId, text); replace([...items, item]); setNewText(''); inputRef.current?.focus(); }
+        try { const item = operations ? await operations.createChecklistItem(taskId, { text }) : await createChecklistItem(await getToken(), taskId, text); replace([...items, item]); setNewText(''); inputRef.current?.focus(); }
         catch { onNotify({ tone: 'error', message: 'Could not add checklist item. Please try again.' }); }
         finally { setPending(false); mutation?.end(); }
     };
@@ -49,7 +51,7 @@ function Checklist({ taskId, items = [], getToken, onItemsChange, onNotify, draf
         if (draft) { replace(items.map((current) => current.id === item.id ? { ...current, text } : current)); setEditingId(null); return; }
         if (mutation && !mutation.begin()) return;
         setPending(true);
-        try { const updated = await updateChecklistItem(await getToken(), taskId, item.id, { text }); replace(items.map((current) => current.id === item.id ? updated : current)); setEditingId(null); }
+        try { const updated = operations ? await operations.updateChecklistItem(taskId, item.id, { text }) : await updateChecklistItem(await getToken(), taskId, item.id, { text }); replace(items.map((current) => current.id === item.id ? updated : current)); setEditingId(null); }
         catch { onNotify({ tone: 'error', message: 'Could not save checklist text. Your edit is still open.' }); }
         finally { setPending(false); mutation?.end(); }
     };
@@ -60,7 +62,7 @@ function Checklist({ taskId, items = [], getToken, onItemsChange, onNotify, draf
         replace(next);
         if (draft) return;
         setPending(true);
-        try { const updated = await updateChecklistItem(await getToken(), taskId, item.id, { completed: !item.completed }); replace(items.map((current) => current.id === item.id ? updated : current)); }
+        try { const updated = operations ? await operations.updateChecklistItem(taskId, item.id, { completed: !item.completed }) : await updateChecklistItem(await getToken(), taskId, item.id, { completed: !item.completed }); replace(items.map((current) => current.id === item.id ? updated : current)); }
         catch { replace(items); onNotify({ tone: 'error', message: 'Could not update checklist item. Its previous state was restored.' }); }
         finally { setPending(false); mutation?.end(); }
     };
@@ -69,7 +71,7 @@ function Checklist({ taskId, items = [], getToken, onItemsChange, onNotify, draf
         if (draft) { replace(items.filter((current) => current.id !== item.id)); return; }
         if (mutation && !mutation.begin()) return;
         setPending(true);
-        try { await deleteChecklistItem(await getToken(), taskId, item.id); replace(items.filter((current) => current.id !== item.id)); setConfirmingId(null); }
+        try { if (operations) await operations.deleteChecklistItem(taskId, item.id); else await deleteChecklistItem(await getToken(), taskId, item.id); replace(items.filter((current) => current.id !== item.id)); setConfirmingId(null); }
         catch { onNotify({ tone: 'error', message: 'Could not delete checklist item. Please try again.' }); }
         finally { setPending(false); mutation?.end(); }
     };
@@ -79,14 +81,14 @@ function Checklist({ taskId, items = [], getToken, onItemsChange, onNotify, draf
         const previous = items; const next = reorder(items, from, to); replace(next);
         if (draft) return;
         setPending(true);
-        try { const saved = await reorderChecklistItems(await getToken(), taskId, next.map((item) => item.id)); replace(saved); }
+        try { const saved = operations ? await operations.reorderChecklistItems(taskId, next.map((item) => item.id)) : await reorderChecklistItems(await getToken(), taskId, next.map((item) => item.id)); replace(saved); }
         catch { replace(previous); onNotify({ tone: 'error', message: 'Could not reorder checklist. Its previous order was restored.' }); }
         finally { setPending(false); mutation?.end(); }
     };
 
     return <section hidden={hideEmpty && items.length === 0 && !expanded} className={styles.checklist} onPointerDown={(event) => event.stopPropagation()}>
         <fieldset disabled={pending || disabled || (!draft && mutation?.busy)} className={styles.editor}>
-        <div className={styles.header}><button type="button" className={styles.toggle} onClick={() => setExpanded((value) => !value)} aria-expanded={expanded} aria-controls={`checklist-${taskId ?? 'draft'}`}>{expanded ? <CaretDownIcon size={17} /> : <CaretRightIcon size={17} />} {items.length === 0 && !expanded ? 'Add checklist' : 'Checklist'}</button><div className={styles.headerActions}>{items.length > 0 && <span className={styles.progressText} role="status">{completed} of {items.length} complete</span>}{onGenerate && <button type="button" className={styles.generateButton} disabled={generateDisabled} onClick={() => { setExpanded(true); onGenerate(); }}>{generating ? 'Generating…' : 'Generate checklist'}</button>}</div></div>
+        <div className={styles.header}><button type="button" className={styles.toggle} onClick={() => setExpanded((value) => !value)} aria-expanded={expanded} aria-controls={`checklist-${taskId ?? 'draft'}`}>{expanded ? <CaretDownIcon size={17} /> : <CaretRightIcon size={17} />} {items.length === 0 && !expanded ? 'Add checklist' : 'Checklist'}</button><div className={styles.headerActions}>{items.length > 0 && <span className={styles.progressText} role="status">{completed} of {items.length} complete</span>}{onGenerate && <span title={generateHint} className={generateHint ? styles.unavailableControl : undefined}><button type="button" className={styles.generateButton} disabled={generateDisabled} aria-describedby={generateHintId} onClick={() => { setExpanded(true); onGenerate(); }}>{generating ? 'Generating…' : 'Generate checklist'}</button></span>}</div></div>
         <div id={`checklist-${taskId ?? 'draft'}`} className={styles.content} hidden={!expanded}>
             <ul className={styles.items}>{items.map((item, index) => <li className={styles.item} key={item.id} onDragOver={(event) => event.preventDefault()} onDrop={() => { if (dragIndex.current !== null) move(dragIndex.current, index); dragIndex.current = null; }}>
                 <input type="checkbox" checked={item.completed} disabled={pending || readOnly} onChange={() => toggle(item)} aria-label={`Mark ${item.text} complete`} />
