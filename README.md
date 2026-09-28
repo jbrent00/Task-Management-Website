@@ -250,4 +250,4 @@ npm test
 npm run typecheck
 ```
 
-Because the repository does not currently include browser automation, manually verify affected task workflows in the frontend after making UI or API changes. The demo operations have automated isolation, persistence, reset, and core operation tests, but a captured browser network trace is still pending in the Phase 4 completion gate documented in `docs/REDESIGN_IMPLEMENTATION_PLAN.md`.
+Because the repository does not currently include browser automation, manually verify affected task workflows in the frontend after making UI or API changes. The demo operations have automated isolation, persistence, reset, and core operation tests. Phase 4 browser network inspection and its evidence are recorded in `docs/REDESIGN_IMPLEMENTATION_PLAN.md`.
