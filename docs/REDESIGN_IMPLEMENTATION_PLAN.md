@@ -9,7 +9,7 @@
 - Phase 2, Authenticated product redesign: visually accepted and complete on 2026-09-25
 - Application implementation: in progress
 - Phase 4, Interactive guest demo: complete and verified on 2026-09-28
-- Current phase: Phase 5, Final verification and delivery, ready to begin; Phase 3 capture clarity and visual acceptance remain open.
+- Current phase: Phase 5, Final verification and delivery, in progress; Phase 3 capture clarity and visual acceptance remain open.
 - Backend schema changes: none needed for Phase 2; board-targeted creation status support is implemented
 
 ### Phase 1 completion record
@@ -721,6 +721,8 @@ Deferred Phase 3 return: the existing genuine Northline captures remain unchange
 7. Run the complete `design-taste-frontend` pre-flight review.
 8. Audit visible strings for unsupported claims, broken grammar, and em dash or en dash characters.
 9. Review the final diff for unrelated changes and preserve pre-existing user work.
+
+Phase 5 verification record, 2026-09-28: See [PHASE_5_VERIFICATION_2026-09-28.md](PHASE_5_VERIFICATION_2026-09-28.md) for the commands, live browser actions and outcomes, responsive measurements, Lighthouse reports, fixes, cleanup, and remaining gates. Phase 3 remains **visually unaccepted** until the user's explicit review.
 
 ## Internal interfaces
 

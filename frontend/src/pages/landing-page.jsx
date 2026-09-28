@@ -23,7 +23,7 @@ function LandingPage() {
   return <PublicLayout><main id="main-content">
     <section className={styles.hero} aria-labelledby="hero-title">
       <div className={styles.heroCopy}><h1 id="hero-title">Plan clearly.<br />Move together.</h1><p>Organize your own work, then bring people in when a project needs shared momentum.</p><ActionLinks /></div>
-      <div className={styles.heroVisual}><img className={styles.heroStill} src="/images/planning-still-life.png" alt="Blank paper and a metal planning clip in warm light" loading="eager" /><div className={styles.heroProof}><span>Real project board</span><Capture file="project-board-cards.png" tabletFile="project-board" mobileFile="project-board" alt="Nine genuine Northline task cards across To do, In progress, and Completed columns" className={styles.heroCapture} eager /></div></div>
+      <div className={styles.heroVisual}><picture><source media="(max-width: 767px)" srcSet="/images/planning-still-life-mobile.jpg" /><img className={styles.heroStill} src="/images/planning-still-life.jpg" alt="Blank paper and a metal planning clip in warm light" loading="eager" fetchPriority="high" /></picture><div className={styles.heroProof}><span>Real project board</span><Capture file="project-board-cards.png" tabletFile="project-board" mobileFile="project-board" alt="Nine genuine Northline task cards across To do, In progress, and Completed columns" className={styles.heroCapture} eager /></div></div>
     </section>
 
     <section id="product" className={styles.personal} aria-labelledby="personal-title">
@@ -48,11 +48,11 @@ function LandingPage() {
     </section>
 
     <section className={styles.workflows} aria-labelledby="workflows-title">
-      <div className={styles.workflowCopy}><h2 id="workflows-title">Built for real<br />workflows.</h2><p>Clear permissions, accessible controls, and recoverable updates keep the interface dependable when work changes.</p><img src="/images/planning-still-life.png" alt="" loading="lazy" /></div>
+      <div className={styles.workflowCopy}><h2 id="workflows-title">Built for real<br />workflows.</h2><p>Clear permissions, accessible controls, and recoverable updates keep the interface dependable when work changes.</p><img src="/images/planning-still-life.jpg" alt="" loading="lazy" /></div>
       <div className={styles.workflowRows}>
-        <article><span className={styles.workflowIndex}>01 / ACCESS</span><div><h3>Accessible by default</h3><p>Visible focus, labeled controls, keyboard reordering, and reduced-motion support.</p><span className={styles.workflowEvidence}>Keyboard movement and focus states are built into task controls.</span></div></article>
-        <article><span className={styles.workflowIndex}>02 / ROLES</span><div><h3>Permission-aware collaboration</h3><p>Owners manage members and settings. Editors work on tasks within project policy. Viewers can follow along.</p><div className={styles.roleProof}><span>Owner <b>Manage</b></span><span>Editor <b>Edit</b></span><span>Viewer <b>View</b></span></div></div></article>
-        <article><span className={styles.workflowIndex}>03 / RECOVERY</span><div><h3>Changes you can trust</h3><p>Optimistic task updates restore the previous state and show an error when a save fails.</p><span className={styles.recoveryProof}>Save fails <ArrowRightIcon size={14} aria-hidden="true" /> Previous task state restored</span></div></article>
+        <article><span className={styles.workflowIndex}>ACCESS</span><div><h3>Accessible by default</h3><p>Visible focus, labeled controls, keyboard reordering, and reduced-motion support.</p><span className={styles.workflowEvidence}>Keyboard movement and focus states are built into task controls.</span></div></article>
+        <article><span className={styles.workflowIndex}>ROLES</span><div><h3>Permission-aware collaboration</h3><p>Owners manage members and settings. Editors work on tasks within project policy. Viewers read tasks and can discuss when allowed.</p><div className={styles.roleProof}><span>Owner <b>Manage</b></span><span>Editor <b>Edit</b></span><span>Viewer <b>View</b></span></div></div></article>
+        <article><span className={styles.workflowIndex}>RECOVERY</span><div><h3>Changes you can trust</h3><p>Optimistic task updates restore the previous state and show an error when a save fails.</p><span className={styles.recoveryProof}>Save fails <ArrowRightIcon size={14} aria-hidden="true" /> Previous task state restored</span></div></article>
       </div>
     </section>
 

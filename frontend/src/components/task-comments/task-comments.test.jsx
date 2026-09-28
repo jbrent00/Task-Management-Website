@@ -60,3 +60,20 @@ test('selects a mention with the keyboard without submitting or inserting a newl
     fireEvent.click(screen.getByRole('button', { name: 'Comment' }));
     await waitFor(() => expect(api.createTaskComment).toHaveBeenCalledWith('token', 3, { body: 'Hi @Eli Editor', mentions: [{ userId: 'editor', start: 3, end: 14 }] }));
 });
+
+test('viewers can read discussion without comment mutation controls when owner disables comments', async () => {
+    const comment = { id: 5, taskId: 3, authorId: 'author', author: project.memberships[0].user, body: 'Previous comment', mentions: [], createdAt: new Date().toISOString(), editedAt: null, deletedAt: null };
+    api.getTaskComments.mockResolvedValueOnce({ items: [comment], nextCursor: null });
+    render(<TaskComments task={{ id: 3, assignees: [] }} project={{ ...project, role: 'viewer', viewersCanComment: false }} />);
+
+    expect(await screen.findByText('Previous comment')).toBeInTheDocument();
+    expect(screen.getByText('The project owner has turned off viewer comments.')).toBeInTheDocument();
+    expect(screen.queryByRole('textbox', { name: 'Comment' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Edit' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Delete' })).not.toBeInTheDocument();
+});
+
+test('viewers can contribute to discussion by default', async () => {
+    render(<TaskComments task={{ id: 3, assignees: [] }} project={{ ...project, role: 'viewer', viewersCanComment: true }} />);
+    expect(await screen.findByRole('textbox', { name: 'Comment' })).toBeInTheDocument();
+});

@@ -1,0 +1,2 @@
+ALTER TABLE "Project"
+ADD COLUMN "viewersCanComment" BOOLEAN NOT NULL DEFAULT true;

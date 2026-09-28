@@ -19,6 +19,7 @@ model Project {
   editorsCanEditAllTasks   Boolean             @default(true)
   editorsCanJoinTasks      Boolean             @default(true)
   editorsCanLeaveTasks     Boolean             @default(true)
+  viewersCanComment        Boolean             @default(true)
   memberships              ProjectMembership[]
   invitations              ProjectInvitation[]
   tasks                    Task[]

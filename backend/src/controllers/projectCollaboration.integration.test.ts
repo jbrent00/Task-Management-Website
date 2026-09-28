@@ -195,6 +195,7 @@ test('project policy defaults preserve the existing open editor workflow', async
     assert.equal(stored.editorsCanEditAllTasks, true);
     assert.equal(stored.editorsCanJoinTasks, true);
     assert.equal(stored.editorsCanLeaveTasks, true);
+    assert.equal(stored.viewersCanComment, true);
 });
 
 test('restricted editor policies are enforced for creation, editing, and assignment', async () => {
@@ -224,6 +225,7 @@ test('project settings endpoint persists every collaboration policy and remains 
         editorsCanEditAllTasks: false,
         editorsCanJoinTasks: false,
         editorsCanLeaveTasks: false,
+        viewersCanComment: false,
     };
     const ownerResponse = await invoke(updateProject, {
         userId: users.owner,
@@ -247,6 +249,11 @@ test('project settings endpoint persists every collaboration policy and remains 
         userId: users.owner,
         params: { id: String(project.id) },
         body: { title: project.title, description: null, editorsCanCreateTasks: 'yes' },
+    })).status, 400);
+    assert.equal((await invoke(updateProject, {
+        userId: users.owner,
+        params: { id: String(project.id) },
+        body: { title: project.title, description: null, viewersCanComment: 'yes' },
     })).status, 400);
 });
 
@@ -446,6 +453,28 @@ test('comments validate mentions, notify assignees, soft-delete, and record acti
     const activity = await invoke(getProjectActivity, { userId: users.owner, params: { projectId: String(project.id) }, query: { category: 'comments' } });
     assert.equal(activity.status, 200);
     assert.deepEqual((activity.body as { items: Array<{ type: string }> }).items.map((item) => item.type), ['comment_deleted', 'comment_edited', 'comment_created']);
+});
+
+test('owner policy can disable viewer comments while preserving discussion reading', async () => {
+    const project = await createProject('restricted viewer comments', [
+        { userId: users.owner, role: 'owner' }, { userId: users.viewer, role: 'viewer' },
+    ]);
+    const task = await createTask(project.id);
+    const params = { taskId: String(task.id) };
+    const created = await invoke(createTaskComment, { userId: users.viewer, params, body: { body: 'Before restriction' } });
+    assert.equal(created.status, 201);
+    const commentId = String((created.body as { id: number }).id);
+
+    const changed = await invoke(updateProject, {
+        userId: users.owner, params: { id: String(project.id) },
+        body: { title: project.title, description: null, viewersCanComment: false },
+    });
+    assert.equal(changed.status, 200);
+    assert.equal((await invoke(getTaskComments, { userId: users.viewer, params })).status, 200);
+    assert.equal((await invoke(createTaskComment, { userId: users.viewer, params, body: { body: 'After restriction' } })).status, 403);
+    assert.equal((await invoke(updateTaskComment, { userId: users.viewer, params: { ...params, commentId }, body: { body: 'Edited' } })).status, 403);
+    assert.equal((await invoke(deleteTaskComment, { userId: users.viewer, params: { ...params, commentId } })).status, 403);
+    assert.equal((await invoke(deleteTaskComment, { userId: users.owner, params: { ...params, commentId } })).status, 204);
 });
 
 test('archived projects reject mutations and stay out of active project and task results', async () => {

@@ -6,6 +6,7 @@ const projectApi = vi.hoisted(() => ({
     deleteProjectTag: vi.fn(),
     inviteProjectMember: vi.fn(),
     removeProjectMember: vi.fn(),
+    updateProject: vi.fn(),
     revokeProjectInvitation: vi.fn(),
     transferProjectOwnership: vi.fn(),
     updateProjectMember: vi.fn(),
@@ -18,7 +19,7 @@ vi.mock('../api/projects', () => ({
     archiveProject: vi.fn(), createProjectTag: projectApi.createProjectTag, deleteProject: projectApi.deleteProject, deleteProjectTag: projectApi.deleteProjectTag,
     getProject: vi.fn(), inviteProjectMember: projectApi.inviteProjectMember, removeProjectMember: projectApi.removeProjectMember,
     restoreProject: vi.fn(), revokeProjectInvitation: projectApi.revokeProjectInvitation, transferProjectOwnership: projectApi.transferProjectOwnership,
-    updateProject: vi.fn(), updateProjectMember: projectApi.updateProjectMember, updateProjectTag: projectApi.updateProjectTag,
+    updateProject: projectApi.updateProject, updateProjectMember: projectApi.updateProjectMember, updateProjectTag: projectApi.updateProjectTag,
 }));
 vi.mock('../api/aiGeneration', () => ({ AiGenerationError: class AiGenerationError extends Error {}, generateTaskDraft: aiApi.generateTaskDraft }));
 vi.mock('../api/projectTasks', () => ({ createProjectTask: taskApi.createProjectTask, getProjectTasks: vi.fn() }));
@@ -151,4 +152,21 @@ test('shows read-only settings to editors and viewers', () => {
     expect(screen.getByRole('heading', { name: 'Project settings' })).toBeInTheDocument();
     expect(screen.getByText('Only the project owner can change settings.')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Save settings' })).not.toBeInTheDocument();
+});
+
+test('owner can turn viewer discussion access off and restore its default', async () => {
+    projectApi.updateProject.mockResolvedValue({});
+    const onChanged = vi.fn();
+    const onNotify = vi.fn();
+    render(<SettingsPanel project={{ ...project, viewersCanComment: true }} getToken={async () => 'token'} onChanged={onChanged} onError={() => {}} onNotify={onNotify} onDeleted={() => {}} />);
+
+    fireEvent.click(screen.getByRole('checkbox', { name: /Viewers can comment/i }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save settings' }));
+    await waitFor(() => expect(projectApi.updateProject).toHaveBeenCalled());
+    expect(projectApi.updateProject.mock.calls[0][4].viewersCanComment).toBe(false);
+    expect(onChanged).toHaveBeenCalledOnce();
+    expect(onNotify).toHaveBeenCalledWith('Project settings saved.');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Restore defaults' }));
+    expect(screen.getByRole('checkbox', { name: /Viewers can comment/i })).toBeChecked();
 });

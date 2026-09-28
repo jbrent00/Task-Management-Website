@@ -64,6 +64,7 @@ function CommentComposer({ members, initialBody = '', initialMentions = [], subm
 
 export default function TaskComments({ task, project, onChanged }) {
     const { getToken, userId } = useAuth(); const [items, setItems] = useState([]); const [cursor, setCursor] = useState(null); const [loading, setLoading] = useState(true); const [error, setError] = useState(''); const [editingId, setEditingId] = useState(null); const [deleteTarget, setDeleteTarget] = useState(null); const [deleting, setDeleting] = useState(false);
+    const readOnly = Boolean(project.archivedAt) || (project.role === 'viewer' && project.viewersCanComment === false);
     const load = useCallback(async (older = false) => {
         setLoading(true); try { const page = await getTaskComments(await getToken(), task.id, older ? cursor : null); setItems((current) => older ? [...page.items, ...current] : page.items); setCursor(page.nextCursor); setError(''); } catch (loadError) { setError(loadError.message); } finally { setLoading(false); }
     }, [getToken, task.id, cursor]);
@@ -89,11 +90,11 @@ export default function TaskComments({ task, project, onChanged }) {
         {cursor && <button className={styles.older} disabled={loading} onClick={() => load(true)}>Load older comments</button>}
         {error && <p className={styles.error} role="alert">{error}</p>}
         <div className={styles.list}>{items.map((comment) => <article key={comment.id} className={styles.comment}>
-            <div className={styles.commentHead}><div>{comment.author.imageUrl ? <img src={comment.author.imageUrl} alt="" /> : <span>{nameOf(comment.author).slice(0, 1).toUpperCase()}</span>}<p><strong>{nameOf(comment.author)}</strong><small>{new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(comment.createdAt))}{comment.editedAt ? ' · edited' : ''}</small></p></div>{!comment.deletedAt && !project.archivedAt && (comment.authorId === userId || project.role === 'owner') && <div className={styles.commentActions}>{comment.authorId === userId && <button onClick={() => setEditingId(comment.id)}>Edit</button>}<button onClick={() => setDeleteTarget(comment)}>Delete</button></div>}</div>
+            <div className={styles.commentHead}><div>{comment.author.imageUrl ? <img src={comment.author.imageUrl} alt="" /> : <span>{nameOf(comment.author).slice(0, 1).toUpperCase()}</span>}<p><strong>{nameOf(comment.author)}</strong><small>{new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(comment.createdAt))}{comment.editedAt ? ' · edited' : ''}</small></p></div>{!comment.deletedAt && !readOnly && (comment.authorId === userId || project.role === 'owner') && <div className={styles.commentActions}>{comment.authorId === userId && <button onClick={() => setEditingId(comment.id)}>Edit</button>}<button onClick={() => setDeleteTarget(comment)}>Delete</button></div>}</div>
             {comment.deletedAt ? <p className={styles.deleted}>This comment was deleted.</p> : editingId === comment.id ? <CommentComposer members={project.memberships} initialBody={comment.body} initialMentions={comment.mentions} submitLabel="Save comment" onSubmit={(input) => update(comment, input)} onCancel={() => setEditingId(null)} /> : <p className={styles.body}><MentionedText body={comment.body} mentions={comment.mentions} /></p>}
         </article>)}</div>
         {!loading && items.length === 0 && <p className={styles.empty}>No comments yet. Start the conversation.</p>}
-        {!project.archivedAt && <CommentComposer members={project.memberships} submitLabel="Comment" onSubmit={create} />}
+        {readOnly ? <p className={styles.empty}>{project.archivedAt ? 'This archived project is read-only.' : 'The project owner has turned off viewer comments.'}</p> : <CommentComposer members={project.memberships} submitLabel="Comment" onSubmit={create} />}
         {deleteTarget && <ConfirmDialog title="Delete comment?" confirmLabel="Delete comment" busyLabel="Deleting…" busy={deleting} onCancel={() => setDeleteTarget(null)} onConfirm={remove}>A deleted-comment marker will remain in the discussion.</ConfirmDialog>}
     </section>;
 }

@@ -60,6 +60,7 @@ export async function createTaskComment(req: Request, res: Response) {
     if (!userId) { res.status(401).json({ error: 'Unauthorized' }); return; }
     const access = await getTaskAccess(taskId, userId);
     if (!access || !access.task.projectId || !access.task.project) { res.status(404).json({ error: 'Project task not found' }); return; }
+    if (access.role === 'viewer' && !access.task.project.viewersCanComment) { res.status(403).json({ error: 'Viewer comments are disabled for this project' }); return; }
     if (access.task.project.archivedAt) { res.status(403).json({ error: 'Archived projects are read-only' }); return; }
     const input = await validateCommentInput(access.task.projectId, req.body.body, req.body.mentions ?? []);
     if (!input) { res.status(400).json({ error: 'Comment or mentions are invalid' }); return; }
@@ -88,6 +89,7 @@ export async function updateTaskComment(req: Request, res: Response) {
     if (!existing?.task.projectId || !existing.task.project) { res.status(404).json({ error: 'Comment not found' }); return; }
     const access = await getTaskAccess(existing.taskId, userId);
     if (!access) { res.status(404).json({ error: 'Comment not found' }); return; }
+    if (access.role === 'viewer' && !existing.task.project.viewersCanComment) { res.status(403).json({ error: 'Viewer comments are disabled for this project' }); return; }
     if (existing.authorId !== userId) { res.status(403).json({ error: 'Only the author can edit this comment' }); return; }
     if (existing.deletedAt) { res.status(409).json({ error: 'Deleted comments cannot be edited' }); return; }
     if (existing.task.project.archivedAt) { res.status(403).json({ error: 'Archived projects are read-only' }); return; }
@@ -118,6 +120,7 @@ export async function deleteTaskComment(req: Request, res: Response) {
     if (!existing?.task.projectId || !existing.task.project) { res.status(404).json({ error: 'Comment not found' }); return; }
     const access = await getTaskAccess(existing.taskId, userId);
     if (!access) { res.status(404).json({ error: 'Comment not found' }); return; }
+    if (access.role === 'viewer' && !existing.task.project.viewersCanComment) { res.status(403).json({ error: 'Viewer comments are disabled for this project' }); return; }
     if (existing.task.project.archivedAt) { res.status(403).json({ error: 'Archived projects are read-only' }); return; }
     if (existing.authorId !== userId && access.role !== 'owner') { res.status(403).json({ error: 'Only the author or project owner can delete this comment' }); return; }
     if (existing.deletedAt) { res.status(204).end(); return; }
