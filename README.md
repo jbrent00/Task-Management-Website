@@ -1,33 +1,54 @@
-# Task Management Website
+# Flowboard
 
-A full-stack task workspace for organizing personal and collaborative work across three-column boards. Tasks can be planned by status, priority, due date, project, assignee, and colored tags, then searched, filtered, sorted, edited, and reordered.
+**Personal tasks that grow into shared projects.** Flowboard is a full-stack task workspace I designed and built to make daily planning simple, then add assignments, discussion, and accountability when a team joins. It combines a three-column board with task details, project collaboration, and a hands-on guest demo.
 
-The application uses Clerk for authentication. Personal tasks and tags stay private, while project owners can invite verified Clerk users into shared project workspaces with owner, editor, or viewer permissions.
+Designed and built by **Justin Brent**.
 
-## Features
+**Explore:** [GitHub repository](https://github.com/jbrent00/Task-Management-Website) · [Try the guest demo locally](#try-the-guest-demo) · [View the case study locally](http://localhost:5173/case-study) (after starting the frontend)
 
-- Clerk-powered sign-up, sign-in, session management, and protected routes
-- Task creation, editing, completion, deletion, and drag-and-drop reordering
-- To do, In progress, and Completed board columns
-- Priorities, optional due dates, project assignment, and multiple tags per task
-- Colored tag indicators with compact overflow handling on task cards
-- Date-focused views for today, the next seven days, overdue, unscheduled, completed, and recently completed tasks
-- Search across task titles and descriptions
-- Filters for status, priority, due-date state, project, and tags
-- Manual, priority, due-date, title, creation-date, and completion-date sorting
-- Dedicated active/archived project overview and project workspaces
-- In-app project invitations matched to verified Clerk email addresses
-- Owner, editor, and viewer permissions with ownership transfer
-- Multiple task assignees with permission-aware join and leave workflows
-- Task discussions with structured member mentions, edit/delete markers, and in-app notifications
-- Project and task activity timelines for key collaboration events
-- Tag creation, editing, deletion, and a curated color picker
-- Per-user view preferences persisted in local storage
-- AI-assisted description and checklist drafting through an authenticated backend endpoint
-- AI-assisted drafting in both personal and project task creation
-- Optimistic drag-and-drop updates with rollback and feedback when a request fails
-- Responsive layouts and keyboard-accessible task reordering
-- Interactive guest demo with browser-local tasks and a seeded collaborative project
+**Live site:** Coming soon. The deployed URL will replace this line.
+
+## See Flowboard
+
+### Landing page
+
+![Flowboard landing page with the personal-to-shared project message and a real project board](docs/screenshots/landing-desktop.jpg)
+
+The public page introduces the product through real interface captures and links to the interactive guest workspace.
+
+### Personal task board
+
+![Personal task board with date views, search, filters, and To do, In progress, and Completed columns](frontend/public/captures/my-tasks.jpg)
+
+Date-focused views and filters help narrow the board without losing the task's priority, due date, tags, or checklist progress.
+
+### Shared project
+
+![Northline project board showing shared tasks, assignees, tags, and project navigation](frontend/public/captures/project-board.jpg)
+
+Projects add assignees, discussions, activity history, invitations, and owner/editor/viewer permissions to the same task workflow.
+
+### Mobile workspace
+
+<img src="docs/screenshots/tasks-mobile.jpg" alt="Flowboard mobile task workspace with compact controls, status tabs, task cards, and bottom navigation" width="390">
+
+The layout replaces the desktop columns with a single selected status and keeps navigation and task actions usable on a narrow screen.
+
+## What I built
+
+- **Personal planning:** Create, edit, complete, delete, search, filter, sort, and reorder tasks. Use priorities, due dates, colored tags, checklists, and focused date views.
+- **Shared work:** Move from private tasks to projects with multiple assignees, invitations, task discussion and mentions, notifications, and activity timelines. The API enforces owner, editor, and viewer policy; owners can archive projects or transfer ownership.
+- **Reliable interactions:** Drag-and-drop and keyboard task movement update the board immediately. If saving fails, the previous order returns with feedback. The interface includes visible focus states, responsive layouts, and reduced-motion support.
+- **Optional AI drafting:** An authenticated backend endpoint generates editable description and checklist drafts for personal or project tasks; the API key stays on the server.
+- **Guest workspace:** A seeded personal board and shared project run in browser-local storage, so someone can try core task workflows without an account, database, or backend.
+
+## Try the guest demo
+
+From `frontend/`, run `npm install` and `npm run dev`, then open **`http://localhost:5173/demo`**. The guest route does not initialize Clerk or call the backend, so the frontend server is enough. Visit `http://localhost:5173/` for the landing page and `http://localhost:5173/case-study` for the design and engineering case study; those public routes use Clerk and need the frontend publishable key described below.
+
+In the demo you can create, edit, complete, reopen, move, search, filter, sort, and reorder tasks in a personal board or the seeded project. You can edit tags and checklists, browse sample discussion and activity, and use **Reset demo** to restore the sample. Changes are saved in this browser under `flowboard:demo-workspace:v1` until reset.
+
+Guests cannot create projects, invite members, change memberships, post discussions, use notifications, or request AI drafts. Those actions require an account and the full stack.
 
 ## Technology stack
 
@@ -38,7 +59,7 @@ The application uses Clerk for authentication. Personal tasks and tags stay priv
 | Authentication | Clerk React and Clerk Express |
 | Backend | Express, TypeScript, `tsx` |
 | Database | PostgreSQL, Prisma ORM, Prisma PostgreSQL adapter |
-| Validation | Shared controller validation with Node's built-in test runner |
+| Tests | Vitest and Testing Library on the frontend; Node's test runner through `tsx` on the backend |
 
 ## Project structure
 
@@ -48,18 +69,18 @@ Task-Management-Website/
 │   ├── src/api/                 # Authenticated API clients
 │   ├── src/components/          # Reusable task, project, and tag UI
 │   ├── src/functions/           # Task view, date, filter, and sort helpers
-│   └── src/pages/               # Sign-in, sign-up, and task pages
+│   └── src/pages/               # Public, demo, auth, task, and project pages
 └── backend/
     ├── prisma/
     │   ├── migrations/          # Versioned PostgreSQL migrations
     │   └── schema.prisma        # User, task, project, and tag models
     └── src/
         ├── controllers/         # Endpoint behavior and validation
-        ├── routes/              # Task, project, and tag routes
-        └── services/            # Prisma client setup
+        ├── routes/              # Authenticated task, project, and collaboration routes
+        └── services/            # Database, user profile, policy, and AI services
 ```
 
-## Prerequisites
+## Prerequisites for the full stack
 
 Install or create the following before starting:
 
@@ -67,9 +88,9 @@ Install or create the following before starting:
 - npm
 - A running PostgreSQL database
 - A [Clerk](https://clerk.com/) application
-- An OpenAI API key for AI-assisted drafting
+- An OpenAI API key if you want to use AI-assisted drafting
 
-## Run the application locally
+## Run the full application locally
 
 ### 1. Clone the repository
 
@@ -82,13 +103,13 @@ cd Task-Management-Website
 
 Create a Clerk application and copy its publishable and secret keys. The frontend uses the publishable key, while the backend uses the secret key to validate authenticated API requests.
 
-The application also stores each Clerk user in PostgreSQL. In the Clerk dashboard, create a webhook that:
+The application stores Clerk users in PostgreSQL. For ongoing profile and verified-email updates, create a webhook in the Clerk dashboard that:
 
 - subscribes to the `user.created` and `user.updated` events so verified invitation emails stay synchronized;
 - sends events to `https://YOUR_PUBLIC_BACKEND_URL/api/webhooks`;
 - uses the signing secret you will place in `CLERK_WEBHOOK_SIGNING_SECRET`.
 
-For local sign-up testing, expose port `3000` through a secure tunnel and use that public URL for the webhook. Existing Clerk users who were created before the webhook was configured will not automatically exist in the local database; create a new test user after the webhook is active or add the corresponding user record through an appropriate local development workflow.
+For local webhook testing, expose port `3000` through a secure tunnel and use that public URL for the webhook. On the first authenticated API request, the backend also creates a local profile for a Clerk user who is not yet in the database. Keep the webhook configured so later profile and verified-email changes stay synchronized.
 
 ### 3. Configure and start the backend
 
@@ -104,9 +125,9 @@ DATABASE_URL="postgresql://USER:PASSWORD@HOST:5432/DATABASE"
 PORT=3000
 FRONTEND_URL="http://localhost:5173"
 CLERK_SECRET_KEY="sk_test_..."
-CLERK_WEBHOOK_SIGNING_SECRET="whsec_..."
-OPENAI_API_KEY="sk-..."
-OPENAI_MODEL="gpt-5.6-luna"
+CLERK_WEBHOOK_SIGNING_SECRET="whsec_..." # When using the Clerk webhook
+OPENAI_API_KEY="sk-..."                # Optional; enables AI drafting
+OPENAI_MODEL="gpt-5.6-luna"             # Optional
 ```
 
 Generate the Prisma client and apply the committed migrations:
@@ -148,13 +169,7 @@ Start Vite:
 npm run dev
 ```
 
-Open `http://localhost:5173`. Sign up or sign in, then visit `/tasks` to use the authenticated workspace. To try the guest workspace, open `/demo` directly or use **Try demo** in the signed-out site header. The guest route needs only the frontend dev server; it does not initialize Clerk or call the backend.
-
-### Guest demo
-
-The demo uses the product task board and task editor. You can create, edit, delete, complete, reopen, move, search, filter, sort, and reorder personal or seeded-project tasks; work with tags, due dates, and checklists; browse the sample project and its read-only discussion and activity history; and restore the sample with **Reset demo**. Changes are stored in this browser under `flowboard:demo-workspace:v1` and survive reload. Reset replaces local demo changes with the original sample.
-
-Account-only features remain visible where useful and explain their limits. AI drafting buttons are disabled for guests. Guests cannot add discussion or activity entries, invite members, manage memberships, create projects, or use notifications. Sign in for those features.
+Open `http://localhost:5173`. Sign up or sign in, then visit `/tasks` to use the authenticated workspace. You can also visit `/demo` for the browser-local guest workspace described above.
 
 ## Environment variables
 
@@ -164,7 +179,7 @@ Account-only features remain visible where useful and explain their limits. AI d
 | --- | --- | --- |
 | `DATABASE_URL` | Yes | PostgreSQL connection string used by Prisma |
 | `CLERK_SECRET_KEY` | Yes | Verifies Clerk sessions on protected API routes |
-| `CLERK_WEBHOOK_SIGNING_SECRET` | Yes for new-user sync | Verifies Clerk webhook signatures |
+| `CLERK_WEBHOOK_SIGNING_SECRET` | If webhook configured | Verifies Clerk webhook signatures for ongoing profile and email updates |
 | `FRONTEND_URL` | Production; recommended locally | Allowed frontend origin for CORS |
 | `PORT` | No | API port; defaults to `3000` |
 | `NODE_ENV` | No | Uses production CORS behavior when set to `production` |
@@ -175,8 +190,8 @@ Account-only features remain visible where useful and explain their limits. AI d
 
 | Variable | Required | Purpose |
 | --- | --- | --- |
-| `VITE_BACKEND_BASE_URL` | Yes | Base URL used for API requests |
-| `VITE_CLERK_PUBLISHABLE_KEY` | Yes | Initializes Clerk in the browser |
+| `VITE_BACKEND_BASE_URL` | For signed-in app | Base URL used for API requests |
+| `VITE_CLERK_PUBLISHABLE_KEY` | For public and signed-in routes | Initializes Clerk in the browser; not needed for a direct `/demo` visit |
 
 Do not commit either `.env` file. Both are ignored by Git.
 
@@ -199,7 +214,7 @@ Run each command from its package directory.
 | Command | Purpose |
 | --- | --- |
 | `npm run dev` | Start the Express API with `tsx` watch mode |
-| `npm test` | Run controller validation tests |
+| `npm test` | Run controller, policy, AI, and collaboration tests |
 | `npm run typecheck` | Type-check the backend without emitting files |
 | `npm run generate` | Regenerate the Prisma client |
 | `npm run migrate` | Apply committed Prisma migrations |
@@ -209,7 +224,7 @@ Use `npm run migrate` for shared changes. Do not edit existing migrations, and d
 
 ## API overview
 
-All task, project, and tag routes require a valid Clerk session token. Data access is scoped to the authenticated user.
+Task, project, invitation, notification, and tag routes require a valid Clerk session token. Data access is scoped to the authenticated user. The health and Clerk webhook routes are public; the webhook verifies its signature.
 
 | Method | Route | Purpose |
 | --- | --- | --- |
@@ -219,6 +234,8 @@ All task, project, and tag routes require a valid Clerk session token. Data acce
 | `PUT`, `DELETE` | `/tasks/:id` | Update or delete one task |
 | `POST` | `/tasks/ai/generate` | Generate a draft description or five checklist items |
 | `PATCH` | `/tasks/bulk-update` | Persist reordered or status-changed tasks |
+| `POST` | `/tasks/:id/join`, `/tasks/:id/leave` | Join or leave a project task where permitted |
+| `POST`, `PATCH`, `DELETE`, `PUT` | `/tasks/:taskId/checklist-items/*` | Create, edit, delete, or reorder checklist items |
 | `GET`, `POST` | `/projects` | List accessible projects or create a private project |
 | `GET`, `PATCH`, `DELETE` | `/projects/:id` | Read, update, or permanently delete a project |
 | `POST` | `/projects/:id/archive`, `/projects/:id/restore` | Change project archive state |
@@ -226,11 +243,16 @@ All task, project, and tag routes require a valid Clerk session token. Data acce
 | `GET` | `/projects/:id/activity` | Read the paginated project or task activity timeline |
 | `GET`, `POST` | `/tasks/:id/comments` | Read or add task comments and structured mentions |
 | `PATCH`, `DELETE` | `/tasks/:id/comments/:commentId` | Edit or soft-delete a task comment |
-| `POST`, `DELETE` | `/projects/:id/invitations` | Create or revoke in-app invitations |
+| `POST` | `/projects/:id/invitations` | Create an in-app project invitation |
+| `DELETE` | `/projects/:id/invitations/:invitationId` | Revoke an invitation |
 | `PATCH`, `DELETE` | `/projects/:id/members/:userId` | Change a role or remove/leave membership |
-| `GET`, `POST` | `/project-invitations` | List and accept/decline the current user's invitations |
+| `POST` | `/projects/:id/transfer-ownership` | Transfer project ownership |
+| `GET` | `/project-invitations` | List the current user's invitations |
+| `POST` | `/project-invitations/:invitationId/accept`, `/project-invitations/:invitationId/decline` | Respond to an invitation |
+| `GET`, `POST` | `/notifications`, `/notifications/read` | List and mark notifications read, respectively |
 | `GET`, `POST` | `/tags` | List or create tags |
 | `PUT`, `DELETE` | `/tags/:id` | Update or delete one tag |
+| `POST`, `PATCH`, `DELETE` | `/projects/:projectId/tags/*` | Manage shared project tags |
 
 Deleting a project permanently deletes its project tasks, shared tags, memberships, and invitations after exact-title confirmation. Removing a member preserves project tasks and clears their assignments. Deleting a personal tag removes its personal-task associations.
 
@@ -241,6 +263,7 @@ Run the checks relevant to both applications:
 ```bash
 cd frontend
 npm run lint
+npm test
 npm run build
 ```
 
@@ -250,4 +273,4 @@ npm test
 npm run typecheck
 ```
 
-Because the repository does not currently include browser automation, manually verify affected task workflows in the frontend after making UI or API changes. The demo operations have automated isolation, persistence, reset, and core operation tests. Phase 4 browser network inspection and its evidence are recorded in `docs/REDESIGN_IMPLEMENTATION_PLAN.md`.
+The repository does not currently include browser automation. Manually verify affected task workflows after UI or API changes. The frontend tests cover guest-demo isolation, persistence, reset, and core operations.
