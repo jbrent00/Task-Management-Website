@@ -11,7 +11,7 @@ Portfolio-grade productivity product for recruiters, individual contributors, an
 ### Design dials
 
 - `DESIGN_VARIANCE: 6`
-- `MOTION_INTENSITY: 5`
+- `MOTION_INTENSITY: 3`
 - `VISUAL_DENSITY: 5`
 
 ### Brand principles
@@ -31,13 +31,11 @@ Portfolio-grade productivity product for recruiters, individual contributors, an
 - Avoid filler such as "seamless," "elevate," "unleash," and "revolutionize"
 - Do not use em dashes or en dashes in visible copy
 
-### Core public copy
+### Public-page message
 
-- Hero: **Plan clearly. Move together.**
-- Hero support: **Organize your own work, then bring people in when a project needs shared momentum.**
-- Primary CTA: **Explore the demo**
-- Secondary CTA: **Create an account**
-- Product story: **Start with your own work. Bring in a team when the work grows.**
+- Lead with the shift from personal tasks to shared projects. The hero may change composition and copy when a clearer product explanation results.
+- Use **Explore the demo** as the primary landing action. Account creation is a secondary action where useful.
+- Show actual product behavior before listing capabilities. Keep claims concrete and verifiable.
 - Credit: **Designed and built by Justin Brent.**
 
 ### Mark and wordmark
@@ -141,11 +139,12 @@ Use an 8px base rhythm with 4px for compact internal adjustments.
 
 ### Public navigation
 
-- Maximum height: 72px
+- Maximum height: 80px; the current desktop header is 78px
 - Single line on desktop
 - Brand on the left
-- Product anchor, Case study, and GitHub in the center or right group
-- Sign in as a quiet action and Explore the demo as the primary action
+- Product, Case study, and GitHub appear in that order before the theme control
+- Signed-out navigation ends with quiet Sign in and a primary Explore the demo action; account creation remains available in page content
+- Signed-in navigation ends with one Open workspace action
 - Mobile uses a compact menu without a decorative full-screen animation
 
 ### Product shell
@@ -223,7 +222,7 @@ Use an 8px base rhythm with 4px for compact internal adjustments.
 
 ## 5. Motion
 
-- Use Motion for route-level landing reveals, shared layout transitions, and dialog presence.
+- Use Motion only when a route reveal or shared layout transition makes the state change clearer.
 - Use CSS for hover, focus, pressed, and small disclosure transitions.
 - Standard duration: 180ms for controls, 260ms for panels, 500ms maximum for marketing reveals.
 - Standard ease: `cubic-bezier(0.16, 1, 0.3, 1)`.
@@ -234,22 +233,20 @@ Use an 8px base rhythm with 4px for compact internal adjustments.
 
 ## 6. Public pages
 
-### Landing page sections
+### Landing page story
 
-The landing page contains exactly six sections. `imagegen-frontend-web` must create one separate horizontal reference image for every section.
-
-1. **Hero**: off-grid composition, short value statement, real Flowboard capture, tactile planning artifact, Explore the demo primary CTA.
-2. **Personal planning**: task views, filters, checklists, and drag-and-drop shown through a real product capture.
-3. **Shared projects**: assignments, comments, permissions, and activity with an inverted editorial composition.
-4. **Product depth**: exactly five cells for tags, due dates, notifications, AI drafting, and task details. At least two cells use real visual crops.
-5. **Built for real workflows**: accessibility, permission-aware collaboration, and recoverable optimistic updates. Do not use fake metrics.
-6. **Closing CTA and footer**: one decisive demo action, account creation as secondary, authorship, GitHub, and case-study links.
+- The desktop hero explains the personal-to-shared shift in one glance, with a legible real Flowboard capture and a clear demo action.
+- Personal planning and shared projects use distinct compositions and product evidence. Do not repeat the same board image as the main proof in consecutive sections.
+- Product depth establishes a hierarchy: one or two substantial demonstrations, then compact supporting details. The content determines the number of visual cells.
+- Workflow proof names specific accessibility, permission, and recovery behavior and links or points to real evidence where available. Do not invent metrics.
+- End with a decisive demo action, an optional account action, authorship, GitHub, and case-study links.
+- Use `design-taste-frontend` as the sole authority for public-page design decisions. Generate imagery only when genuine product captures cannot serve the design.
 
 ### Image direction
 
 - Real redesigned product captures are the primary proof.
-- Generated supporting imagery depicts tactile planning artifacts such as paper plans, annotated cards, clips, and desk-scale objects.
-- Generated imagery uses cool neutral materials with restrained persimmon details and directional natural light.
+- Generated supporting imagery is optional when genuine product captures cannot communicate a section's purpose.
+- When used, supporting imagery follows the cool neutral palette with restrained persimmon details.
 - Avoid people-at-laptop stock imagery, floating 3D blobs, fake dashboards, neon glow, and illegible AI-generated copy.
 - Generated reference images are 16:9 or 16:10 and show one section only.
 
@@ -262,14 +259,10 @@ The landing page contains exactly six sections. `imagegen-frontend-web` must cre
 
 ### Case study
 
-- Product overview and problem
-- User and portfolio goals
-- Visual system decisions
-- Architecture and data flow
-- Verified feature set
-- Testing and accessibility approach
-- Lessons learned
-- GitHub source link
+- Tell a varied visual story about the product problem, interface decisions, permission and data flow, recovery and accessibility, and lessons learned.
+- Pair major engineering claims with a product capture, diagram, source file, or test evidence.
+- Keep the writing concise and factual for recruiters. Avoid repeated numbered chapters and feature inventories.
+- Include the repository link and a working route to the demo.
 
 ## 7. Demo workspace
 

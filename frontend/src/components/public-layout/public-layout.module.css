@@ -6,11 +6,9 @@
 .nav { display: flex; align-items: center; gap: clamp(16px, 2.2vw, 34px); }
 .nav a { display: inline-flex; align-items: center; gap: 3px; white-space: nowrap; color: var(--text-muted); font-size: 13px; font-weight: 550; text-decoration: none; }
 .nav a:hover { color: var(--accent); }
-.nav .demoLink { color: var(--accent); font-weight: 650; }
-.nav .demoLink:hover { color: var(--accent-hover); }
 .nav .accountLink { color: var(--text); }
-.nav .navCta { padding: 12px 17px; border: 1px solid var(--text); border-radius: 10px; background: var(--text); color: var(--page-bg); font-weight: 650; }
-.nav .navCta:hover { border-color: var(--accent); background: var(--accent); color: var(--accent-ink); }
+.nav .navCta { padding: 12px 17px; border: 1px solid var(--accent); border-radius: 10px; background: var(--accent); color: var(--accent-ink); font-weight: 650; }
+.nav .navCta:hover { border-color: var(--accent-hover); background: var(--accent-hover); color: var(--accent-ink); }
 .menuToggle { display: none; border: 0; background: none; color: var(--text); }
 .footer { border-top: 1px solid var(--border); }
 .footerInner { width: min(100% - 64px, 1440px); min-height: 100px; margin: auto; display: flex; align-items: center; justify-content: space-between; gap: 20px; }
